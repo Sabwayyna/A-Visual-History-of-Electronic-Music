@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Four Aspects - Daphne Oram (1960)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("../fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000000;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        #controlsBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: transparent;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #controlsBtn img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #controlsBtn .soft-shape {
+            transition: opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        #controlsBtn .spiky-shape {
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        #controlsBtn:hover .soft-shape {
+            opacity: 0;
+        }
+
+        #controlsBtn:hover .spiky-shape {
+            opacity: 1;
+        }
+
+        #controlsPanel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 24px;
+            color: #000000;
+            font-size: 14px;
+            z-index: 99;
+            min-width: 180px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            line-height: 2;
+        }
+
+        #controlsBtn:hover + #controlsPanel,
+        #controlsPanel:hover {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #controlsPanel .title {
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        #controlsPanel .control-item {
+            margin: 4px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #controlsPanel .key {
+            font-weight: 600;
+            padding: 2px 6px;
+            margin-right: 12px;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        #saveConfirmation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            border: 3px solid #000000;
+            padding: 20px 40px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 6px 6px 0px #000000;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        #saveConfirmation.show {
+            opacity: 1;
+        }
+
+        #speedIndicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            border: 3px solid #000000;
+            padding: 20px 40px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 6px 6px 0px #000000;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            letter-spacing: 2px;
+        }
+
+        #speedIndicator.show {
+            opacity: 1;
+        }
+
+        #backLink {
+            position: fixed;
+            top: 20px;
+            left: 24px;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #backLink:hover {
+            color: rgba(255, 255, 255, 1);
+            letter-spacing: 3px;
+            transform: translateX(-2px);
+        }
+
+        #backLink::before {
+            content: "\2190";
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+
+        #backLink:hover::before {
+            transform: translateX(-4px);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            display: flex;
+            gap: 16px;
+            z-index: 100;
+        }
+
+        .nav-link {
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+
+        .nav-link svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .nav-tooltip {
+            position: fixed;
+            bottom: 76px;
+            background: rgba(255, 255, 255, 0.9);
+            color: black;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover .nav-tooltip {
+            opacity: 1;
+        }
+
+
+        #song-header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            white-space: nowrap;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* ── Info Panel ── */
+        #song-header {
+            cursor: pointer;
+            pointer-events: auto;
+            transition: color 0.15s ease;
+        }
+
+        #song-header:hover {
+            color: rgba(255, 255, 255, 1.0);
+        }
+
+        #song-header:active {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        #song-header.open {
+            color: rgba(255, 255, 255, 1.0);
+        }
+
+        #info-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.76);
+            z-index: 9998;
+            transform: translateY(-100%);
+            transition: transform 0.38s cubic-bezier(0.77, 0, 0.175, 1);
+            overflow-y: auto;
+        }
+
+        #info-panel.open {
+            transform: translateY(0);
+        }
+
+        #info-panel-inner {
+            padding: 2vh 7vw 12vh;
+        }
+
+        .ip-close-btn {
+            position: sticky;
+            top: 0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 2.5vh 0 2vh;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 0.85vw;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.28);
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: color 0.2s;
+            user-select: none;
+        }
+
+        .ip-close-btn:hover {
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .ip-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: 2.5vw;
+            row-gap: 1vh;
+            margin-bottom: 4vh;
+        }
+
+        .ip-year {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 3.8vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.0;
+            color: rgba(255, 255, 255, 0.72);
+            text-transform: uppercase;
+            order: 2;
+        }
+
+        .ip-title {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 8vw;
+            font-weight: 400;
+            letter-spacing: -0.03em;
+            line-height: 0.88;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.88);
+            text-transform: uppercase;
+            width: 100%;
+            order: 1;
+            margin-bottom: 2vh;
+        }
+
+        .ip-artist {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 3.8vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.0;
+            color: rgba(255, 255, 255, 0.72);
+            text-transform: uppercase;
+            order: 3;
+        }
+
+        .ip-images {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1vw;
+            margin-bottom: 4vh;
+        }
+
+        .ip-img-slot {
+            aspect-ratio: 4 / 3;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .ip-text {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 3.5vh;
+        }
+
+        .ip-text p {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 2.4vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.15;
+            color: rgba(255, 255, 255, 0.78);
+            margin-bottom: 2.5vh;
+        }
+
+        .ip-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        #nav-prev, #nav-next {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.55);
+            text-decoration: none;
+            z-index: 100;
+        }
+        #nav-prev { left: 24px; }
+        #nav-next { right: 24px; }
+    </style>
+</head>
+<body>
+    <div id="song-header">1960  -  Four Aspects  -  Daphne Oram</div>
+    <div id="info-panel">
+        <div id="info-panel-inner">
+            <div class="ip-close-btn">CLOSE &#215;</div>
+            <div class="ip-meta">
+                <div class="ip-year">1960</div>
+                <div class="ip-title">Four Aspects</div>
+                <div class="ip-artist">Daphne Oram</div>
+            </div>
+            <div class="ip-text">
+                <p>Oram built the Oramics machine in her own studio: shapes drawn by hand on 35mm film strips would scan and control pitch, duration, and timbre. Sound as drawn notation. Four Aspects was among the first pieces realised through this method.</p>
+                <p>Blobs spiral outward from the centre as the piece progresses. Each mark responds to amplitude  -  wider when louder, absent in silence. Organic, asymmetric, hand-drawn in character. An attempt to render the sound the way Oram rendered scores.</p>
+            </div>
+        </div>
+    </div>    <input type="file" id="fileInput" accept="audio/*" />
+
+    <a href="../index.html" id="backLink">
+        <span>Timeline</span>
+    </a>
+    <a href="karlheinz-stockhausen-studio-i-1953.html" id="nav-prev">&#8592;</a>
+    <a href="delia-derbyshire-doctor-who-theme-1963.html" id="nav-next">&#8594;</a>
+
+    <div id="controlsBtn">
+        <img src="../bouda.png" class="soft-shape" alt="Controls">
+        <img src="../kiki.png" class="spiky-shape" alt="Controls">
+    </div>
+    <div id="controlsPanel">
+        <div class="title">Controls</div>
+        <div class="control-item">
+            <span class="key">SPACE</span>
+            <span>Play / Pause</span>
+        </div>
+        <div class="control-item">
+            <span class="key">&larr; &rarr;</span>
+            <span>Speed</span>
+        </div>
+        <div class="control-item">
+            <span class="key">S</span>
+            <span>Save Frame</span>
+        </div>
+        <div class="control-item">
+            <span class="key">C</span>
+            <span>Clear Canvas</span>
+        </div>
+        <div class="control-item">
+            <span class="key">H</span>
+            <span>Hide UI</span>
+        </div>
+    </div>
+
+    <div id="saveConfirmation">FRAME SAVED</div>
+    <div id="speedIndicator">1.0x</div>
+
+    <div class="bottom-nav">
+        <a href="../visualizer.html" class="nav-link">
+            <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="white" stroke-width="1.5" fill="none">
+                    <path d="M8 21 L14 12 L20 28 L26 15 L32 24 L38 21" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="14" cy="12" r="2" fill="white"/>
+                    <circle cx="26" cy="15" r="2" fill="white"/>
+                </g>
+            </svg>
+            <div class="nav-tooltip">Visualizer</div>
+        </a>
+
+        <a href="../alphabet-chart.html" class="nav-link">
+            <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="white" stroke-width="1.5" fill="none">
+                    <line x1="14" y1="8" x2="14" y2="34" />
+                    <line x1="28" y1="8" x2="28" y2="34" />
+                    <line x1="8" y1="14" x2="34" y2="14" />
+                    <line x1="8" y1="28" x2="34" y2="28" />
+                    <circle cx="14" cy="14" r="2" fill="white" />
+                    <circle cx="28" cy="28" r="2" fill="white" />
+                    <line x1="19" y1="19" x2="23" y2="23" />
+                    <line x1="23" y1="19" x2="19" y2="23" />
+                </g>
+            </svg>
+            <div class="nav-tooltip">Alphabet</div>
+        </a>
+    </div>
+
+    <script>
+
+// Four Aspects  -  organic spiral blob visualizer (no grid)
+// Song progress sweeps a spiral from centre outward; arc-blobs shaped like
+// the organic torn-paper / waveform strips in the reference images.
+const AUTO_LOAD_AUDIO = '../Musique/04 - Daphne Oram - Four Aspects.mp3';
+
+var song, fft, amp;
+var started = false;
+var grainBuffer, blobBuffer;
+var showUI = true;
+var playbackSpeed = 1.0;
+var frameCounter = 0;
+
+// ── geometry ──────────────────────────────────────────────────────────────────
+var gcx, gcy, outerR;
+
+// ── spiral state ──────────────────────────────────────────────────────────────
+var lastTotalAngle = -1;
+var numRevolutions = 7;        // rings in the full spiral
+var NUM_STEPS_PER_REV = 100;   // drawing steps per revolution
+var DRAW_STEP  = 0.0628;       // TWO_PI / 100  -  set in setup
+var ARC_SPAN   = 0.220;        // DRAW_STEP * 3.5  -  moderate overlap
+var SILENCE_THRESHOLD = 0.013;
+var viewScale   = 2.8;
+var smoothedVol = 0;
+
+function preload() {
+  song = loadSound(AUTO_LOAD_AUDIO,
+    function() { console.log("Song loaded"); },
+    function(e) { console.error("Error:", e); }
+  );
+}
+
+// ── geometry init ─────────────────────────────────────────────────────────────
+function initGeometry() {
+  gcx    = width  / 2;
+  gcy    = height / 2;
+  outerR = min(width, height) * 0.43;
+}
+
+// ── grain buffer ──────────────────────────────────────────────────────────────
+function buildGrainBuffer() {
+  if (grainBuffer) grainBuffer.remove();
+  grainBuffer = createGraphics(512, 512);
+  grainBuffer.loadPixels();
+  for (var i = 0; i < grainBuffer.pixels.length; i += 4) {
+    var v = random(0, 255);
+    grainBuffer.pixels[i]     = v;
+    grainBuffer.pixels[i + 1] = v;
+    grainBuffer.pixels[i + 2] = v;
+    grainBuffer.pixels[i + 3] = floor(random(20, 45));
+  }
+  grainBuffer.updatePixels();
+}
+
+// ── p5 lifecycle ──────────────────────────────────────────────────────────────
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  fft = new p5.FFT(0.8, 1024);
+  amp = new p5.Amplitude(0.8);
+
+  initGeometry();
+  DRAW_STEP = (Math.PI * 2) / NUM_STEPS_PER_REV;
+  ARC_SPAN  = DRAW_STEP * 3.5;
+
+  blobBuffer = createGraphics(windowWidth, windowHeight);
+  blobBuffer.clear();
+  buildGrainBuffer();
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  initGeometry();
+  resetBlobBuffer();
+}
+
+function resetBlobBuffer() {
+  if (blobBuffer) blobBuffer.remove();
+  blobBuffer = createGraphics(windowWidth, windowHeight);
+  blobBuffer.clear();
+  viewScale   = 2.8;
+  smoothedVol = 0;
+  if (song && song.isLoaded() && song.duration && song.duration() > 0) {
+    lastTotalAngle = (song.currentTime() / song.duration()) * Math.PI * 2 * numRevolutions;
+  } else {
+    lastTotalAngle = -1;
+  }
+}
+
+function draw() {
+  background(0);
+
+  // Zoom out slowly as the spiral grows outward
+  if (started && song && song.isLoaded()) {
+    var dur = song.duration ? song.duration() : 0;
+    if (dur > 0) {
+      var songFrac    = constrain(song.currentTime() / dur, 0, 1);
+      var targetScale = map(songFrac, 0, 0.88, 2.8, 1.0, true);
+      viewScale = lerp(viewScale, targetScale, 0.016);
+    }
+  }
+
+  push();
+  translate(width / 2, height / 2);
+  scale(viewScale);
+  translate(-width / 2, -height / 2);
+  image(blobBuffer, 0, 0);
+  pop();
+
+  if (started && song && song.isPlaying()) {
+    updateSpiral();
+  }
+
+  drawGrain();
+}
+
+// ── spiral drawing ────────────────────────────────────────────────────────────
+function updateSpiral() {
+  var dur = song.duration();
+  if (!dur || dur <= 0) return;
+
+  var fraction   = song.currentTime() / dur;
+  var totalAngle = fraction * Math.PI * 2 * numRevolutions;
+
+  if (lastTotalAngle < 0) lastTotalAngle = totalAngle;
+  if (totalAngle <= lastTotalAngle) return;
+
+  var vol = amp.getLevel();
+  smoothedVol = lerp(smoothedVol, vol, 0.10);
+  var effVol  = smoothedVol * 0.60 + vol * 0.40;
+
+  var S             = min(width, height);
+  var totalAngleMax = numRevolutions * Math.PI * 2;
+
+  var steps = 0;
+  while (lastTotalAngle < totalAngle && steps < 3) {
+    var t          = lastTotalAngle;
+    var revolution = Math.floor(t / (Math.PI * 2));
+    if (revolution >= numRevolutions) break;
+
+    // Silence → leave a visible gap in the spiral
+    if (effVol < SILENCE_THRESHOLD) {
+      lastTotalAngle += DRAW_STEP;
+      steps++;
+      continue;
+    }
+
+    var angleOnRing = (t % (Math.PI * 2)) - Math.PI / 2;
+    var spiralFrac  = t / totalAngleMax;
+    // Radius: begins at a small dot near centre, expands to near the screen edge
+    var ringR = map(spiralFrac, 0, 1, S * 0.010, outerR * 0.96);
+
+    // Thickness: thin ribbon at quiet moments, moderate bulge when loud.
+    // Kept small so rings stay distinct and never merge into a solid disk.
+    var thick = map(effVol, SILENCE_THRESHOLD, 0.45, S * 0.002, S * 0.018, true);
+    thick = Math.max(thick, S * 0.0015);
+
+    var alpha     = floor(map(effVol, SILENCE_THRESHOLD, 0.4, 140, 245, true));
+    var noiseBase = revolution * 37.3;
+
+    drawArcBlob(angleOnRing, ringR, thick, noiseBase, alpha);
+
+    lastTotalAngle += DRAW_STEP;
+    steps++;
+  }
+}
+
+// ── draw one arc-blob ─────────────────────────────────────────────────────────
+// Shape inspired by the organic torn-paper / waveform-strip reference images:
+//   • Outer edge: smooth, rounded bumps that rise outward (like the positive
+//     half of a waveform). Uses only coarse noise → soft, no jagged spikes.
+//   • Inner edge: barely moves  -  thin baseline, only tiny inward dimples.
+// Together these create the variable-width ribbon shapes from the reference.
+function drawArcBlob(angle, ringR, thickness, noiseBase, alpha) {
+  var g = blobBuffer;
+  var N = 30; // high point count → smooth curves
+
+  g.push();
+  g.noStroke();
+  g.fill(255, alpha);
+
+  g.beginShape();
+
+  // ── outer edge: outward-only bumps driven by smooth Perlin noise ──────────
+  for (var i = 0; i <= N; i++) {
+    var a  = angle + (i / N - 0.5) * ARC_SPAN;
+    var ca = Math.cos(a);
+    var sa = Math.sin(a);
+
+    // Single coarse noise layer → soft, rounded bumps (no fine noise = no jaggies)
+    var nVal = noise(noiseBase + ca * 4.5, noiseBase + sa * 4.5);
+    // Remap: below 0.30 → flat baseline; above 0.30 → rises smoothly into bump
+    var bump = Math.max(0, (nVal - 0.30) / 0.70);
+    // Ease the bump with a power curve for rounder, softer peaks
+    bump = Math.pow(bump, 0.75);
+    var oR = ringR + bump * thickness * 2.6;
+    g.vertex(gcx + ca * oR, gcy + sa * oR);
+  }
+
+  // ── inner edge: nearly flat  -  only gentle inward dimples ─────────────────
+  for (var i = N; i >= 0; i--) {
+    var a  = angle + (i / N - 0.5) * ARC_SPAN;
+    var ca = Math.cos(a);
+    var sa = Math.sin(a);
+
+    var nVal  = noise(noiseBase + 70 + ca * 3.0, noiseBase + 70 + sa * 3.0);
+    var inner = Math.max(0, (nVal - 0.42) / 0.58);
+    var iR    = Math.max(ringR - inner * thickness * 0.5, 2);
+    g.vertex(gcx + ca * iR, gcy + sa * iR);
+  }
+
+  g.endShape(CLOSE);
+  g.pop();
+}
+
+function drawGrain() {
+  push();
+  tint(255, 35);
+  for (var gx = 0; gx < width; gx += 512) {
+    for (var gy = 0; gy < height; gy += 512) {
+      image(grainBuffer, gx, gy);
+    }
+  }
+  pop();
+}
+
+// ── input ─────────────────────────────────────────────────────────────────────
+function mousePressed() {
+  if (!started && song && song.isLoaded()) {
+    userStartAudio();
+    song.play();
+    song.rate(playbackSpeed);
+    started = true;
+    frameCounter = 0;
+  }
+}
+
+function keyPressed() {
+  if (key === ' ') {
+    if (song && song.isLoaded()) {
+      if (!started) {
+        userStartAudio(); song.play(); song.rate(playbackSpeed);
+        started = true; frameCounter = 0;
+      } else if (song.isPlaying()) { song.pause(); }
+      else { song.play(); }
+    }
+    return false;
+  }
+  if (key === 'h' || key === 'H') {
+    showUI = !showUI;
+    var els = [document.getElementById('controlsBtn'), document.getElementById('controlsPanel'),
+               document.getElementById('backLink'), document.querySelector('.bottom-nav')];
+    for (var i = 0; i < els.length; i++) { if (els[i]) els[i].style.display = showUI ? '' : 'none'; }
+  }
+  if (key === 's' || key === 'S') {
+    var ts = year() + '' + nf(month(),2) + nf(day(),2) + '_' + nf(hour(),2) + nf(minute(),2) + nf(second(),2);
+    saveCanvas('four-aspects_' + ts, 'png');
+    var c = document.getElementById('saveConfirmation');
+    if (c) { c.classList.add('show'); setTimeout(function(){ c.classList.remove('show'); }, 2000); }
+  }
+  if (key === 'c' || key === 'C') {
+    resetBlobBuffer();
+  }
+  if (keyCode === RIGHT_ARROW) {
+    playbackSpeed = Math.min(playbackSpeed + 1.0, 10.0);
+    if (song && song.isLoaded()) song.rate(playbackSpeed);
+    var si = document.getElementById('speedIndicator');
+    si.textContent = playbackSpeed.toFixed(1) + 'x'; si.classList.add('show');
+    setTimeout(function(){ si.classList.remove('show'); }, 1500);
+  }
+  if (keyCode === LEFT_ARROW) {
+    playbackSpeed = Math.max(playbackSpeed - 1.0, 1.0);
+    if (song && song.isLoaded()) song.rate(playbackSpeed);
+    var si = document.getElementById('speedIndicator');
+    si.textContent = playbackSpeed.toFixed(1) + 'x'; si.classList.add('show');
+    setTimeout(function(){ si.classList.remove('show'); }, 1500);
+  }
+}
+
+    </script>
+
+    <script>
+    // Auto-start handler
+    (function() {
+      function tryAutoPlay() {
+        if (typeof song !== 'undefined' && song && song.isLoaded()) {
+          var audioCtx = getAudioContext();
+          if (audioCtx.state === 'suspended') return;
+          userStartAudio().then(function() {
+            if (!started) {
+              song.play(); song.rate(playbackSpeed);
+              started = true; frameCounter = 0;
+              console.log('Auto-play started');
+            }
+          });
+        } else { setTimeout(tryAutoPlay, 200); }
+      }
+      setTimeout(tryAutoPlay, 500);
+      function resumeAndPlay() {
+        var audioCtx = getAudioContext();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().then(function() {
+            if (typeof song !== 'undefined' && song && song.isLoaded() && !started) {
+              song.play(); song.rate(playbackSpeed);
+              started = true; frameCounter = 0;
+              console.log('Playback started after user gesture');
+            }
+          });
+        }
+      }
+      document.addEventListener('click', resumeAndPlay, { once: true });
+      document.addEventListener('keydown', resumeAndPlay, { once: true });
+    })();
+    </script>
+
+
+    <script>
+    (function() {
+        var header = document.getElementById('song-header');
+        var panel  = document.getElementById('info-panel');
+        if (!header || !panel) return;
+
+        function closePanel() {
+            panel.classList.remove('open');
+            header.classList.remove('open');
+        }
+
+        header.addEventListener('click', function() {
+            panel.classList.toggle('open');
+            header.classList.toggle('open');
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closePanel();
+        });
+
+        var closeBtn = panel.querySelector('.ip-close-btn');
+        if (closeBtn) closeBtn.addEventListener('click', closePanel);
+
+        panel.addEventListener('click', function(e) {
+            if (e.target === panel) closePanel();
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!panel.classList.contains('open')) return;
+            if (!panel.contains(e.target) && e.target !== header) {
+                closePanel();
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

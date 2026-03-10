@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music Visualizer - Musique Concrète</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000000;
+        font-family: "LinotypeUnivers", sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+      }
+
+      /* Hidden file input */
+      #fileInput {
+        display: none;
+      }
+
+
+      /* Controls button - minimalist top right */
+      #controlsBtn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background: transparent;
+        cursor: pointer;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #controlsBtn img {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      #controlsBtn .soft-shape {
+        transition: opacity 0.3s ease;
+        opacity: 1;
+      }
+
+      #controlsBtn .spiky-shape {
+        transition: opacity 0.3s ease;
+        opacity: 0;
+      }
+
+      #controlsBtn:hover .soft-shape {
+        opacity: 0;
+      }
+
+      #controlsBtn:hover .spiky-shape {
+        opacity: 1;
+      }
+
+      /* Controls panel - minimalist style */
+      #controlsPanel {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 20px 24px;
+        color: #000000;
+        font-size: 14px;
+        z-index: 99;
+        min-width: 180px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        line-height: 2;
+      }
+
+      #controlsBtn:hover + #controlsPanel,
+      #controlsPanel:hover {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #controlsPanel .title {
+        font-weight: 700;
+        margin-bottom: 16px;
+        font-size: 14px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      #controlsPanel .control-item {
+        margin: 4px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      #controlsPanel .key {
+        font-weight: 600;
+        padding: 2px 6px;
+        margin-right: 12px;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+      }
+
+
+      /* Save confirmation overlay */
+      #saveConfirmation {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #ffffff;
+        border: 3px solid #000000;
+        padding: 20px 40px;
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 6px 6px 0px #000000;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      #saveConfirmation.show {
+        opacity: 1;
+      }
+
+      /* Speed indicator overlay */
+      #speedIndicator {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #ffffff;
+        border: 3px solid #000000;
+        padding: 20px 40px;
+        font-size: 14px;
+        font-weight: 700;
+        box-shadow: 6px 6px 0px #000000;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        letter-spacing: 2px;
+      }
+
+      #speedIndicator.show {
+        opacity: 1;
+      }
+
+      /* Alphabet chart link - unconventional bottom-left cipher */
+      #alphabetLink {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        width: 42px;
+        height: 42px;
+        cursor: pointer;
+        z-index: 100;
+        opacity: 0.4;
+        transition: opacity 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #alphabetLink:hover {
+        opacity: 1;
+      }
+
+      /* SVG grid symbol */
+      #alphabetLink svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* Tooltip on hover */
+      #alphabetTooltip {
+        position: fixed;
+        bottom: 24px;
+        left: 76px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 8px 16px;
+        color: #000000;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        z-index: 99;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        white-space: nowrap;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      #alphabetLink:hover + #alphabetTooltip {
+        opacity: 1;
+      }
+
+      /* Alternative: Text-based cipher version */
+      #alphabetCipher {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 4px;
+        color: rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        z-index: 100;
+        transition: all 0.4s ease;
+        user-select: none;
+        display: none; /* We'll use SVG version by default */
+      }
+
+      #alphabetCipher:hover {
+        color: rgba(255, 255, 255, 1);
+        letter-spacing: 6px;
+        transform: translateX(2px);
+      }
+
+      /* Start overlay */
+      #startOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        transition: opacity 0.3s ease;
+      }
+
+      #startOverlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #startOverlay .start-text {
+        color: #fff;
+        font-size: 18px;
+        font-weight: 400;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+      }
+
+      #startOverlay .start-icon {
+        display: flex;
+        gap: 30px;
+      }
+
+      #startOverlay .icon {
+        width: 40px;
+        height: 40px;
+        position: relative;
+      }
+
+      #startOverlay .icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        position: absolute;
+        animation: fadeInOut 2s ease-in-out infinite;
+      }
+
+      #startOverlay .icon:nth-child(2) img {
+        animation: fadeInOut 2s ease-in-out infinite reverse;
+      }
+
+      @keyframes fadeInOut {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Start Overlay -->
+    <div id="startOverlay">
+      <div class="start-text">Select an audio file to begin</div>
+      <div class="start-icon">
+        <div class="icon"><img src="bouda.png" alt=""></div>
+        <div class="icon"><img src="kiki.png" alt=""></div>
+      </div>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="fileInput" accept="audio/*" />
+
+    <!-- Minimalist controls button (top right) -->
+    <div id="controlsBtn">
+      <!-- Soft round shape (bouda) -->
+      <img src="bouda.png" class="soft-shape" alt="Controls">
+      <!-- Sharp spiky shape (kiki) -->
+      <img src="kiki.png" class="spiky-shape" alt="Controls">
+    </div>
+    <div id="controlsPanel">
+      <div class="title">Controls</div>
+      <div class="control-item">
+        <span class="key">SPACE</span>
+        <span>Play / Pause</span>
+      </div>
+      <div class="control-item">
+        <span class="key">← →</span>
+        <span>Speed</span>
+      </div>
+      <div class="control-item">
+        <span class="key">S</span>
+        <span>Save Frame</span>
+      </div>
+      <div class="control-item">
+        <span class="key">C</span>
+        <span>Clear Canvas</span>
+      </div>
+      <div class="control-item">
+        <span class="key">H</span>
+        <span>Hide UI</span>
+      </div>
+    </div>
+
+    <!-- Save confirmation (HTML overlay) -->
+    <div id="saveConfirmation">✓ FRAME SAVED</div>
+
+    <!-- Speed indicator overlay -->
+    <div id="speedIndicator">1.0x</div>
+
+    <!-- Alphabet chart link - unconventional geometric cipher -->
+    <div id="alphabetLink">
+      <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+        <!-- Grid pattern representing the visual alphabet -->
+        <g stroke="white" stroke-width="1.5" fill="none">
+          <!-- 3x3 grid -->
+          <line x1="14" y1="8" x2="14" y2="34" />
+          <line x1="28" y1="8" x2="28" y2="34" />
+          <line x1="8" y1="14" x2="34" y2="14" />
+          <line x1="8" y1="28" x2="34" y2="28" />
+          <!-- Corner marks -->
+          <circle cx="14" cy="14" r="2" fill="white" />
+          <circle cx="28" cy="28" r="2" fill="white" />
+          <!-- Small crosses -->
+          <line x1="19" y1="19" x2="23" y2="23" />
+          <line x1="23" y1="19" x2="19" y2="23" />
+        </g>
+      </svg>
+    </div>
+    <div id="alphabetTooltip">Visual Alphabet</div>
+
+    <!-- Alternative: Text cipher version (hidden by default) -->
+    <div id="alphabetCipher">[A→P]</div>
+
+    <script src="sketch.js"></script>
+    <script>
+      const startOverlay = document.getElementById('startOverlay');
+      const startText = startOverlay.querySelector('.start-text');
+      const fileInput = document.getElementById('fileInput');
+
+      // Hide overlay and start playback after file is loaded
+      window.hideOverlayAndPlay = function() {
+        console.log('Hiding overlay and starting playback');
+        startOverlay.classList.add('hidden');
+      };
+
+      // Click overlay to select file
+      startOverlay.addEventListener('click', function() {
+        console.log('Opening file selector...');
+        fileInput.click();
+      });
+
+      // Update text when file is selected
+      fileInput.addEventListener('change', function() {
+        if (fileInput.files.length > 0) {
+          startText.textContent = 'Loading audio...';
+        }
+      });
+
+      // Wire up controls button click to load new music
+      document.getElementById('controlsBtn').addEventListener('click', function() {
+        fileInput.click();
+      });
+
+      // Alphabet chart link navigation
+      document.getElementById('alphabetLink').addEventListener('click', function() {
+        window.location.href = 'alphabet-chart.html';
+      });
+
+      // Alternative cipher link (if enabled)
+      document.getElementById('alphabetCipher').addEventListener('click', function() {
+        window.location.href = 'alphabet-chart.html';
+      });
+    </script>
+  </body>
+</html>

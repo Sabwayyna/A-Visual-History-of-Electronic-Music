@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A History of Digital Music</title>
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: "LinotypeUnivers", sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Grain ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9997;
+            opacity: 0.07;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 200px 200px;
+        }
+
+        /* ── Header ── */
+        #header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 20px 10vw;
+            z-index: 100;
+        }
+
+        #header-title {
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+        }
+
+        #header-nav {
+            display: flex;
+            gap: 28px;
+        }
+
+        #header-nav a {
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: color 0.1s;
+        }
+
+        #header-nav a:hover { color: #fff; }
+
+        /* ── Center Icon ── */
+        #icon-center {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 46vw;
+            height: 46vw;
+            max-width: 640px;
+            max-height: 640px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #icon-center img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: contain;
+        }
+
+        #icon-kiki  { animation: fade-kiki  7s ease-in-out infinite; }
+        #icon-bouba { animation: fade-bouba 7s ease-in-out infinite; }
+
+        @keyframes fade-kiki  { 0%, 100% { opacity: 0.5; }  50% { opacity: 0.08; } }
+        @keyframes fade-bouba { 0%, 100% { opacity: 0.08; } 50% { opacity: 0.5;  } }
+
+        /* ── List ── */
+        #main {
+            position: relative;
+            z-index: 10;
+            padding: 120px 0 100px;
+        }
+
+        #list { width: 100%; }
+
+        .entry {
+            display: grid;
+            grid-template-columns: auto 1fr 1fr;
+            padding: 2px 10vw;
+            text-decoration: none;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.05s, color 0.05s;
+        }
+
+        .entry:hover { background: #fff; color: #000; }
+
+        .col-year,
+        .col-artist,
+        .col-title {
+            font-size: 64px;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.05;
+            text-transform: uppercase;
+            white-space: nowrap;
+            -webkit-text-stroke: 0.5px #fff;
+        }
+
+        .col-title {
+            font-style: italic;
+            padding-left: 5vw;
+        }
+
+        .entry:hover .col-year,
+        .entry:hover .col-artist,
+        .entry:hover .col-title {
+            -webkit-text-stroke: 0.5px #000;
+        }
+
+        /* Last entry: title wraps to second line */
+        .entry-last {
+            align-items: start;
+        }
+
+        .entry-last .col-title {
+            white-space: normal;
+            line-height: 1.02;
+        }
+    </style>
+</head>
+<body>
+
+    <header id="header">
+        <div id="header-title">A History of Digital Music</div>
+        <nav id="header-nav">
+            <a href="info.html">Info</a>
+            <a href="timeline-horizontal.html">Timeline</a>
+        </nav>
+    </header>
+
+    <div id="icon-center">
+        <img id="icon-kiki"  src="kiki.png"  alt="">
+        <img id="icon-bouba" src="bouda.png" alt="">
+    </div>
+
+    <main id="main">
+        <div id="list">
+
+            <a class="entry" href="songs/pierre-schaeffer-cinq-études-de-bruits-1948.html"
+               data-audio="Musique/01 - Pierre Schaeffer - Cinq études de bruits (1948) - Etude aux chemins de fer.mp3">
+                <span class="col-year">1948</span>
+                <span class="col-artist">Pierre Schaeffer</span>
+                <span class="col-title">Cinq Etudes de Bruits</span>
+            </a>
+
+            <a class="entry" href="songs/karlheinz-stockhausen-studio-i-1953.html"
+               data-audio="Musique/Karlheinz Stockhausen_ Studie I (1953).mp3">
+                <span class="col-year">1953</span>
+                <span class="col-artist">Karlheinz Stockhausen</span>
+                <span class="col-title">Studio I</span>
+            </a>
+
+            <a class="entry" href="songs/daphne-oram-four-aspects-1960.html"
+               data-audio="Musique/04 - Daphne Oram - Four Aspects.mp3">
+                <span class="col-year">1960</span>
+                <span class="col-artist">Daphne Oram</span>
+                <span class="col-title">Four Aspects</span>
+            </a>
+
+            <a class="entry" href="songs/delia-derbyshire-doctor-who-theme-1963.html"
+               data-audio="Musique/05 - Doctor Who (1963) -  Original Theme music video.mp3">
+                <span class="col-year">1963</span>
+                <span class="col-artist">Delia Derbyshire</span>
+                <span class="col-title">Doctor Who Theme</span>
+            </a>
+
+            <a class="entry" href="songs/brian-eno-music-for-airports-11-1978.html"
+               data-audio="Musique/08 - Brian Eno - 1:1  Music for Airports (Remastered 2004).mp3">
+                <span class="col-year">1978</span>
+                <span class="col-artist">Brian Eno</span>
+                <span class="col-title">Music for Airports 1/1</span>
+            </a>
+
+            <a class="entry" href="songs/laurie-spiegel-patchwork-1980.html"
+               data-audio="Musique/Patchwork.mp3">
+                <span class="col-year">1980</span>
+                <span class="col-artist">Laurie Spiegel</span>
+                <span class="col-title">Patchwork</span>
+            </a>
+
+            <a class="entry" href="songs/charanjit-singh-bhairav-1983.html"
+               data-audio="Musique/Charanjit Singh - Raga Bhairav (1982).mp3">
+                <span class="col-year">1983</span>
+                <span class="col-artist">Charanjit Singh</span>
+                <span class="col-title">Bhairav</span>
+            </a>
+
+            <a class="entry" href="songs/mr-fingers-larry-heard-can-you-feel-it-1986.html"
+               data-audio="Musique/09 - Mr Fingers - Can You Feel It.mp3">
+                <span class="col-year">1986</span>
+                <span class="col-artist">Mr. Fingers</span>
+                <span class="col-title">Can You Feel It</span>
+            </a>
+
+            <a class="entry" href="songs/autechre-dael-1995.html"
+               data-audio="Musique/11 - Dael · Autechre.mp3">
+                <span class="col-year">1995</span>
+                <span class="col-artist">Autechre</span>
+                <span class="col-title">Dael</span>
+            </a>
+
+            <a class="entry" href="songs/boards-of-canada-roygbiv-1998.html"
+               data-audio="Musique/12 - Boards of Canada — Roygbiv (1998).mp3">
+                <span class="col-year">1998</span>
+                <span class="col-artist">Boards of Canada</span>
+                <span class="col-title">Roygbiv</span>
+            </a>
+
+            <a class="entry" href="songs/ryoji-ikeda-datamatrix-2005.html"
+               data-audio="Musique/13 - Ryoji Ikeda - data.matrix.mp3">
+                <span class="col-year">2005</span>
+                <span class="col-artist">Ryoji Ikeda</span>
+                <span class="col-title">Data Matrix</span>
+            </a>
+
+            <a class="entry entry-last" href="songs/rashad-becker-busy-ready-what-corroborators-2025.html"
+               data-audio="Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3">
+                <span class="col-year">2025</span>
+                <span class="col-artist">Rashad Becker</span>
+                <span class="col-title">Busy Ready What,<br>Corroborators</span>
+            </a>
+
+        </div>
+    </main>
+
+    <script>
+        const entries = document.querySelectorAll('.entry');
+        const audioCache = {};
+        let currentAudio = null;
+        let audioUnlocked = false;
+
+        // Unlock audio context on first interaction
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            const s = new Audio();
+            s.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+            s.play().then(() => { s.pause(); audioUnlocked = true; }).catch(() => { audioUnlocked = true; });
+        }
+
+        document.addEventListener('mousemove', unlockAudio, { once: true });
+        document.addEventListener('click', unlockAudio, { once: true });
+
+        // Preload all audio
+        entries.forEach(entry => {
+            const path = entry.getAttribute('data-audio');
+            if (!path) return;
+            const audio = new Audio();
+            audio.preload = 'auto';
+            audio.src = path;
+            audioCache[path] = audio;
+            audio.load();
+        });
+
+        // Hover to play / stop
+        entries.forEach(entry => {
+            entry.addEventListener('mouseenter', function () {
+                const path = this.getAttribute('data-audio');
+                if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+                if (path && audioCache[path]) {
+                    currentAudio = audioCache[path];
+                    currentAudio.currentTime = 0;
+                    currentAudio.play().catch(() => {});
+                }
+            });
+            entry.addEventListener('mouseleave', function () {
+                if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+            });
+        });
+    </script>
+
+</body>
+</html>

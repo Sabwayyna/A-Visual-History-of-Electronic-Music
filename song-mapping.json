@@ -1,0 +1,145 @@
+[
+  {
+    "index": 1,
+    "year": "1948",
+    "artist": "Pierre Schaeffer",
+    "track": "Cinq Etudes de Bruits",
+    "era": "MUSIQUE CONCRETE & EARLY ELECTRONICS",
+    "description": "Birth of musique concrete.",
+    "audio": "Musique/01 - Pierre Schaeffer - Cinq études de bruits (1948) - Etude aux chemins de fer.mp3",
+    "filename": "pierre-schaeffer-cinq-études-de-bruits-1948.html",
+    "path": "songs/pierre-schaeffer-cinq-études-de-bruits-1948.html"
+  },
+  {
+    "index": 2,
+    "year": "1953",
+    "artist": "Karlheinz Stockhausen",
+    "track": "Studio I",
+    "era": "MUSIQUE CONCRETE & EARLY ELECTRONICS",
+    "description": "Electronic studio composition milestone.",
+    "audio": "Musique/Karlheinz Stockhausen_ Studie I (1953).mp3",
+    "filename": "karlheinz-stockhausen-studio-i-1953.html",
+    "path": "songs/karlheinz-stockhausen-studio-i-1953.html"
+  },
+  {
+    "index": 3,
+    "year": "1960",
+    "artist": "Daphne Oram",
+    "track": "Four Aspects",
+    "era": "MUSIQUE CONCRETE & EARLY ELECTRONICS",
+    "description": "Early British electronic innovation and Oramics foundation.",
+    "audio": "Musique/04 - Daphne Oram - Four Aspects.mp3",
+    "filename": "daphne-oram-four-aspects-1960.html",
+    "path": "songs/daphne-oram-four-aspects-1960.html"
+  },
+  {
+    "index": 4,
+    "year": "1963",
+    "artist": "Delia Derbyshire",
+    "track": "Doctor Who Theme",
+    "era": "MUSIQUE CONCRETE & EARLY ELECTRONICS",
+    "description": "Tape-based electronic sound design milestone.",
+    "audio": "Musique/05 - Doctor Who (1963) -  Original Theme music video.mp3",
+    "filename": "delia-derbyshire-doctor-who-theme-1963.html",
+    "path": "songs/delia-derbyshire-doctor-who-theme-1963.html"
+  },
+  {
+    "index": 5,
+    "year": "1974",
+    "artist": "Kraftwerk",
+    "track": "Autobahn",
+    "era": "ELECTRONIC PIONEERS / AMBIENT",
+    "description": "Template for electronic pop and machine aesthetics.",
+    "audio": "Musique/07 - Kraftwerk - Autobahn - 1974 Full Version.mp3",
+    "filename": "kraftwerk-autobahn-1974.html",
+    "path": "songs/kraftwerk-autobahn-1974.html"
+  },
+  {
+    "index": 6,
+    "year": "1978",
+    "artist": "Brian Eno",
+    "track": "Music for Airports 1/1",
+    "era": "ELECTRONIC PIONEERS / AMBIENT",
+    "description": "Ambient music as a formalized genre.",
+    "audio": "Musique/08 - Brian Eno - 1:1  Music for Airports (Remastered 2004).mp3",
+    "filename": "brian-eno-music-for-airports-11-1978.html",
+    "path": "songs/brian-eno-music-for-airports-11-1978.html"
+  },
+  {
+    "index": 7,
+    "year": "1980",
+    "artist": "Laurie Spiegel",
+    "track": "Patchwork",
+    "era": "ELECTRONIC PIONEERS / AMBIENT",
+    "description": "Computer composition and personal electronic expression.",
+    "audio": "Musique/Patchwork.mp3",
+    "filename": "laurie-spiegel-patchwork-1980.html",
+    "path": "songs/laurie-spiegel-patchwork-1980.html"
+  },
+  {
+    "index": 8,
+    "year": "1983",
+    "artist": "Charanjit Singh",
+    "track": "Bhairav",
+    "era": "CHICAGO HOUSE & DETROIT TECHNO",
+    "description": "Proto-acid textures and raga-based sequencing.",
+    "audio": "Musique/Charanjit Singh - Raga Bhairav (1982).mp3",
+    "filename": "charanjit-singh-bhairav-1983.html",
+    "path": "songs/charanjit-singh-bhairav-1983.html"
+  },
+  {
+    "index": 9,
+    "year": "1986",
+    "artist": "Mr. Fingers (Larry Heard)",
+    "track": "Can You Feel It",
+    "era": "CHICAGO HOUSE & DETROIT TECHNO",
+    "description": "A cornerstone of Chicago deep house.",
+    "audio": "Musique/09 - Mr Fingers - Can You Feel It.mp3",
+    "filename": "mr-fingers-larry-heard-can-you-feel-it-1986.html",
+    "path": "songs/mr-fingers-larry-heard-can-you-feel-it-1986.html"
+  },
+  {
+    "index": 10,
+    "year": "1995",
+    "artist": "Autechre",
+    "track": "Tri Repetae",
+    "era": "IDM / ELECTRONICA",
+    "description": "Algorithmic and abstract IDM landmark.",
+    "audio": "Musique/11 - Dael · Autechre.mp3",
+    "filename": "autechre-dael-1995.html",
+    "path": "songs/autechre-dael-1995.html"
+  },
+  {
+    "index": 11,
+    "year": "1998",
+    "artist": "Boards of Canada",
+    "track": "Roygbiv",
+    "era": "IDM / ELECTRONICA",
+    "description": "Analog warmth and nostalgic electronic aesthetics.",
+    "audio": "Musique/12 - Boards of Canada — Roygbiv (1998).mp3",
+    "filename": "boards-of-canada-roygbiv-1998.html",
+    "path": "songs/boards-of-canada-roygbiv-1998.html"
+  },
+  {
+    "index": 12,
+    "year": "2005",
+    "artist": "Ryoji Ikeda",
+    "track": "Data Matrix",
+    "era": "GLITCH / CONTEMPORARY EXPERIMENTAL",
+    "description": "Data-driven digital minimalism.",
+    "audio": "Musique/13 - Ryoji Ikeda - data.matrix.mp3",
+    "filename": "ryoji-ikeda-datamatrix-2005.html",
+    "path": "songs/ryoji-ikeda-datamatrix-2005.html"
+  },
+  {
+    "index": 13,
+    "year": "2025",
+    "artist": "Rashad Becker",
+    "track": "Busy Ready What, Corroborators",
+    "era": "GLITCH / CONTEMPORARY EXPERIMENTAL",
+    "description": "Contemporary experimental electroacoustic composition.",
+    "audio": "Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3",
+    "filename": "rashad-becker-busy-ready-what-corroborators-2025.html",
+    "path": "songs/rashad-becker-busy-ready-what-corroborators-2025.html"
+  }
+]

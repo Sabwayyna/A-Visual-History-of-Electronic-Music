@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studie I - Karlheinz Stockhausen (1953)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("../fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000000;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        #controlsBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: transparent;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #controlsBtn img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #controlsBtn .soft-shape {
+            transition: opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        #controlsBtn .spiky-shape {
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        #controlsBtn:hover .soft-shape {
+            opacity: 0;
+        }
+
+        #controlsBtn:hover .spiky-shape {
+            opacity: 1;
+        }
+
+        #controlsPanel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 24px;
+            color: #000000;
+            font-size: 14px;
+            z-index: 99;
+            min-width: 180px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            line-height: 2;
+        }
+
+        #controlsBtn:hover + #controlsPanel,
+        #controlsPanel:hover {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #controlsPanel .title {
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        #controlsPanel .control-item {
+            margin: 4px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #controlsPanel .key {
+            font-weight: 600;
+            padding: 2px 6px;
+            margin-right: 12px;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        #saveConfirmation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            border: 3px solid #000000;
+            padding: 20px 40px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 6px 6px 0px #000000;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        #saveConfirmation.show {
+            opacity: 1;
+        }
+
+        #speedIndicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            border: 3px solid #000000;
+            padding: 20px 40px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 6px 6px 0px #000000;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            letter-spacing: 2px;
+        }
+
+        #speedIndicator.show {
+            opacity: 1;
+        }
+
+        #backLink {
+            position: fixed;
+            top: 20px;
+            left: 24px;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #backLink:hover {
+            color: rgba(255, 255, 255, 1);
+            letter-spacing: 3px;
+            transform: translateX(-2px);
+        }
+
+        #backLink::before {
+            content: "\2190";
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+
+        #backLink:hover::before {
+            transform: translateX(-4px);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            display: flex;
+            gap: 16px;
+            z-index: 100;
+        }
+
+        .nav-link {
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+
+        .nav-link svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .nav-tooltip {
+            position: fixed;
+            bottom: 76px;
+            background: rgba(255, 255, 255, 0.9);
+            color: black;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover .nav-tooltip {
+            opacity: 1;
+        }
+
+        #scrollHint {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: lowercase;
+            z-index: 90;
+            pointer-events: none;
+            transition: opacity 1.5s ease;
+        }
+
+        #scrollHint.hidden {
+            opacity: 0;
+        }
+
+
+        #song-header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            white-space: nowrap;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* ── Info Panel ── */
+        #song-header {
+            cursor: pointer;
+            pointer-events: auto;
+            transition: color 0.15s ease;
+        }
+
+        #song-header:hover {
+            color: rgba(255, 255, 255, 1.0);
+        }
+
+        #song-header:active {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        #song-header.open {
+            color: rgba(255, 255, 255, 1.0);
+        }
+
+        #info-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.76);
+            z-index: 9998;
+            transform: translateY(-100%);
+            transition: transform 0.38s cubic-bezier(0.77, 0, 0.175, 1);
+            overflow-y: auto;
+        }
+
+        #info-panel.open {
+            transform: translateY(0);
+        }
+
+        #info-panel-inner {
+            padding: 2vh 7vw 12vh;
+        }
+
+        .ip-close-btn {
+            position: sticky;
+            top: 0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 2.5vh 0 2vh;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 0.85vw;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.28);
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: color 0.2s;
+            user-select: none;
+        }
+
+        .ip-close-btn:hover {
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .ip-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: 2.5vw;
+            row-gap: 1vh;
+            margin-bottom: 4vh;
+        }
+
+        .ip-year {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 3.8vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.0;
+            color: rgba(255, 255, 255, 0.72);
+            text-transform: uppercase;
+            order: 2;
+        }
+
+        .ip-title {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 8vw;
+            font-weight: 400;
+            letter-spacing: -0.03em;
+            line-height: 0.88;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.88);
+            text-transform: uppercase;
+            width: 100%;
+            order: 1;
+            margin-bottom: 2vh;
+        }
+
+        .ip-artist {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 3.8vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.0;
+            color: rgba(255, 255, 255, 0.72);
+            text-transform: uppercase;
+            order: 3;
+        }
+
+        .ip-images {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1vw;
+            margin-bottom: 4vh;
+        }
+
+        .ip-img-slot {
+            aspect-ratio: 4 / 3;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .ip-text {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 3.5vh;
+        }
+
+        .ip-text p {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 2.4vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.15;
+            color: rgba(255, 255, 255, 0.78);
+            margin-bottom: 2.5vh;
+        }
+
+        .ip-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        #nav-prev, #nav-next {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.55);
+            text-decoration: none;
+            z-index: 100;
+        }
+        #nav-prev { left: 24px; }
+        #nav-next { right: 24px; }
+    </style>
+</head>
+<body>
+    <div id="song-header">1953  -  Studie I  -  Karlheinz Stockhausen</div>
+    <div id="info-panel">
+        <div id="info-panel-inner">
+            <div class="ip-close-btn">CLOSE &#215;</div>
+            <div class="ip-meta">
+                <div class="ip-year">1953</div>
+                <div class="ip-title">Studie I</div>
+                <div class="ip-artist">Karlheinz Stockhausen</div>
+            </div>
+            <div class="ip-text">
+                <p>The first electronic composition published with a score. Stockhausen built each sound from pure sine waves at mathematically precise frequency ratios, assembled on magnetic tape at WDR Cologne. No instruments, no recorded sounds  -  only mathematics made audible.</p>
+                <p>A starfield drifting outward through deep space. White squares emerge on strong beats, sparse between them. The view pulls back as the piece plays  -  scroll to drift further. Each point of light traces one frequency in the field.</p>
+            </div>
+        </div>
+    </div>    <input type="file" id="fileInput" accept="audio/*" />
+
+    <a href="../index.html" id="backLink">
+        <span>Timeline</span>
+    </a>
+    <a href="pierre-schaeffer-cinq-études-de-bruits-1948.html" id="nav-prev">&#8592;</a>
+    <a href="daphne-oram-four-aspects-1960.html" id="nav-next">&#8594;</a>
+
+    <div id="controlsBtn">
+        <img src="../bouda.png" class="soft-shape" alt="Controls">
+        <img src="../kiki.png" class="spiky-shape" alt="Controls">
+    </div>
+    <div id="controlsPanel">
+        <div class="title">Controls</div>
+        <div class="control-item">
+            <span class="key">SPACE</span>
+            <span>Play / Pause</span>
+        </div>
+        <div class="control-item">
+            <span class="key">&larr; &rarr;</span>
+            <span>Speed</span>
+        </div>
+        <div class="control-item">
+            <span class="key">SCROLL</span>
+            <span>Zoom Out</span>
+        </div>
+        <div class="control-item">
+            <span class="key">S</span>
+            <span>Save Frame</span>
+        </div>
+        <div class="control-item">
+            <span class="key">C</span>
+            <span>Clear Canvas</span>
+        </div>
+        <div class="control-item">
+            <span class="key">H</span>
+            <span>Hide UI</span>
+        </div>
+    </div>
+
+    <div id="saveConfirmation">FRAME SAVED</div>
+    <div id="speedIndicator">1.0x</div>
+
+    <div id="scrollHint">scroll to drift</div>
+
+    <div class="bottom-nav">
+        <a href="../visualizer.html" class="nav-link">
+            <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="white" stroke-width="1.5" fill="none">
+                    <path d="M8 21 L14 12 L20 28 L26 15 L32 24 L38 21" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="14" cy="12" r="2" fill="white"/>
+                    <circle cx="26" cy="15" r="2" fill="white"/>
+                </g>
+            </svg>
+            <div class="nav-tooltip">Visualizer</div>
+        </a>
+
+        <a href="../alphabet-chart.html" class="nav-link">
+            <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="white" stroke-width="1.5" fill="none">
+                    <line x1="14" y1="8" x2="14" y2="34" />
+                    <line x1="28" y1="8" x2="28" y2="34" />
+                    <line x1="8" y1="14" x2="34" y2="14" />
+                    <line x1="8" y1="28" x2="34" y2="28" />
+                    <circle cx="14" cy="14" r="2" fill="white" />
+                    <circle cx="28" cy="28" r="2" fill="white" />
+                    <line x1="19" y1="19" x2="23" y2="23" />
+                    <line x1="23" y1="19" x2="19" y2="23" />
+                </g>
+            </svg>
+            <div class="nav-tooltip">Alphabet</div>
+        </a>
+    </div>
+
+    <script>
+
+// Studie I: Outer space starfield  -  drifting through liminal darkness
+const AUTO_LOAD_AUDIO = '../Musique/Karlheinz Stockhausen_ Studie I (1953).mp3';
+
+let song, fft, amp;
+let started = false;
+let stars = []; // stored in world coordinates (centered at 0,0)
+let grainBuffer;
+let volHistory = [];
+let lastVol = 0;
+let frameCounter = 0;
+let showUI = true;
+let playbackSpeed = 1.0;
+let scrollZoom = 1.0; // multiplier from scroll  -  only goes down, infinite zoom out
+
+function preload() {
+  song = loadSound(AUTO_LOAD_AUDIO,
+    () => console.log("Song loaded successfully"),
+    (error) => console.error("Error loading song:", error)
+  );
+}
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  fft = new p5.FFT(0.8, 1024);
+  amp = new p5.Amplitude(0.8);
+  background(0);
+
+  // Create 512x512 grain buffer
+  grainBuffer = createGraphics(512, 512);
+  grainBuffer.loadPixels();
+  for (let i = 0; i < grainBuffer.pixels.length; i += 4) {
+    let v = random(0, 255);
+    grainBuffer.pixels[i] = v;
+    grainBuffer.pixels[i + 1] = v;
+    grainBuffer.pixels[i + 2] = v;
+    grainBuffer.pixels[i + 3] = floor(random(30, 50));
+  }
+  grainBuffer.updatePixels();
+}
+
+function draw() {
+  if (!started) {
+    background(0);
+    return;
+  }
+
+  if (!song || !song.isPlaying()) return;
+
+  frameCounter++;
+
+  let vol = amp.getLevel();
+  let spectrum = fft.analyze();
+
+  // Beat detection
+  volHistory.push(vol);
+  if (volHistory.length > 20) volHistory.shift();
+
+  let volChange = vol - lastVol;
+  let avgVol = volHistory.length > 0 ? volHistory.reduce(function(a, b) { return a + b; }, 0) / volHistory.length : vol;
+
+  let isBeat = (volChange > 0.04 && vol > avgVol * 1.1) ||
+               (vol > 0.35 && volChange > 0.02) ||
+               (vol > 0.15 && volChange > 0.06);
+
+  // Strong beat: only truly loud moments get big squares
+  let isStrongBeat = isBeat && vol > 0.3;
+
+  // Song progress
+  let progress = 0;
+  if (song.duration() > 0) {
+    progress = song.currentTime() / song.duration();
+  }
+
+  // --- CAMERA: infinite zoom out ---
+  // Auto-zoom: exponential, starts at 5x, shrinks to 0.05x over the song
+  let autoZoom = 5.0 * pow(0.05 / 5.0, progress);
+  // Combined with scroll zoom (infinite  -  no lower bound)
+  let zoom = autoZoom * scrollZoom;
+
+  // Subtle slow drift
+  let driftX = sin(frameCounter * 0.002) * 20;
+  let driftY = cos(frameCounter * 0.0015) * 15;
+
+  // --- GENERATE STARS ---
+  // Viewport in world space
+  let viewW = width / zoom;
+  let viewH = height / zoom;
+
+  if (isBeat) {
+    let numStars = floor(random(3, 8));
+    for (let i = 0; i < numStars; i++) {
+      let sz;
+      let roll = random();
+
+      if (isStrongBeat && roll < 0.06) {
+        sz = random(30, 70);   // Large  -  only on genuinely loud moments, very rare
+      } else if (isBeat && roll < 0.12) {
+        sz = random(8, 18);    // Medium accent
+      } else {
+        sz = random(1, 3);     // Tiny star
+      }
+
+      let sx = random(-viewW / 2, viewW / 2);
+      let sy = random(-viewH / 2, viewH / 2);
+      stars.push({ x: sx, y: sy, size: sz });
+    }
+  } else if (vol > 0.02 && frameCounter % 3 === 0) {
+    // Ambient: sparse tiny stars between beats
+    let sx = random(-viewW / 2, viewW / 2);
+    let sy = random(-viewH / 2, viewH / 2);
+    stars.push({ x: sx, y: sy, size: random(0.5, 2) });
+  }
+
+  // Cap stars
+  if (stars.length > 10000) stars.splice(0, stars.length - 10000);
+
+  // --- DRAW ---
+  background(0);
+
+  push();
+  translate(width / 2 + driftX, height / 2 + driftY);
+  scale(zoom);
+
+  noStroke();
+  rectMode(CENTER);
+  fill(255);
+
+  for (let i = 0; i < stars.length; i++) {
+    let s = stars[i];
+    rect(s.x, s.y, s.size, s.size);
+  }
+  pop();
+
+  // Grain overlay
+  push();
+  tint(255, 35);
+  for (let gx = 0; gx < width; gx += 512) {
+    for (let gy = 0; gy < height; gy += 512) {
+      image(grainBuffer, gx, gy);
+    }
+  }
+  pop();
+
+  lastVol = vol;
+}
+
+function mouseWheel(event) {
+  // Scroll down = zoom out (infinite, no limit)
+  // Scroll up = zoom back in (capped at 1.0 = no extra zoom)
+  if (event.delta > 0) {
+    scrollZoom *= 0.92;
+  } else {
+    scrollZoom = min(scrollZoom * 1.08, 1.0);
+  }
+  // Fade out the hint on first scroll
+  var hint = document.getElementById('scrollHint');
+  if (hint) hint.classList.add('hidden');
+  return false;
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+
+function mousePressed() {
+  if (!started && song && song.isLoaded()) {
+    userStartAudio();
+    song.play();
+    song.rate(playbackSpeed);
+    started = true;
+    frameCounter = 0;
+    background(0);
+  }
+}
+
+function keyPressed() {
+  if (key === 'h' || key === 'H') {
+    showUI = !showUI;
+    var controlsBtn = document.getElementById('controlsBtn');
+    var controlsPanel = document.getElementById('controlsPanel');
+    var backLink = document.getElementById('backLink');
+    var bottomNav = document.querySelector('.bottom-nav');
+    var scrollHint = document.getElementById('scrollHint');
+    if (showUI) {
+      controlsBtn.style.display = 'flex';
+      controlsPanel.style.opacity = '';
+      controlsPanel.style.pointerEvents = '';
+      if (backLink) backLink.style.display = 'flex';
+      if (bottomNav) bottomNav.style.display = 'flex';
+      if (scrollHint) scrollHint.style.display = '';
+    } else {
+      controlsBtn.style.display = 'none';
+      controlsPanel.style.opacity = '0';
+      controlsPanel.style.pointerEvents = 'none';
+      if (backLink) backLink.style.display = 'none';
+      if (bottomNav) bottomNav.style.display = 'none';
+      if (scrollHint) scrollHint.style.display = 'none';
+    }
+  }
+
+  if (key === 's' || key === 'S') {
+    var timestamp = year() + '' + nf(month(), 2) + nf(day(), 2) + '_' + nf(hour(), 2) + nf(minute(), 2) + nf(second(), 2);
+    saveCanvas('studie-i_' + timestamp + '.png', 'png');
+    var saveConfirm = document.getElementById('saveConfirmation');
+    saveConfirm.classList.add('show');
+    setTimeout(function() { saveConfirm.classList.remove('show'); }, 2000);
+  }
+
+  if (key === 'c' || key === 'C') {
+    stars = [];
+    background(0);
+  }
+
+  if (key === ' ') {
+    if (song && song.isLoaded()) {
+      if (!started) {
+        userStartAudio();
+        song.play();
+        song.rate(playbackSpeed);
+        started = true;
+        frameCounter = 0;
+        background(0);
+      } else if (song.isPlaying()) {
+        song.pause();
+      } else {
+        song.play();
+      }
+    }
+    return false;
+  }
+
+  if (keyCode === RIGHT_ARROW) {
+    playbackSpeed = Math.min(playbackSpeed + 1.0, 10.0);
+    if (song && song.isLoaded()) song.rate(playbackSpeed);
+    var si = document.getElementById('speedIndicator');
+    si.textContent = playbackSpeed.toFixed(1) + 'x';
+    si.classList.add('show');
+    setTimeout(function() { si.classList.remove('show'); }, 1500);
+  }
+
+  if (keyCode === LEFT_ARROW) {
+    playbackSpeed = Math.max(playbackSpeed - 1.0, 1.0);
+    if (song && song.isLoaded()) song.rate(playbackSpeed);
+    var si = document.getElementById('speedIndicator');
+    si.textContent = playbackSpeed.toFixed(1) + 'x';
+    si.classList.add('show');
+    setTimeout(function() { si.classList.remove('show'); }, 1500);
+  }
+}
+
+    </script>
+
+    <script>
+    // Auto-start handler
+    (function() {
+      function tryAutoPlay() {
+        if (typeof song !== 'undefined' && song && song.isLoaded()) {
+          var audioCtx = getAudioContext();
+          if (audioCtx.state === 'suspended') return;
+          userStartAudio().then(function() {
+            if (!started) {
+              song.play();
+              song.rate(playbackSpeed);
+              started = true;
+              frameCounter = 0;
+              background(0);
+              console.log('Auto-play started');
+            }
+          });
+        } else {
+          setTimeout(tryAutoPlay, 200);
+        }
+      }
+      setTimeout(tryAutoPlay, 500);
+
+      function resumeAndPlay() {
+        var audioCtx = getAudioContext();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().then(function() {
+            if (typeof song !== 'undefined' && song && song.isLoaded() && !started) {
+              song.play();
+              song.rate(playbackSpeed);
+              started = true;
+              frameCounter = 0;
+              background(0);
+              console.log('Playback started after user gesture');
+            }
+          });
+        }
+      }
+      document.addEventListener('click', resumeAndPlay, { once: true });
+      document.addEventListener('keydown', resumeAndPlay, { once: true });
+    })();
+    </script>
+
+
+    <script>
+    (function() {
+        var header = document.getElementById('song-header');
+        var panel  = document.getElementById('info-panel');
+        if (!header || !panel) return;
+
+        function closePanel() {
+            panel.classList.remove('open');
+            header.classList.remove('open');
+        }
+
+        header.addEventListener('click', function() {
+            panel.classList.toggle('open');
+            header.classList.toggle('open');
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closePanel();
+        });
+
+        var closeBtn = panel.querySelector('.ip-close-btn');
+        if (closeBtn) closeBtn.addEventListener('click', closePanel);
+
+        panel.addEventListener('click', function(e) {
+            if (e.target === panel) closePanel();
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!panel.classList.contains('open')) return;
+            if (!panel.contains(e.target) && e.target !== header) {
+                closePanel();
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

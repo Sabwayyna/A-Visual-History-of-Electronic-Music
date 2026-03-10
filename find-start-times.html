@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Audio Start Times</title>
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "LinotypeUnivers", sans-serif;
+            background-color: #fff;
+            color: #000;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .instructions {
+            background: #f5f5f5;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .instructions p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .song-item {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .song-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .song-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        audio {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #000;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        .output {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        #copy-all {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Find Audio Start Times</h1>
+
+    <div class="instructions">
+        <p><strong>Instructions:</strong></p>
+        <p>1. Play each audio file and listen for when the actual sound begins</p>
+        <p>2. Use the audio player controls to find the exact time (in seconds) where sound starts</p>
+        <p>3. Enter that time in the "Start Time" field</p>
+        <p>4. Click "Test Start Time" to verify it starts at the right place</p>
+        <p>5. Once you've set all start times, click "Copy All Values" at the bottom</p>
+        <p>6. Paste the values into timeline-horizontal.html to replace the songs array</p>
+    </div>
+
+    <div id="songs-container"></div>
+
+    <button id="copy-all">Copy All Values</button>
+
+    <script>
+        const songs = [
+            { year: 1948, title: "Cinq Études de Bruits", artist: "Pierre Schaeffer", audio: "Musique/01 - Pierre Schaeffer - Cinq études de bruits (1948) - Etude aux chemins de fer.mp3", path: "songs/pierre-schaeffer-cinq-études-de-bruits-1948.html", startTime: 0 },
+            { year: 1952, title: "Williams Mix", artist: "John Cage", audio: "Musique/02 - John Cage_ Williams Mix (19521953).mp3", path: "songs/john-cage-williams-mix-1952.html", startTime: 0 },
+            { year: 1956, title: "Gesang der Jünglinge", artist: "Karlheinz Stockhausen", audio: "Musique/03 - karlheinz stockhausen GESANG DER JÜNGLINGE.mp3", path: "songs/karlheinz-stockhausen-gesang-der-jünglinge-1956.html", startTime: 0 },
+            { year: 1960, title: "Four Aspects", artist: "Daphne Oram", audio: "Musique/04 - Daphne Oram - Four Aspects.mp3", path: "songs/daphne-oram-four-aspects-1960.html", startTime: 0 },
+            { year: 1963, title: "Doctor Who Theme", artist: "Delia Derbyshire", audio: "Musique/05 - Doctor Who (1963) -  Original Theme music video.mp3", path: "songs/delia-derbyshire-doctor-who-theme-1963.html", startTime: 0 },
+            { year: 1965, title: "It's Gonna Rain", artist: "Steve Reich", audio: "Musique/06 - Steve Reich - It's Gonna Rain (1965).mp3", path: "songs/steve-reich-its-gonna-rain-1965.html", startTime: 0 },
+            { year: 1974, title: "Autobahn", artist: "Kraftwerk", audio: "Musique/07 - Kraftwerk - Autobahn - 1974 Full Version.mp3", path: "songs/kraftwerk-autobahn-1974.html", startTime: 0 },
+            { year: 1978, title: "Music for Airports 1/1", artist: "Brian Eno", audio: "Musique/08 - Brian Eno - 1:1  Music for Airports (Remastered 2004).mp3", path: "songs/brian-eno-music-for-airports-11-1978.html", startTime: 0 },
+            { year: 1986, title: "Can You Feel It", artist: "Mr. Fingers (Larry Heard)", audio: "Musique/09 - Mr Fingers - Can You Feel It.mp3", path: "songs/mr-fingers-larry-heard-can-you-feel-it-1986.html", startTime: 0 },
+            { year: 1987, title: "Strings of Life", artist: "Derrick May", audio: "Musique/10 - Rhythm Is Rhythm - Strings Of Life - 1987.mp3", path: "songs/derrick-may-strings-of-life-1987.html", startTime: 0 },
+            { year: 1995, title: "Dael", artist: "Autechre", audio: "Musique/11 - Dael · Autechre.mp3", path: "songs/autechre-dael-1995.html", startTime: 0 },
+            { year: 1998, title: "Roygbiv", artist: "Boards of Canada", audio: "Musique/12 - Boards of Canada — Roygbiv (1998).mp3", path: "songs/boards-of-canada-roygbiv-1998.html", startTime: 0 },
+            { year: 2005, title: "data.matrix", artist: "Ryoji Ikeda", audio: "Musique/13 - Ryoji Ikeda - data.matrix.mp3", path: "songs/ryoji-ikeda-datamatrix-2005.html", startTime: 0 },
+            { year: 2010, title: "Returnal", artist: "Oneohtrix Point Never", audio: "Musique/14 - Oneohtrix Point Never — Returnal (2010) .mp3", path: "songs/oneohtrix-point-never-returnal-2010.html", startTime: 0 }
+        ];
+
+        const container = document.getElementById('songs-container');
+
+        songs.forEach((song, index) => {
+            const songDiv = document.createElement('div');
+            songDiv.className = 'song-item';
+
+            songDiv.innerHTML = `
+                <div class="song-title">${song.year} - ${song.title}</div>
+                <div class="song-info">${song.artist}</div>
+                <audio controls src="${song.audio}" id="audio-${index}"></audio>
+                <div class="controls">
+                    <label>Start Time (seconds):</label>
+                    <input type="number" step="0.1" value="${song.startTime}" id="start-${index}">
+                    <button onclick="testStartTime(${index})">Test Start Time</button>
+                </div>
+                <div class="output" id="output-${index}"></div>
+            `;
+
+            container.appendChild(songDiv);
+        });
+
+        function testStartTime(index) {
+            const audio = document.getElementById(`audio-${index}`);
+            const startTime = parseFloat(document.getElementById(`start-${index}`).value);
+            audio.currentTime = startTime;
+            audio.play();
+        }
+
+        document.getElementById('copy-all').addEventListener('click', () => {
+            const values = songs.map((song, index) => {
+                const startTime = document.getElementById(`start-${index}`).value;
+                return `            { year: ${song.year}, title: "${song.title}", artist: "${song.artist}", audio: "${song.audio}", path: "${song.path}", startTime: ${startTime} }`;
+            }).join(',\n');
+
+            const output = `const songs = [\n${values}\n        ];`;
+
+            navigator.clipboard.writeText(output).then(() => {
+                alert('Copied to clipboard! Now paste this into timeline-horizontal.html to replace the songs array.');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy. Please manually copy from the console.');
+                console.log(output);
+            });
+        });
+    </script>
+</body>
+</html>

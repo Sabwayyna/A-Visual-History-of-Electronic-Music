@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electronic Music Timeline</title>
+    <link rel="stylesheet" href="https://use.typekit.net/hdx3amb.css">
+    <style>
+        /* === RESET & BASE === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: "articulat-cf", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+            font-size: 72px;
+            line-height: 0.75;
+            padding: 120px 60px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* === LOADING SCREEN === */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease;
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-icons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            width: 120px;
+            height: 120px;
+            position: relative;
+        }
+
+        .loading-icon {
+            width: 120px;
+            height: 120px;
+            position: absolute;
+            object-fit: contain;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        .loading-icon.active {
+            display: block;
+        }
+
+        .loading-text {
+            font-family: "articulat-cf", sans-serif;
+            font-size: 18px;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            color: #fff;
+        }
+
+        .loading-progress {
+            font-family: "articulat-cf", sans-serif;
+            margin-top: 12px;
+            font-size: 18px;
+            font-weight: 400;
+            opacity: 0.3;
+        }
+
+        /* === HEADER === */
+        #header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 30px;
+            z-index: 100;
+            pointer-events: auto;
+        }
+
+        #header-title {
+            font-family: "articulat-cf", sans-serif;
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            line-height: 1;
+        }
+
+        #header-nav {
+            display: flex;
+            gap: 24px;
+        }
+
+        #header-nav a {
+            font-family: "articulat-cf", sans-serif;
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-decoration: none;
+            color: #fff;
+            opacity: 0.5;
+            transition: opacity 0.15s ease;
+            line-height: 1;
+        }
+
+        #header-nav a:hover {
+            opacity: 1;
+        }
+
+        /* === TIMELINE (hidden initially) === */
+        #timeline-container {
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        #timeline-container.visible {
+            opacity: 1;
+        }
+
+        /* === TYPOGRAPHY === */
+        .timeline {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            margin-top: 80px;
+            opacity: 0;
+            visibility: hidden;
+            height: 0;
+        }
+
+        .section-label:first-child {
+            margin-top: 0;
+        }
+
+        /* === TIMELINE ENTRIES === */
+        .entry {
+            display: block;
+            text-decoration: none;
+            color: #fff;
+            padding: 4px 0;
+            margin: -6px 0;
+            cursor: pointer;
+            text-align: center;
+            white-space: nowrap;
+            /* Width and transform will be controlled via inline styles in JS */
+            --line-width: 100%;
+            --wave-offset: 0px;
+            --wave-opacity: 1;
+            position: relative;
+            opacity: var(--wave-opacity);
+            background-color: transparent;
+        }
+
+        .entry-content {
+            display: inline-block;
+            --line-width: 100%;
+            --wave-offset: 0px;
+            width: var(--line-width);
+            transform: translateX(var(--wave-offset));
+        }
+
+        .entry:hover {
+            background-color: #fff !important;
+            color: #000 !important;
+            opacity: var(--wave-opacity) !important;
+            width: 100vw;
+            margin-left: calc(-50vw + 50%);
+        }
+
+        .entry:hover .separator {
+            opacity: 0.6;
+        }
+
+        /* Separator styling */
+        .separator {
+            opacity: 0.3;
+            margin: 0 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen">
+        <div class="loading-icons">
+            <img src="kiki.png" alt="kiki" class="loading-icon">
+            <img src="bouda.png" alt="bouba" class="loading-icon">
+        </div>
+        <div class="loading-text">Loading Music</div>
+        <div class="loading-progress" id="loading-progress">0 / 13</div>
+    </div>
+
+    <!-- HEADER -->
+    <div id="header">
+        <div id="header-title">Sound Shapes</div>
+        <nav id="header-nav">
+            <a href="info.html">Info</a>
+            <a href="visualizer.html">Visualizer</a>
+        </nav>
+    </div>
+
+    <!-- TIMELINE (hidden initially) -->
+    <div id="timeline-container">
+        <div class="timeline">
+        <!-- MUSIQUE CONCRÈTE & EARLY ELECTRONICS -->
+        <div class="section-label">Musique Concrète & Early Electronics</div>
+
+        <a href="songs/pierre-schaeffer-cinq-études-de-bruits-1948.html" class="entry" data-index="0" data-audio="Musique/01 - Pierre Schaeffer - Cinq études de bruits (1948) - Etude aux chemins de fer.mp3">
+            <span class="entry-content">
+                <span class="year">1948</span>
+                <span class="separator">—</span>
+                <span class="title">Cinq Etudes de Bruits</span>
+                <span class="separator">—</span>
+                <span class="artist">Pierre Schaeffer</span>
+            </span>
+        </a>
+
+        <a href="songs/karlheinz-stockhausen-studio-i-1953.html" class="entry" data-index="1" data-audio="Musique/Karlheinz Stockhausen_ Studie I (1953).mp3">
+            <span class="entry-content">
+                <span class="year">1953</span>
+                <span class="separator">—</span>
+                <span class="title">Studie I</span>
+                <span class="separator">—</span>
+                <span class="artist">Karlheinz Stockhausen</span>
+            </span>
+        </a>
+
+        <a href="songs/daphne-oram-four-aspects-1960.html" class="entry" data-index="2" data-audio="Musique/04 - Daphne Oram - Four Aspects.mp3">
+            <span class="entry-content">
+                <span class="year">1960</span>
+                <span class="separator">—</span>
+                <span class="title">Four Aspects</span>
+                <span class="separator">—</span>
+                <span class="artist">Daphne Oram</span>
+            </span>
+        </a>
+
+        <a href="songs/delia-derbyshire-doctor-who-theme-1963.html" class="entry" data-index="3" data-audio="Musique/05 - Doctor Who (1963) -  Original Theme music video.mp3">
+            <span class="entry-content">
+                <span class="year">1963</span>
+                <span class="separator">—</span>
+                <span class="title">Doctor Who Theme</span>
+                <span class="separator">—</span>
+                <span class="artist">Delia Derbyshire</span>
+            </span>
+        </a>
+
+        <!-- ELECTRONIC PIONEERS / AMBIENT -->
+        <div class="section-label">Electronic Pioneers / Ambient</div>
+
+        <a href="songs/kraftwerk-autobahn-1974.html" class="entry" data-index="4" data-audio="Musique/07 - Kraftwerk - Autobahn - 1974 Full Version.mp3">
+            <span class="entry-content">
+                <span class="year">1974</span>
+                <span class="separator">—</span>
+                <span class="title">Autobahn</span>
+                <span class="separator">—</span>
+                <span class="artist">Kraftwerk</span>
+            </span>
+        </a>
+
+        <a href="songs/brian-eno-music-for-airports-11-1978.html" class="entry" data-index="5" data-audio="Musique/08 - Brian Eno - 1:1  Music for Airports (Remastered 2004).mp3">
+            <span class="entry-content">
+                <span class="year">1978</span>
+                <span class="separator">—</span>
+                <span class="title">Music for Airports 1/1</span>
+                <span class="separator">—</span>
+                <span class="artist">Brian Eno</span>
+            </span>
+        </a>
+
+        <a href="songs/laurie-spiegel-patchwork-1980.html" class="entry" data-index="6" data-audio="Musique/Patchwork.mp3">
+            <span class="entry-content">
+                <span class="year">1980</span>
+                <span class="separator">—</span>
+                <span class="title">Patchwork</span>
+                <span class="separator">—</span>
+                <span class="artist">Laurie Spiegel</span>
+            </span>
+        </a>
+
+        <!-- CHICAGO HOUSE & DETROIT TECHNO -->
+        <div class="section-label">Chicago House & Detroit Techno</div>
+
+        <a href="songs/charanjit-singh-bhairav-1983.html" class="entry" data-index="7" data-audio="Musique/Charanjit Singh - Raga Bhairav (1982).mp3">
+            <span class="entry-content">
+                <span class="year">1983</span>
+                <span class="separator">—</span>
+                <span class="title">Bhairav</span>
+                <span class="separator">—</span>
+                <span class="artist">Charanjit Singh</span>
+            </span>
+        </a>
+
+        <a href="songs/mr-fingers-larry-heard-can-you-feel-it-1986.html" class="entry" data-index="8" data-audio="Musique/09 - Mr Fingers - Can You Feel It.mp3">
+            <span class="entry-content">
+                <span class="year">1986</span>
+                <span class="separator">—</span>
+                <span class="title">Can You Feel It</span>
+                <span class="separator">—</span>
+                <span class="artist">Mr. Fingers (Larry Heard)</span>
+            </span>
+        </a>
+
+        <!-- IDM / ELECTRONICA -->
+        <div class="section-label">IDM / Electronica</div>
+
+        <a href="songs/autechre-dael-1995.html" class="entry" data-index="9" data-audio="Musique/11 - Dael · Autechre.mp3">
+            <span class="entry-content">
+                <span class="year">1995</span>
+                <span class="separator">—</span>
+                <span class="title">Tri Repetae</span>
+                <span class="separator">—</span>
+                <span class="artist">Autechre</span>
+            </span>
+        </a>
+
+        <a href="songs/boards-of-canada-roygbiv-1998.html" class="entry" data-index="10" data-audio="Musique/12 - Boards of Canada — Roygbiv (1998).mp3">
+            <span class="entry-content">
+                <span class="year">1998</span>
+                <span class="separator">—</span>
+                <span class="title">Roygbiv</span>
+                <span class="separator">—</span>
+                <span class="artist">Boards of Canada</span>
+            </span>
+        </a>
+
+        <!-- GLITCH / CONTEMPORARY EXPERIMENTAL -->
+        <div class="section-label">Glitch / Contemporary Experimental</div>
+
+        <a href="songs/ryoji-ikeda-datamatrix-2005.html" class="entry" data-index="11" data-audio="Musique/13 - Ryoji Ikeda - data.matrix.mp3">
+            <span class="entry-content">
+                <span class="year">2005</span>
+                <span class="separator">—</span>
+                <span class="title">Data Matrix</span>
+                <span class="separator">—</span>
+                <span class="artist">Ryoji Ikeda</span>
+            </span>
+        </a>
+
+        <a href="songs/rashad-becker-busy-ready-what-corroborators-2025.html" class="entry" data-index="12" data-audio="Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3">
+            <span class="entry-content">
+                <span class="year">2025</span>
+                <span class="separator">—</span>
+                <span class="title">Busy Ready What, Corroborators</span>
+                <span class="separator">—</span>
+                <span class="artist">Rashad Becker</span>
+            </span>
+        </a>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * WAVEFORM WIDTH + SCROLL WAVE EFFECT
+         *
+         * This script creates two wave effects:
+         * 1. Static waveform: Line widths vary to create diamond/eye shape
+         * 2. Dynamic scroll wave: Lines shift horizontally and fade as you scroll
+         *
+         * The scroll effect creates a flowing wave that responds to viewport position.
+         */
+
+        // Configuration
+        const MIN_WIDTH = 1000;   // Minimum line width in pixels (top/bottom of list)
+        const MAX_WIDTH = window.innerWidth - 120;  // Maximum line width (almost full viewport width)
+        const WAVE_AMPLITUDE = 80;   // How far lines move left/right (in pixels)
+        const WAVE_FREQUENCY = 1.5;  // How many wave cycles across the viewport
+
+        // Get all timeline entries
+        const entries = document.querySelectorAll('.entry');
+        const totalEntries = entries.length;
+
+        // Set initial line widths (static waveform shape)
+        entries.forEach((entry, index) => {
+            const normalizedPosition = index / (totalEntries - 1);
+            const waveValue = Math.sin(Math.PI * normalizedPosition);
+            const lineWidth = MIN_WIDTH + (waveValue * (MAX_WIDTH - MIN_WIDTH));
+
+            const entryContent = entry.querySelector('.entry-content');
+            if (entryContent) {
+                entryContent.style.setProperty('--line-width', `${lineWidth}px`);
+            }
+        });
+
+        /**
+         * SCROLL WAVE ANIMATION
+         *
+         * As the user scrolls, each line's position in the viewport is calculated.
+         * Lines shift horizontally based on a sine wave pattern.
+         * Lines also fade based on distance from viewport center.
+         */
+        function updateScrollWave() {
+            const viewportHeight = window.innerHeight;
+            const viewportCenter = viewportHeight / 2;
+
+            entries.forEach((entry) => {
+                const rect = entry.getBoundingClientRect();
+                const entryCenter = rect.top + (rect.height / 2);
+
+                // Calculate how far this entry is from viewport center (-1 to 1)
+                // 0 = at center, -1 = top of viewport, 1 = bottom of viewport
+                const distanceFromCenter = (entryCenter - viewportCenter) / viewportHeight;
+
+                // Create horizontal wave displacement using sine function
+                // Multiple waves cycle as you scroll through the page
+                const wavePhase = distanceFromCenter * Math.PI * WAVE_FREQUENCY;
+                const horizontalOffset = Math.sin(wavePhase) * WAVE_AMPLITUDE;
+
+                // Opacity fades based on distance from center
+                // Lines near center are fully visible, edges fade out
+                const opacity = 1 - Math.abs(distanceFromCenter) * 0.3;
+                const clampedOpacity = Math.max(0.5, Math.min(1, opacity));
+
+                // Apply the wave effects
+                const entryContent = entry.querySelector('.entry-content');
+                if (entryContent) {
+                    entryContent.style.setProperty('--wave-offset', `${horizontalOffset}px`);
+                }
+                entry.style.setProperty('--wave-opacity', clampedOpacity);
+            });
+
+            // Continue animation loop
+            requestAnimationFrame(updateScrollWave);
+        }
+
+        // Don't start scroll wave animation yet - wait for loading to complete
+        // updateScrollWave() is called after loading in showTimeline()
+
+        /**
+         * ALTERNATIVE WAVE EFFECTS (try these by replacing the wave calculations above):
+         *
+         * // Slower, more dramatic wave:
+         * const wavePhase = distanceFromCenter * Math.PI * 1;
+         * const horizontalOffset = Math.sin(wavePhase) * 400;
+         *
+         * // Faster, tighter wave:
+         * const wavePhase = distanceFromCenter * Math.PI * 4;
+         * const horizontalOffset = Math.sin(wavePhase) * 100;
+         *
+         * // Asymmetric wave (different left/right):
+         * const horizontalOffset = Math.sin(wavePhase) * WAVE_AMPLITUDE * (distanceFromCenter > 0 ? 1 : 0.5);
+         *
+         * // No opacity fade (just horizontal movement):
+         * const clampedOpacity = 1;
+         */
+
+        /**
+         * AUDIO PRELOADING AND PLAYBACK ON HOVER
+         *
+         * All audio files are preloaded when the page loads for instant playback.
+         * When hovering over an entry, the corresponding audio plays immediately.
+         */
+
+        // Preload all audio files
+        const audioCache = {};
+        let currentAudio = null;
+        let audioReady = false;
+        let timelineShown = false;
+        let audioUnlocked = false;
+
+        console.log('🎵 Starting audio preload...');
+
+        // Get loading screen elements
+        const loadingScreen = document.getElementById('loading-screen');
+        const loadingProgress = document.getElementById('loading-progress');
+        const timelineContainer = document.getElementById('timeline-container');
+
+        // Alternating icon animation (kiki/bouba switching)
+        const icons = document.querySelectorAll('.loading-icon');
+        let currentIconIndex = 0;
+        icons[currentIconIndex].classList.add('active');
+
+        setInterval(() => {
+            icons[currentIconIndex].classList.remove('active');
+            currentIconIndex = (currentIconIndex + 1) % icons.length;
+            icons[currentIconIndex].classList.add('active');
+        }, 500); // Switch every 500ms
+
+        // Preload all audio files
+        let loadedCount = 0;
+        const totalAudio = entries.length;
+
+        // Update loading progress display
+        function updateLoadingProgress() {
+            loadingProgress.textContent = `${loadedCount} / ${totalAudio}`;
+        }
+
+        // Unlock audio playback (required by browser autoplay policy)
+        function unlockAudio() {
+            if (audioUnlocked) return;
+
+            console.log('🔓 Unlocking audio playback...');
+
+            // Play and immediately pause a silent audio to unlock the audio context
+            const unlockSound = new Audio();
+            unlockSound.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+            unlockSound.play().then(() => {
+                unlockSound.pause();
+                audioUnlocked = true;
+                console.log('✅ Audio unlocked!');
+                showTimelineAfterClick();
+            }).catch(e => {
+                console.log('Audio unlock attempt:', e);
+                audioUnlocked = true; // Try to continue anyway
+                showTimelineAfterClick();
+            });
+        }
+
+        // Transition to timeline
+        function showTimelineAfterClick() {
+            if (timelineShown) return; // Prevent multiple calls
+            timelineShown = true;
+
+            console.log('🎉 Transitioning to timeline...');
+
+            // Fade out loading screen
+            loadingScreen.classList.add('hidden');
+
+            // Fade in timeline after a short delay
+            setTimeout(() => {
+                timelineContainer.classList.add('visible');
+                // Start the scroll wave animation
+                updateScrollWave();
+            }, 400);
+        }
+
+        // Auto-transition when audio is loaded
+        function showClickPrompt() {
+            console.log('🎉 All audio loaded! Auto-transitioning...');
+            unlockAudio();
+        }
+
+        // Timeout fallback - show click prompt after 30 seconds even if not all audio loaded
+        setTimeout(() => {
+            if (!audioReady && !timelineShown) {
+                console.log('⏱ Loading timeout - showing click prompt anyway');
+                showClickPrompt();
+            }
+        }, 30000);
+
+        entries.forEach(entry => {
+            const audioPath = entry.getAttribute('data-audio');
+            console.log('Attempting to preload:', audioPath);
+
+            if (audioPath) {
+                // Create and preload the audio
+                const audio = new Audio();
+                audio.preload = 'auto';
+                audio.src = audioPath;
+                audio.volume = 1.0;
+                audioCache[audioPath] = audio;
+
+                // Use 'canplay' instead of 'canplaythrough' for faster loading
+                // 'canplay' fires when enough data is available to start playing
+                audio.addEventListener('canplay', () => {
+                    loadedCount++;
+                    console.log(`✅ Ready to play (${loadedCount}/${totalAudio}):`, audioPath);
+                    updateLoadingProgress();
+
+                    if (loadedCount === totalAudio) {
+                        audioReady = true;
+                        showClickPrompt();
+                    }
+                }, { once: true });
+
+                audio.addEventListener('error', (e) => {
+                    console.error('❌ Failed to load:', audioPath, e);
+                    // Still count failed loads to avoid infinite loading
+                    loadedCount++;
+                    updateLoadingProgress();
+
+                    if (loadedCount === totalAudio) {
+                        audioReady = true;
+                        showClickPrompt();
+                    }
+                });
+
+                // Start loading
+                audio.load();
+            }
+        });
+
+        // Play audio on hover
+        entries.forEach(entry => {
+            entry.addEventListener('mouseenter', function(e) {
+                const audioPath = this.getAttribute('data-audio');
+                console.log('🎯 HOVER DETECTED on:', audioPath);
+                console.log('Audio unlocked:', audioUnlocked);
+
+                // Stop any currently playing audio
+                if (currentAudio) {
+                    try {
+                        currentAudio.pause();
+                        currentAudio.currentTime = 0;
+                        console.log('⏸ Stopped previous audio');
+                    } catch (err) {
+                        console.log('Could not stop previous audio:', err);
+                    }
+                }
+
+                // Get the preloaded audio
+                if (audioPath && audioCache[audioPath]) {
+                    currentAudio = audioCache[audioPath];
+
+                    console.log('▶️ Attempting to play:', audioPath);
+                    console.log('Audio ready state:', currentAudio.readyState);
+                    console.log('Audio network state:', currentAudio.networkState);
+                    console.log('Audio paused:', currentAudio.paused);
+                    console.log('Audio duration:', currentAudio.duration);
+
+                    // Reset to start
+                    currentAudio.currentTime = 0;
+                    currentAudio.volume = 1.0;
+
+                    // Try to play
+                    const playPromise = currentAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise
+                            .then(() => {
+                                console.log('✅ Audio playing successfully!');
+                                console.log('Current time:', currentAudio.currentTime);
+                                console.log('Volume:', currentAudio.volume);
+                            })
+                            .catch(e => {
+                                console.error('❌ Audio play failed:', e.name, '-', e.message);
+
+                                if (e.name === 'NotAllowedError') {
+                                    console.error('🚫 Browser blocked autoplay. User needs to interact with page first.');
+                                } else if (e.name === 'NotSupportedError') {
+                                    console.error('🚫 Audio format not supported');
+                                } else {
+                                    console.error('🚫 Unknown error:', e);
+                                }
+                            });
+                    }
+                } else {
+                    console.error('❌ Audio not found in cache for:', audioPath);
+                    console.log('Available in cache:', Object.keys(audioCache));
+                }
+            });
+
+            // Stop audio on mouse leave
+            entry.addEventListener('mouseleave', function() {
+                if (currentAudio) {
+                    try {
+                        currentAudio.pause();
+                        currentAudio.currentTime = 0;
+                        console.log('⏹ Mouse left, stopping audio');
+                    } catch (err) {
+                        console.log('Could not stop audio on leave:', err);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

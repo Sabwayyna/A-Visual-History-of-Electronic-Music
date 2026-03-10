@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Symbol Reference Sheet</title>
+  <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: "LinotypeUnivers", sans-serif;
+      font-weight: 400;
+      font-style: normal;
+      padding: 40px 24px;
+    }
+    .subtitle {
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #fff;
+      margin-bottom: 48px;
+    }
+    h2 {
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #fff;
+      margin-bottom: 24px;
+    }
+    .section { margin-bottom: 56px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 24px;
+    }
+    .cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+    .cell canvas {
+      background: #000;
+      border: 1px solid #222;
+    }
+    .cell .label {
+      margin-top: 8px;
+      font-size: 10px;
+      letter-spacing: 0.02em;
+      color: #fff;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .cell .sublabel {
+      font-size: 9px;
+      color: #555;
+      text-align: center;
+      margin-top: 2px;
+    }
+    #hover-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #hover-overlay.visible {
+      opacity: 1;
+    }
+    #hover-overlay .overlay-text {
+      color: #fff;
+      font-size: 14px;
+      letter-spacing: 0.03em;
+      text-align: center;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+    #hover-overlay .overlay-name {
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+<p class="subtitle">Symbol Reference Sheet</p>
+
+<div id="hover-overlay">
+  <div>
+    <div class="overlay-name" id="overlay-name"></div>
+    <div class="overlay-text" id="overlay-text"></div>
+  </div>
+</div>
+
+<!-- Primitive Shapes -->
+<div class="section">
+  <h2>Primitive Shapes</h2>
+  <div class="grid" id="primitives"></div>
+</div>
+
+<!-- Composite Patterns -->
+<div class="section">
+  <h2>Composite Patterns</h2>
+  <div class="grid" id="composites"></div>
+</div>
+
+<!-- Alphabet -->
+<div class="section">
+  <h2>Alphabet Mapping (A–P)</h2>
+  <div class="grid" id="alphabet"></div>
+</div>
+
+<script>
+const SIZE = 120;
+const CLR = '#e0e0e0';
+const CLR2 = '#999';
+
+// ── hover overlay ──
+const overlay = document.getElementById('hover-overlay');
+const overlayName = document.getElementById('overlay-name');
+const overlayText = document.getElementById('overlay-text');
+
+function showOverlay(name, desc) {
+  overlayName.textContent = name;
+  overlayText.textContent = desc;
+  overlay.classList.add('visible');
+}
+function hideOverlay() {
+  overlay.classList.remove('visible');
+}
+
+// ── helpers ──
+function makeCanvas(parent, label, desc) {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  const cvs = document.createElement('canvas');
+  cvs.width = SIZE;
+  cvs.height = SIZE;
+  cell.appendChild(cvs);
+  const lbl = document.createElement('div');
+  lbl.className = 'label';
+  lbl.textContent = label;
+  cell.appendChild(lbl);
+  if (desc) {
+    cell.addEventListener('mouseenter', () => showOverlay(label, desc));
+    cell.addEventListener('mouseleave', hideOverlay);
+  }
+  parent.appendChild(cell);
+  return cvs.getContext('2d');
+}
+
+function setStroke(ctx, color, weight) {
+  ctx.strokeStyle = color || CLR;
+  ctx.lineWidth = weight || 1;
+}
+
+// ──────────────────────────────────────
+// 1. PRIMITIVE SHAPES
+// ──────────────────────────────────────
+const primContainer = document.getElementById('primitives');
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Circle (filled)', 'Appears during high-frequency sparkle. Filled circles represent simple harmonics like sine tones.');
+  ctx.fillStyle = CLR;
+  ctx.beginPath(); ctx.arc(60, 60, 28, 0, Math.PI*2); ctx.fill();
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Circle (outline)', 'Outline circles mark tonal events without heavy weight. Used for mid-range bell-like sounds.');
+  setStroke(ctx, CLR, 1.5);
+  ctx.beginPath(); ctx.arc(60, 60, 28, 0, Math.PI*2); ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Square (filled)', 'Triggered by rich harmonic content. Solid squares represent complex waveforms like sawtooth or square waves.');
+  ctx.fillStyle = CLR;
+  ctx.fillRect(32, 32, 56, 56);
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Square (outline)', 'Appears during moderate volume. Outlined squares mark rhythmic structure without visual density.');
+  setStroke(ctx, CLR, 1.5);
+  ctx.strokeRect(32, 32, 56, 56);
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Rectangle', 'Maps to bass tones. Vertical rectangles represent sustained sub-bass, horizontal ones represent percussive bass.');
+  setStroke(ctx, CLR, 1.5);
+  ctx.strokeRect(20, 38, 80, 44);
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Cross', 'Marks percussive transients and beat events. Each cross is a sharp click or tick in the audio.');
+  setStroke(ctx, CLR, 1.5);
+  ctx.beginPath();
+  ctx.moveTo(60, 30); ctx.lineTo(60, 90);
+  ctx.moveTo(30, 60); ctx.lineTo(90, 60);
+  ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Horizontal Line', 'Represents sustained drones and pad tones. Length corresponds to duration of the sound.');
+  setStroke(ctx, CLR, 1.5);
+  ctx.beginPath(); ctx.moveTo(16, 60); ctx.lineTo(104, 60); ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Vertical Line', 'Marks beat divisions and structural boundaries in the composition.');
+  setStroke(ctx, CLR, 1.5);
+  ctx.beginPath(); ctx.moveTo(60, 16); ctx.lineTo(60, 104); ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Diagonal Line', 'Adds textural complexity during rhythmically dense passages. Angle varies with frequency content.');
+  setStroke(ctx, CLR, 1.5);
+  ctx.beginPath(); ctx.moveTo(24, 24); ctx.lineTo(96, 96); ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Square with X', 'Triggered by complex beats. Maps to metallic, inharmonic FM tones with short decay.');
+  setStroke(ctx, CLR, 1.5);
+  ctx.strokeRect(30, 30, 60, 60);
+  ctx.beginPath();
+  ctx.moveTo(30, 30); ctx.lineTo(90, 90);
+  ctx.moveTo(90, 30); ctx.lineTo(30, 90);
+  ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Custom Line', 'Connects points in spiral and wave patterns. Used to trace evolving sonic paths.');
+  setStroke(ctx, CLR, 1.5);
+  ctx.beginPath(); ctx.moveTo(20, 90); ctx.lineTo(100, 30); ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Large Circle', 'Compositional marker for harmonic resonances and chords. Drawn with difference blend mode.');
+  setStroke(ctx, CLR, 1);
+  ctx.beginPath(); ctx.arc(60, 60, 50, 0, Math.PI*2); ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Focal Bar', 'Appears at peak volume moments as a bright vertical accent. Represents full-spectrum energy.');
+  ctx.fillStyle = CLR;
+  ctx.fillRect(48, 20, 24, 80);
+  setStroke(ctx, CLR, 1);
+  ctx.strokeRect(48, 20, 24, 80);
+})();
+
+(function(){
+  const ctx = makeCanvas(primContainer, 'Text', 'Labels song sections and structural divisions. Annotates transitions in the composition.');
+  ctx.fillStyle = CLR;
+  ctx.font = '12px Courier New';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('PART', 60, 50);
+  ctx.font = '16px Courier New';
+  ctx.fillText('1', 60, 70);
+})();
+
+
+// ──────────────────────────────────────
+// 2. COMPOSITE PATTERNS
+// ──────────────────────────────────────
+const compContainer = document.getElementById('composites');
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Textural Noise', 'Background grain generated during quiet to moderate passages. Adds visual density that mirrors ambient sound texture.');
+  setStroke(ctx, CLR2, 0.8);
+  const rng = (a,b) => a + Math.random()*(b-a);
+  for (let i = 0; i < 30; i++) {
+    const x = rng(15, 105), y = rng(15, 105);
+    const t = Math.random();
+    if (t < 0.25) {
+      ctx.beginPath(); ctx.arc(x, y, rng(1,3), 0, Math.PI*2);
+      Math.random() < 0.4 ? ctx.fill() : ctx.stroke();
+    } else if (t < 0.45) {
+      const s = rng(2,6);
+      ctx.beginPath();
+      ctx.moveTo(x-s, y); ctx.lineTo(x+s, y);
+      ctx.moveTo(x, y-s); ctx.lineTo(x, y+s);
+      ctx.stroke();
+    } else if (t < 0.65) {
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+rng(3,10), y); ctx.stroke();
+    } else if (t < 0.8) {
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y+rng(3,8)); ctx.stroke();
+    } else {
+      const l = rng(3,8), a = [45,-45,30,-30][Math.floor(Math.random()*4)];
+      const r = a * Math.PI/180;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+l*Math.cos(r), y+l*Math.sin(r)); ctx.stroke();
+    }
+  }
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Symbol Cluster', 'Dense grouping of marks during concentrated musical events. Multiple symbols reinforce moments of intensity.');
+  ctx.fillStyle = CLR2;
+  setStroke(ctx, CLR2, 0.8);
+  for (let i = 0; i < 7; i++) {
+    const x = 60 + (Math.random()-0.5)*36;
+    const y = 60 + (Math.random()-0.5)*36;
+    const t = Math.floor(Math.random()*3);
+    if (t === 0) {
+      ctx.beginPath(); ctx.arc(x, y, 2+Math.random()*2, 0, Math.PI*2);
+      Math.random()<0.4 ? ctx.fill() : ctx.stroke();
+    } else if (t === 1) {
+      const s = 3+Math.random()*4;
+      ctx.beginPath();
+      ctx.moveTo(x-s,y); ctx.lineTo(x+s,y);
+      ctx.moveTo(x,y-s); ctx.lineTo(x,y+s);
+      ctx.stroke();
+    } else {
+      const s = 3+Math.random()*3;
+      ctx.strokeRect(x-s/2, y-s/2, s, s);
+    }
+  }
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Spiral Pattern', 'Appears during evolving or rotating sounds. Maps to phaser-swept tones with spinning modulation.');
+  setStroke(ctx, CLR2, 0.8);
+  ctx.fillStyle = CLR2;
+  const cx = 60, cy = 60, maxR = 42, pts = 32;
+  for (let i = 0; i < pts; i++) {
+    const angle = (i/pts) * Math.PI * 4;
+    const r = (i/pts) * maxR;
+    const x = cx + Math.cos(angle)*r;
+    const y = cy + Math.sin(angle)*r;
+    if (i % 3 === 0) { ctx.beginPath(); ctx.arc(x, y, 1.5, 0, Math.PI*2); ctx.fill(); }
+    if (i > 0 && i % 4 === 0) {
+      const pa = ((i-4)/pts) * Math.PI*4;
+      const pr = ((i-4)/pts) * maxR;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(pa)*pr, cy+Math.sin(pa)*pr);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+  }
+  const s = 5;
+  ctx.beginPath();
+  ctx.moveTo(cx-s,cy); ctx.lineTo(cx+s,cy);
+  ctx.moveTo(cx,cy-s); ctx.lineTo(cx,cy+s);
+  ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Section Divider', 'Marks transitions between song sections. A structural ruler with tick marks and labels.');
+  setStroke(ctx, CLR2, 1.5);
+  ctx.beginPath(); ctx.moveTo(60, 10); ctx.lineTo(60, 110); ctx.stroke();
+  setStroke(ctx, CLR2, 0.6);
+  for (let i = 0; i < 6; i++) {
+    const y = 10 + i*20;
+    ctx.beginPath(); ctx.moveTo(52, y); ctx.lineTo(68, y); ctx.stroke();
+  }
+  setStroke(ctx, CLR2, 0.8);
+  ctx.strokeRect(45, 35, 30, 20);
+  ctx.fillStyle = CLR2;
+  ctx.font = '8px Courier New';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('PART', 60, 30);
+  ctx.font = '10px Courier New';
+  ctx.fillText('1', 60, 46);
+  setStroke(ctx, CLR2, 0.8);
+  ctx.beginPath(); ctx.moveTo(40, 20); ctx.lineTo(80, 20); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(40, 60); ctx.lineTo(80, 60); ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Cross-Hatch', 'Represents rhythmic complexity and filtered noise. Density increases with bandpass-filtered audio energy.');
+  setStroke(ctx, CLR2, 0.6);
+  const x0 = 20, y0 = 20, w = 80, h = 80, lines = 10;
+  const sp = h / lines;
+  for (let i = 0; i < lines; i++) {
+    const y = y0 + i * sp;
+    if (Math.random() < 0.8) {
+      const r = 45 * Math.PI/180;
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0+w*Math.cos(r), y+w*Math.sin(r)); ctx.stroke();
+    }
+    if (Math.random() < 0.7) {
+      const r = -45 * Math.PI/180;
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0+w*Math.cos(r), y+w*Math.sin(r)); ctx.stroke();
+    }
+    if (i % 3 === 0) {
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0+w, y); ctx.stroke();
+    }
+  }
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Wave Pattern', 'Maps to arpeggiated sequences and modulation. Amplitude follows the frequency data in real time.');
+  setStroke(ctx, CLR2, 0.8);
+  const amp = 20, len = 90, pts = 30;
+  for (let w = 0; w < 2; w++) {
+    const yOff = 50 + w * 30;
+    const a = amp * (w === 0 ? 1 : 0.7);
+    ctx.beginPath();
+    for (let i = 0; i < pts; i++) {
+      const x = 15 + (i/pts)*len;
+      const y = yOff + Math.sin(i * 0.5) * a;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  setStroke(ctx, CLR2, 0.4);
+  for (let i = 0; i < pts; i += 3) {
+    const x = 15 + (i/pts)*len;
+    const y = 50 + Math.sin(i*0.5)*amp;
+    ctx.beginPath(); ctx.moveTo(x, y-amp*0.4); ctx.lineTo(x, y+amp*0.4); ctx.stroke();
+  }
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Architectural Element', 'Structural brackets for physically modeled instrument sounds. Represents plucked strings and resonant bodies.');
+  setStroke(ctx, CLR2, 1);
+  const cx = 60, cy = 60, bw = 30, bh = 60;
+  ctx.strokeRect(cx-bw/2, cy-bh/2, bw, bh);
+  setStroke(ctx, CLR2, 0.4);
+  for (let i = 1; i <= 3; i++) {
+    const y = cy - bh/2 + i*(bh/4);
+    ctx.beginPath(); ctx.moveTo(cx-bw/2, y); ctx.lineTo(cx+bw/2, y); ctx.stroke();
+  }
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Dense Grid', 'Appears during FM synthesis and complex mid-range tones. Each cell responds to a different frequency component.');
+  setStroke(ctx, CLR2, 0.5);
+  ctx.fillStyle = CLR2;
+  const x0 = 18, y0 = 18, cs = 14, cols = 6, rows = 6;
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      if (Math.random() < 0.85) {
+        const cx = x0 + i*cs + cs/2;
+        const cy = y0 + j*cs + cs/2;
+        const t = Math.random();
+        if (t < 0.2) { ctx.fillRect(cx-cs*0.4, cy-cs*0.4, cs*0.8, cs*0.8); }
+        else if (t < 0.4) { ctx.beginPath(); ctx.arc(cx, cy, cs*0.35, 0, Math.PI*2); ctx.stroke(); }
+        else if (t < 0.6) {
+          const s = cs*0.35;
+          ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx+s,cy); ctx.moveTo(cx,cy-s); ctx.lineTo(cx,cy+s); ctx.stroke();
+        } else if (t < 0.8) {
+          const s = cs*0.35;
+          ctx.strokeRect(cx-s, cy-s, s*2, s*2);
+          ctx.beginPath(); ctx.moveTo(cx-s,cy-s); ctx.lineTo(cx+s,cy+s); ctx.moveTo(cx+s,cy-s); ctx.lineTo(cx-s,cy+s); ctx.stroke();
+        } else {
+          for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(cx+(Math.random()-0.5)*cs*0.5, cy+(Math.random()-0.5)*cs*0.5, 1, 0, Math.PI*2); ctx.fill(); }
+        }
+      }
+    }
+  }
+  ctx.strokeRect(x0, y0, cols*cs, rows*cs);
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Grid Pattern', 'Sparser grid for moderate harmonic complexity. Partially filled cells reflect intermittent tonal activity.');
+  setStroke(ctx, CLR2, 0.5);
+  ctx.fillStyle = CLR2;
+  const x0 = 22, y0 = 22, cs = 16, cols = 5, rows = 5;
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      if (Math.random() < 0.6) {
+        const cx = x0 + i*cs + cs/2;
+        const cy = y0 + j*cs + cs/2;
+        const t = Math.random();
+        if (t < 0.33) { ctx.fillRect(cx-cs*0.35, cy-cs*0.35, cs*0.7, cs*0.7); }
+        else if (t < 0.66) { ctx.beginPath(); ctx.arc(cx, cy, cs*0.3, 0, Math.PI*2); ctx.stroke(); }
+        else {
+          const s = cs*0.35;
+          ctx.beginPath(); ctx.moveTo(cx-s,cy); ctx.lineTo(cx+s,cy); ctx.moveTo(cx,cy-s); ctx.lineTo(cx,cy+s); ctx.stroke();
+        }
+      }
+    }
+  }
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Curved Arc', 'Sweeping compositional arcs for evolving tonal passages. Radius and span reflect pitch range.');
+  setStroke(ctx, CLR2, 1);
+  ctx.beginPath(); ctx.arc(60, 60, 40, -Math.PI*0.7, Math.PI*0.3); ctx.stroke();
+  setStroke(ctx, CLR2, 0.6);
+  ctx.beginPath(); ctx.arc(60, 60, 28, -Math.PI*0.5, Math.PI*0.5); ctx.stroke();
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Organic Blob', 'Irregular clusters for formant-filtered, vowel-like timbres. Appears during organic, natural-sounding audio.');
+  setStroke(ctx, CLR2, 0.8);
+  ctx.fillStyle = CLR2;
+  const cx = 60, cy = 60, sz = 32, pts = 14;
+  for (let i = 0; i < pts; i++) {
+    const angle = (i/pts) * Math.PI * 2;
+    const r = sz * (0.4 + Math.random()*0.8);
+    const x = cx + Math.cos(angle)*r;
+    const y = cy + Math.sin(angle)*r;
+    const t = Math.floor(Math.random()*5);
+    if (t === 0) { ctx.beginPath(); ctx.arc(x, y, 1+Math.random()*2, 0, Math.PI*2); Math.random()<0.5 ? ctx.fill() : ctx.stroke(); }
+    else if (t === 1) { const s = 2+Math.random()*3; ctx.beginPath(); ctx.moveTo(x-s,y); ctx.lineTo(x+s,y); ctx.moveTo(x,y-s); ctx.lineTo(x,y+s); ctx.stroke(); }
+    else if (t === 2) { ctx.beginPath(); ctx.moveTo(x-3,y); ctx.lineTo(x+5,y); ctx.stroke(); }
+    else if (t === 3) { ctx.beginPath(); ctx.moveTo(x,y-2); ctx.lineTo(x,y+5); ctx.stroke(); }
+    else { const s = 2+Math.random()*2; ctx.strokeRect(x-s/2, y-s/2, s, s); }
+  }
+  for (let c = 0; c < 5; c++) { ctx.beginPath(); ctx.arc(cx+(Math.random()-0.5)*sz*0.5, cy+(Math.random()-0.5)*sz*0.5, 1, 0, Math.PI*2); ctx.fill(); }
+})();
+
+(function(){
+  const ctx = makeCanvas(compContainer, 'Scattered Field', 'Random dot distribution for granular synthesis textures. Each particle is a tiny grain of sound.');
+  setStroke(ctx, CLR2, 0.5);
+  ctx.fillStyle = CLR2;
+  for (let i = 0; i < 40; i++) {
+    const x = 15 + Math.random()*90;
+    const y = 15 + Math.random()*90;
+    const t = Math.floor(Math.random()*6);
+    if (t === 0) { ctx.beginPath(); ctx.arc(x,y,0.5+Math.random()*1.5,0,Math.PI*2); ctx.fill(); }
+    else if (t === 1) { const s=1+Math.random()*2; ctx.beginPath(); ctx.moveTo(x-s,y); ctx.lineTo(x+s,y); ctx.moveTo(x,y-s); ctx.lineTo(x,y+s); ctx.stroke(); }
+    else if (t === 2) { ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+2+Math.random()*5,y); ctx.stroke(); }
+    else if (t === 3) { const l=2+Math.random()*4,a=[45,-45,30,-30][Math.floor(Math.random()*4)]*Math.PI/180; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+l*Math.cos(a),y+l*Math.sin(a)); ctx.stroke(); }
+    else if (t === 4) { ctx.strokeRect(x,y,2+Math.random()*3,1+Math.random()*2); }
+    else { ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+2+Math.random()*4); ctx.stroke(); }
+  }
+})();
+
+
+// ──────────────────────────────────────
+// 3. ALPHABET (A–P)
+// ──────────────────────────────────────
+const alphaContainer = document.getElementById('alphabet');
+
+const alphabetData = [
+  { letter:'A', name:'Bass Block', desc:'Deep sustained sub-bass tones. Large dark rectangles at the bottom of the frequency spectrum.',
+    draw(ctx){ ctx.fillStyle = '#333'; ctx.fillRect(38, 20, 44, 80); setStroke(ctx,'#555',1); ctx.strokeRect(38, 20, 44, 80); }},
+  { letter:'B', name:'Bass Fragment', desc:'Short percussive bass plucks. Horizontal bars that appear on rhythmic stabs.',
+    draw(ctx){ ctx.fillStyle = '#505050'; ctx.fillRect(20, 46, 80, 28); }},
+  { letter:'C', name:'Mid-Range Grid', desc:'FM synthesis bells with metallic overtones. Grid complexity mirrors the harmonic richness.',
+    draw(ctx){
+    setStroke(ctx,'#888',0.5); ctx.fillStyle='#888';
+    const x0=24,y0=24,cs=18,n=4;
+    for(let i=0;i<n;i++) for(let j=0;j<n;j++){
+      const cx=x0+i*cs+cs/2, cy=y0+j*cs+cs/2;
+      const t=Math.random();
+      if(t<0.3){ctx.fillRect(cx-cs*0.35,cy-cs*0.35,cs*0.7,cs*0.7);}
+      else if(t<0.6){ctx.beginPath();ctx.arc(cx,cy,cs*0.3,0,Math.PI*2);ctx.stroke();}
+      else{const s=cs*0.3;ctx.beginPath();ctx.moveTo(cx-s,cy);ctx.lineTo(cx+s,cy);ctx.moveTo(cx,cy-s);ctx.lineTo(cx,cy+s);ctx.stroke();}
+    }
+    ctx.strokeRect(x0,y0,n*cs,n*cs);
+  }},
+  { letter:'D', name:'Cross-Hatch Texture', desc:'Bandpass-filtered noise bursts. Diagonal density reflects rhythmic and timbral complexity.',
+    draw(ctx){
+    setStroke(ctx,'#aaa',0.5);
+    for(let i=0;i<12;i++){
+      const y=20+i*7;
+      const r1=45*Math.PI/180, r2=-45*Math.PI/180;
+      if(Math.random()<0.8){ctx.beginPath();ctx.moveTo(25,y);ctx.lineTo(25+70*Math.cos(r1),y+70*Math.sin(r1));ctx.stroke();}
+      if(Math.random()<0.7){ctx.beginPath();ctx.moveTo(25,y);ctx.lineTo(25+70*Math.cos(r2),y+70*Math.sin(r2));ctx.stroke();}
+    }
+  }},
+  { letter:'E', name:'Treble Dot', desc:'High delicate sine tones, very short. Small bright dots that shimmer at the top of the frequency range.',
+    draw(ctx){ ctx.fillStyle = '#e0e0e0'; ctx.beginPath(); ctx.arc(60,60,5,0,Math.PI*2); ctx.fill(); }},
+  { letter:'F', name:'Beat Marker', desc:'Kick drum transients with pitch envelope. Broken vertical lines that pulse with the beat.',
+    draw(ctx){
+    setStroke(ctx,'#fff',2);
+    for(let i=0;i<8;i++){ const y=12+i*13; ctx.beginPath(); ctx.moveTo(60,y); ctx.lineTo(60,y+8); ctx.stroke(); }
+  }},
+  { letter:'G', name:'Thin Horizontal Line', desc:'Sustained pad with slow modulation. Long thin strokes that represent drones and held tones.',
+    draw(ctx){ setStroke(ctx,'#777',0.8); ctx.beginPath(); ctx.moveTo(15,60); ctx.lineTo(105,60); ctx.stroke(); }},
+  { letter:'H', name:'Large Circle', desc:'Harmonic resonances and chords. Large compositional circles that define the overall form.',
+    draw(ctx){ setStroke(ctx,'#fff',1); ctx.beginPath(); ctx.arc(60,60,48,0,Math.PI*2); ctx.stroke(); }},
+  { letter:'I', name:'Scattered Field', desc:'Granular cloud with random pitch scatter. Each dot is a single grain of sound.',
+    draw(ctx){
+    ctx.fillStyle='#b0b0b0';
+    for(let i=0;i<40;i++){ ctx.beginPath(); ctx.arc(15+Math.random()*90, 15+Math.random()*90, 0.5+Math.random()*1.5, 0, Math.PI*2); ctx.fill(); }
+  }},
+  { letter:'J', name:'Wave Pattern', desc:'Arpeggiated sequences and rhythmic pulses. The wave oscillation follows melodic contour.',
+    draw(ctx){
+    setStroke(ctx,'#888',0.8); ctx.beginPath();
+    for(let i=0;i<40;i++){ const x=10+(i/40)*100; const y=60+Math.sin(i*0.4)*22; i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+    ctx.stroke();
+  }},
+  { letter:'K', name:'Cross Symbol', desc:'Sharp transient clicks. Small percussive marks for high-frequency ticks and pops.',
+    draw(ctx){ setStroke(ctx,'#c0c0c0',1.2); ctx.beginPath(); ctx.moveTo(50,60); ctx.lineTo(70,60); ctx.moveTo(60,50); ctx.lineTo(60,70); ctx.stroke(); }},
+  { letter:'L', name:'Square with X', desc:'Metallic FM hits with short decay. The compound shape reflects inharmonic frequency content.',
+    draw(ctx){
+    setStroke(ctx,'#ccc',0.8); const s=40;
+    ctx.strokeRect(60-s/2,60-s/2,s,s);
+    ctx.beginPath(); ctx.moveTo(60-s/2,60-s/2); ctx.lineTo(60+s/2,60+s/2); ctx.moveTo(60+s/2,60-s/2); ctx.lineTo(60-s/2,60+s/2); ctx.stroke();
+  }},
+  { letter:'M', name:'Organic Blob', desc:'Formant-filtered growl with vowel-like quality. Irregular shape mirrors the organic nature of the sound.',
+    draw(ctx){
+    setStroke(ctx,'#707070',0.7); ctx.fillStyle='#707070';
+    const cx=60,cy=60,sz=28,pts=12;
+    for(let i=0;i<pts;i++){
+      const a=(i/pts)*Math.PI*2, r=sz*(0.5+Math.random()*0.7);
+      const x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r;
+      const t=Math.floor(Math.random()*4);
+      if(t===0){ctx.beginPath();ctx.arc(x,y,1.5,0,Math.PI*2);ctx.fill();}
+      else if(t===1){const s=3;ctx.beginPath();ctx.moveTo(x-s,y);ctx.lineTo(x+s,y);ctx.moveTo(x,y-s);ctx.lineTo(x,y+s);ctx.stroke();}
+      else if(t===2){ctx.beginPath();ctx.moveTo(x-3,y);ctx.lineTo(x+4,y);ctx.stroke();}
+      else{const s=3;ctx.strokeRect(x-s/2,y-s/2,s,s);}
+    }
+    for(let c=0;c<4;c++){ctx.beginPath();ctx.arc(cx+(Math.random()-0.5)*16,cy+(Math.random()-0.5)*16,1,0,Math.PI*2);ctx.fill();}
+  }},
+  { letter:'N', name:'Architectural Bracket', desc:'Plucked string via physical modeling. The structural form reflects resonant body and natural decay.',
+    draw(ctx){
+    setStroke(ctx,'#999',1); const cx=60,cy=60,bw=30,bh=70;
+    ctx.strokeRect(cx-bw/2,cy-bh/2,bw,bh);
+    setStroke(ctx,'#999',0.4);
+    for(let i=1;i<=4;i++){ const y=cy-bh/2+i*(bh/5); ctx.beginPath();ctx.moveTo(cx-bw/2,y);ctx.lineTo(cx+bw/2,y);ctx.stroke(); }
+  }},
+  { letter:'O', name:'Spiral Pattern', desc:'Phaser-swept tones with rotating modulation. The spiral traces the circular motion of the effect.',
+    draw(ctx){
+    setStroke(ctx,'#aaa',0.6); ctx.fillStyle='#aaa';
+    const cx=60,cy=60,maxR=38,pts=28;
+    for(let i=0;i<pts;i++){
+      const a=(i/pts)*Math.PI*4, r=(i/pts)*maxR;
+      const x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r;
+      if(i%3===0){ctx.beginPath();ctx.arc(x,y,1.2,0,Math.PI*2);ctx.fill();}
+      if(i>0&&i%4===0){ const pa=((i-4)/pts)*Math.PI*4,pr=((i-4)/pts)*maxR; ctx.beginPath();ctx.moveTo(cx+Math.cos(pa)*pr,cy+Math.sin(pa)*pr);ctx.lineTo(x,y);ctx.stroke(); }
+    }
+    const s=4;ctx.beginPath();ctx.moveTo(cx-s,cy);ctx.lineTo(cx+s,cy);ctx.moveTo(cx,cy-s);ctx.lineTo(cx,cy+s);ctx.stroke();
+  }},
+  { letter:'P', name:'Dense Pillar', desc:'Full-spectrum noise burst at peak energy. A dense vertical column that appears during the loudest moments.',
+    draw(ctx){
+    setStroke(ctx,'#ddd',1); ctx.fillStyle='#ddd';
+    ctx.fillRect(48, 10, 24, 100);
+    setStroke(ctx,'#fff',0.5);
+    for(let i=0;i<20;i++){
+      const y=12+i*5; const t=Math.random();
+      if(t<0.3){ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(80,y);ctx.stroke();}
+      else if(t<0.5){const s=2;ctx.beginPath();ctx.moveTo(60-s,y);ctx.lineTo(60+s,y);ctx.moveTo(60,y-s);ctx.lineTo(60,y+s);ctx.stroke();}
+      else if(t<0.7){ctx.beginPath();ctx.arc(48+Math.random()*24,y,1,0,Math.PI*2);ctx.fill();}
+    }
+  }}
+];
+
+alphabetData.forEach(item => {
+  const ctx = makeCanvas(alphaContainer, item.letter + ' — ' + item.name, item.desc);
+  item.draw(ctx);
+});
+</script>
+
+</body>
+</html>

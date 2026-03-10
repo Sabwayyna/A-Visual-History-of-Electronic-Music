@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline - Horizontal</title>
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("../fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "LinotypeUnivers", sans-serif;
+            background: #fff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Timeline strip — overflow hidden clips oversized items */
+        #timeline-container {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .year-item {
+            position: absolute;
+            top: 50%;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 9px;
+            font-weight: 400;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.5px;
+            line-height: 1;
+        }
+
+        /* Digit-level grayscale variation — darkest to lightest */
+        .dg0 { color: rgba(0,0,0,0.88); }
+        .dg1 { color: rgba(0,0,0,0.60); }
+        .dg2 { color: rgba(0,0,0,0.38); }
+        .dg3 { color: rgba(0,0,0,0.22); }
+
+        /* Dark mode digit colors */
+        body.dark-mode .dg0 { color: rgba(255,255,255,0.88); }
+        body.dark-mode .dg1 { color: rgba(255,255,255,0.60); }
+        body.dark-mode .dg2 { color: rgba(255,255,255,0.38); }
+        body.dark-mode .dg3 { color: rgba(255,255,255,0.22); }
+
+        /* Grain canvas */
+        #grain-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Central title */
+        #main-title {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 9px;
+            font-weight: 400;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: rgba(0,0,0,0.18);
+            pointer-events: none;
+            z-index: 60;
+            white-space: nowrap;
+        }
+
+        body.dark-mode #main-title { color: rgba(255,255,255,0.18); }
+
+        /* Song info */
+        #song-title {
+            position: fixed;
+            top: 52px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-style: italic;
+            letter-spacing: 1px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 60;
+        }
+
+        #click-hint {
+            position: fixed;
+            top: 74px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: rgba(0,0,0,0.4);
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            z-index: 60;
+            white-space: nowrap;
+        }
+
+        body.dark-mode #click-hint { color: rgba(255,255,255,0.4); }
+        body.dark-mode #song-title { color: #fff; }
+
+        #artist-name {
+            position: fixed;
+            bottom: 52px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            letter-spacing: 1px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 60;
+        }
+
+        body.dark-mode #artist-name { color: #fff; }
+
+        /* Loading screen */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-text {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 14px;
+            margin-top: 20px;
+            opacity: 0.7;
+        }
+
+        .loading-progress {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 14px;
+            margin-top: 10px;
+            opacity: 0.3;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .icon-container {
+            width: 60px; height: 60px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .icon {
+            width: 50px; height: 50px;
+            position: absolute;
+            object-fit: contain;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        .icon.active { display: block; }
+
+        #continue-prompt {
+            display: none;
+            font-size: 14px;
+            opacity: 0.6;
+            margin-top: 20px;
+        }
+
+        #loading-screen.ready { cursor: pointer; }
+        .hidden { display: none !important; }
+
+        /* Color toggle */
+        #color-toggle {
+            position: fixed;
+            top: 28px; right: 28px;
+            width: 34px; height: 34px;
+            border: 1.5px solid #000;
+            background: transparent;
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.15s;
+            border-radius: 50%;
+        }
+
+        #color-toggle:hover { transform: scale(1.1); }
+        .circle-half { position: absolute; width: 50%; height: 100%; top: 0; }
+        .left { left: 0; background: #000; border-radius: 50% 0 0 50%; }
+        .right { right: 0; background: transparent; border-radius: 0 50% 50% 0; }
+
+        body.dark-mode { background: #000; }
+        body.dark-mode #color-toggle { border-color: #fff; }
+        body.dark-mode #color-toggle .left { background: transparent; }
+        body.dark-mode #color-toggle .right { background: #fff; }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="icon-container">
+            <img src="bouda.png" alt="Bouba" class="icon">
+            <img src="kiki.png" alt="Kiki" class="icon">
+        </div>
+        <div class="loading-text">Loading audio...</div>
+        <div class="loading-progress" id="loading-progress">0 / 13</div>
+        <div id="continue-prompt">Click anywhere to continue</div>
+    </div>
+
+    <div id="timeline-container"></div>
+    <canvas id="grain-canvas"></canvas>
+
+    <div id="main-title">The History of Digital Music</div>
+    <div id="song-title"></div>
+    <div id="click-hint">click to listen</div>
+    <div id="artist-name"></div>
+
+    <button id="color-toggle" aria-label="Toggle color mode">
+        <div class="circle-half left"></div>
+        <div class="circle-half right"></div>
+    </button>
+
+    <script>
+        const songs = [
+            { year: 1948, title: "Cinq Etudes de Bruits", artist: "Pierre Schaeffer", audio: "Musique/01 - Pierre Schaeffer - Cinq études de bruits (1948) - Etude aux chemins de fer.mp3", path: "songs/pierre-schaeffer-cinq-études-de-bruits-1948.html", startTime: 0 },
+            { year: 1953, title: "Studie I", artist: "Karlheinz Stockhausen", audio: "Musique/Karlheinz Stockhausen_ Studie I (1953).mp3", path: "songs/karlheinz-stockhausen-studio-i-1953.html", startTime: 0 },
+            { year: 1960, title: "Four Aspects", artist: "Daphne Oram", audio: "Musique/04 - Daphne Oram - Four Aspects.mp3", path: "songs/daphne-oram-four-aspects-1960.html", startTime: 0 },
+            { year: 1963, title: "Doctor Who Theme", artist: "Delia Derbyshire", audio: "Musique/05 - Doctor Who (1963) -  Original Theme music video.mp3", path: "songs/delia-derbyshire-doctor-who-theme-1963.html", startTime: 0 },
+            { year: 1978, title: "Music for Airports 1/1", artist: "Brian Eno", audio: "Musique/08 - Brian Eno - 1:1  Music for Airports (Remastered 2004).mp3", path: "songs/brian-eno-music-for-airports-11-1978.html", startTime: 0 },
+            { year: 1980, title: "Patchwork", artist: "Laurie Spiegel", audio: "Musique/Patchwork.mp3", path: "songs/laurie-spiegel-patchwork-1980.html", startTime: 0 },
+            { year: 1983, title: "Bhairav", artist: "Charanjit Singh", audio: "Musique/Charanjit Singh - Raga Bhairav (1982).mp3", path: "songs/charanjit-singh-bhairav-1983.html", startTime: 0 },
+            { year: 1986, title: "Can You Feel It", artist: "Mr. Fingers (Larry Heard)", audio: "Musique/09 - Mr Fingers - Can You Feel It.mp3", path: "songs/mr-fingers-larry-heard-can-you-feel-it-1986.html", startTime: 0 },
+            { year: 1995, title: "Tri Repetae", artist: "Autechre", audio: "Musique/11 - Dael · Autechre.mp3", path: "songs/autechre-dael-1995.html", startTime: 0 },
+            { year: 1998, title: "Roygbiv", artist: "Boards of Canada", audio: "Musique/12 - Boards of Canada — Roygbiv (1998).mp3", path: "songs/boards-of-canada-roygbiv-1998.html", startTime: 0 },
+            { year: 2005, title: "Data Matrix", artist: "Ryoji Ikeda", audio: "Musique/13 - Ryoji Ikeda - data.matrix.mp3", path: "songs/ryoji-ikeda-datamatrix-2005.html", startTime: 0 },
+            { year: 2025, title: "Busy Ready What, Corroborators", artist: "Rashad Becker", audio: "Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3", path: "songs/rashad-becker-busy-ready-what-corroborators-2025.html", startTime: 0 }
+        ];
+
+        // Layout constants
+        const ITEM_SPACING  = 150;    // world-space px between item centers
+        const CENTER_SCALE  = 13;     // scale at screen center — large enough to overflow
+        const EDGE_SCALE    = 0.45;   // scale at screen edges (small)
+        const MIN_OPACITY   = 0.32;   // never fully fade out
+        const FALLOFF_K     = 4.2;    // Gaussian sharpness
+        const AUTO_SPEED    = 0.28;   // px per frame (slow drift)
+
+        const totalWidth = songs.length * ITEM_SPACING;
+
+        let scrollOffset = 0;
+        let audioCache   = {};
+        let currentAudio = null;
+        let hoveredIndex = null;
+        let lastTs       = 0;
+
+        // ── Scale & opacity ────────────────────────────────────────────────
+        function getScale(distFraction) {
+            const t = Math.min(Math.abs(distFraction), 1);
+            return EDGE_SCALE + (CENTER_SCALE - EDGE_SCALE) * Math.exp(-FALLOFF_K * t * t);
+        }
+
+        function getOpacity(distFraction) {
+            const t = Math.min(Math.abs(distFraction), 1);
+            // Stays close to 1 near center, dips to MIN_OPACITY at edges
+            return MIN_OPACITY + (1 - MIN_OPACITY) * Math.exp(-1.8 * t * t);
+        }
+
+        // ── Screen position with loop wrap ─────────────────────────────────
+        function getScreenX(index) {
+            const halfW = window.innerWidth / 2;
+            let rel = index * ITEM_SPACING - (scrollOffset % totalWidth);
+            rel = ((rel % totalWidth) + totalWidth) % totalWidth;
+            if (rel > totalWidth / 2) rel -= totalWidth;
+            return halfW + rel;
+        }
+
+        // ── Create DOM items ───────────────────────────────────────────────
+        function createItems() {
+            const container = document.getElementById('timeline-container');
+            songs.forEach((song, i) => {
+                const el = document.createElement('div');
+                el.className = 'year-item';
+                el.dataset.index = i;
+                // One line; each digit gets its own grayscale class
+                el.innerHTML = song.year.toString().split('').map((d, di) =>
+                    `<span class="dg${di}">${d}</span>`
+                ).join('');
+                el.addEventListener('mouseenter', () => handleHover(i));
+                el.addEventListener('mouseleave',  handleLeave);
+                el.addEventListener('click',       () => handleClick(i));
+                container.appendChild(el);
+            });
+        }
+
+        // ── Layout update ──────────────────────────────────────────────────
+        function updateLayout() {
+            const items = document.querySelectorAll('.year-item');
+            const halfW  = window.innerWidth / 2;
+            let maxScale = EDGE_SCALE;
+
+            items.forEach((item, i) => {
+                const sx   = getScreenX(i);
+                const dist = (sx - halfW) / halfW;   // signed, -1…+1
+                const sc   = getScale(dist);
+                const op   = getOpacity(dist);
+
+                if (sc > maxScale) maxScale = sc;
+
+                item.style.left      = `${sx}px`;
+                item.style.transform = `translateX(-50%) translateY(-50%) scale(${sc})`;
+                item.style.opacity   = op;
+                item.style.zIndex    = Math.round(sc * 10);
+            });
+
+            // Grain intensity: 0 when everything is at edge scale, 1 when item is at center
+            const grainT = (maxScale - EDGE_SCALE) / (CENTER_SCALE - EDGE_SCALE);
+            renderGrain(grainT);
+        }
+
+        // ── Grain canvas ───────────────────────────────────────────────────
+        const grainCanvas = document.getElementById('grain-canvas');
+        const gCtx        = grainCanvas.getContext('2d');
+
+        function resizeGrain() {
+            grainCanvas.width  = window.innerWidth;
+            grainCanvas.height = window.innerHeight;
+        }
+
+        function renderGrain(intensity) {
+            gCtx.clearRect(0, 0, grainCanvas.width, grainCanvas.height);
+            if (intensity < 0.02) return;
+
+            const isDark  = document.body.classList.contains('dark-mode');
+            const color   = isDark ? '255,255,255' : '0,0,0';
+            // Grain count and per-pixel opacity both scale with intensity
+            const count   = Math.floor(intensity * 22000);
+            const alpha   = 0.25 + 0.25 * intensity;
+
+            gCtx.fillStyle = `rgba(${color},${alpha.toFixed(2)})`;
+            for (let i = 0; i < count; i++) {
+                const x = Math.random() * grainCanvas.width;
+                const y = Math.random() * grainCanvas.height;
+                gCtx.fillRect(x, y, 1, 1);
+            }
+        }
+
+        // ── Animation loop ─────────────────────────────────────────────────
+        function animate(ts) {
+            const dt = lastTs ? Math.min((ts - lastTs) / 16.67, 3) : 1;
+            lastTs = ts;
+
+            scrollOffset = (scrollOffset + AUTO_SPEED * dt) % totalWidth;
+
+            updateLayout();
+            requestAnimationFrame(animate);
+        }
+
+        // ── Wheel scroll (adds to auto-scroll offset) ──────────────────────
+        window.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            scrollOffset = ((scrollOffset + e.deltaY * 0.25) % totalWidth + totalWidth) % totalWidth;
+        }, { passive: false });
+
+        // ── Hover / click ──────────────────────────────────────────────────
+        const songTitleEl  = document.getElementById('song-title');
+        const artistNameEl = document.getElementById('artist-name');
+        const clickHintEl  = document.getElementById('click-hint');
+
+        function handleHover(i) {
+            hoveredIndex = i;
+            const song = songs[i];
+            songTitleEl.textContent  = song.title;
+            artistNameEl.textContent = song.artist;
+            songTitleEl.style.opacity  = '1';
+            artistNameEl.style.opacity = '1';
+            clickHintEl.style.opacity  = '1';
+
+            if (audioCache[song.year]) {
+                if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+                currentAudio = audioCache[song.year];
+                currentAudio.currentTime = song.startTime || 0;
+                currentAudio.play().catch(() => {});
+            }
+        }
+
+        function handleLeave() {
+            hoveredIndex = null;
+            songTitleEl.style.opacity  = '0';
+            artistNameEl.style.opacity = '0';
+            clickHintEl.style.opacity  = '0';
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+        }
+
+        function handleClick(i) {
+            const song = songs[i];
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+            if (song.path) window.location.href = song.path;
+        }
+
+        // ── Audio preload ──────────────────────────────────────────────────
+        const loadingScreen   = document.getElementById('loading-screen');
+        const continuePrompt  = document.getElementById('continue-prompt');
+        const loadingProgress = document.getElementById('loading-progress');
+
+        async function preloadAudio() {
+            let loadedCount = 0;
+            const total = songs.length;
+
+            const promises = songs.map(song => new Promise(resolve => {
+                const audio = new Audio();
+                audio.preload = 'auto';
+                let resolved = false;
+
+                const done = (ok) => {
+                    if (resolved) return;
+                    resolved = true;
+                    if (ok) audioCache[song.year] = audio;
+                    loadedCount++;
+                    loadingProgress.textContent = `${loadedCount} / ${total}`;
+                    resolve();
+                };
+
+                audio.addEventListener('canplaythrough', () => done(true),  { once: true });
+                audio.addEventListener('loadeddata',     () => done(true),  { once: true });
+                audio.addEventListener('error',          () => done(false), { once: true });
+                setTimeout(() => done(false), 10000);
+
+                audio.src = song.audio;
+                audio.load();
+            }));
+
+            await Promise.all(promises);
+
+            document.querySelector('.loading-text').style.display = 'none';
+            continuePrompt.style.display = 'block';
+            loadingScreen.classList.add('ready');
+        }
+
+        // ── Loading screen dismiss ─────────────────────────────────────────
+        loadingScreen.addEventListener('click', () => {
+            if (loadingScreen.classList.contains('ready'))
+                loadingScreen.classList.add('hidden');
+        });
+
+        // Icon flicker animation
+        const icons = document.querySelectorAll('.icon');
+        let iconIdx = 0;
+        icons[iconIdx].classList.add('active');
+        setInterval(() => {
+            icons[iconIdx].classList.remove('active');
+            iconIdx = (iconIdx + 1) % icons.length;
+            icons[iconIdx].classList.add('active');
+        }, 500);
+
+        // ── Color toggle ───────────────────────────────────────────────────
+        document.getElementById('color-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+
+        // ── Init ───────────────────────────────────────────────────────────
+        resizeGrain();
+        window.addEventListener('resize', resizeGrain);
+        createItems();
+        requestAnimationFrame(animate);
+        preloadAudio();
+    </script>
+</body>
+</html>

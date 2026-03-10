@@ -1,0 +1,20 @@
+{
+  "name": "music-visualizer",
+  "version": "1.0.0",
+  "description": "Real-time cumulative music visualizer",
+  "scripts": {
+    "start": "npx http-server -p 8000 -o",
+    "serve": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "music",
+    "visualizer",
+    "p5.js"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@google/gemini-cli": "^0.28.2",
+    "@openai/codex": "^0.101.0"
+  }
+}

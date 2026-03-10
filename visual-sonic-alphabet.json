@@ -1,0 +1,694 @@
+{
+  "meta": {
+    "title": "Visual-Sonic Alphabet for Musique Concrète Visualizer",
+    "version": "1.0.0",
+    "description": "Bidirectional mapping between visual attributes and sound parameters",
+    "visual_axes": {
+      "x": "texture_complexity",
+      "x_description": "0 (smooth/simple) → 1 (grainy/complex)",
+      "y": "brightness_value",
+      "y_description": "0 (dark) → 1 (bright/white)"
+    },
+    "sound_axes": {
+      "x": "spectral_density",
+      "x_description": "rhythmic/timbral complexity",
+      "y": "pitch_register",
+      "y_description": "bass → treble"
+    }
+  },
+  "alphabet": [
+    {
+      "letter": "A",
+      "name": "Bass Block",
+      "visual": {
+        "shape": "rectangle",
+        "orientation": "vertical",
+        "fill_type": "solid",
+        "hue": "#000000",
+        "value": 0.15,
+        "brightness": 0.2,
+        "size_px": 120,
+        "width_height_ratio": 0.3,
+        "texture": "smooth",
+        "texture_value": 0.1,
+        "motion": "static",
+        "stroke_weight": 1.5
+      },
+      "sound": {
+        "instrument": "saw_bass",
+        "oscillator_type": "sawtooth",
+        "pitch": {"type": "midi", "value": 36},
+        "octave_range": [1, 2],
+        "duration_ms": 800,
+        "attack_ms": 50,
+        "decay_ms": 100,
+        "sustain_level": 0.8,
+        "release_ms": 400,
+        "amplitude": 0.7,
+        "effects": {
+          "reverb": 0.05,
+          "lowpass_cutoff": 180,
+          "resonance": 0.3
+        },
+        "frequency_band": "sub_bass",
+        "description": "Deep, sustained bass tone with slow attack"
+      },
+      "mapping_rule": "Large dark rectangles at bottom → low-frequency sustained tones"
+    },
+    {
+      "letter": "B",
+      "name": "Bass Fragment",
+      "visual": {
+        "shape": "rectangle",
+        "orientation": "horizontal",
+        "fill_type": "solid",
+        "hue": "#303030",
+        "value": 0.25,
+        "brightness": 0.3,
+        "size_px": 45,
+        "width_height_ratio": 2.5,
+        "texture": "smooth",
+        "texture_value": 0.15,
+        "motion": "static",
+        "stroke_weight": 0.8
+      },
+      "sound": {
+        "instrument": "pluck_bass",
+        "oscillator_type": "triangle",
+        "pitch": {"type": "midi", "value": 48},
+        "octave_range": [2, 3],
+        "duration_ms": 300,
+        "attack_ms": 5,
+        "decay_ms": 120,
+        "sustain_level": 0.3,
+        "release_ms": 180,
+        "amplitude": 0.6,
+        "effects": {
+          "reverb": 0.08,
+          "lowpass_cutoff": 400,
+          "resonance": 0.4
+        },
+        "frequency_band": "bass",
+        "description": "Short, percussive bass pluck"
+      },
+      "mapping_rule": "Medium dark horizontal rectangles → bass pluck/stab sounds"
+    },
+    {
+      "letter": "C",
+      "name": "Mid-Range Grid",
+      "visual": {
+        "shape": "grid",
+        "orientation": "square",
+        "fill_type": "pattern",
+        "hue": "#707070",
+        "value": 0.5,
+        "brightness": 0.5,
+        "size_px": 80,
+        "grid_cells": 16,
+        "texture": "complex",
+        "texture_value": 0.7,
+        "motion": "static",
+        "stroke_weight": 0.5
+      },
+      "sound": {
+        "instrument": "fm_bell",
+        "oscillator_type": "fmsquare",
+        "modulation_index": 3.5,
+        "pitch": {"type": "midi", "value": 60},
+        "octave_range": [4, 5],
+        "duration_ms": 600,
+        "attack_ms": 15,
+        "decay_ms": 200,
+        "sustain_level": 0.5,
+        "release_ms": 300,
+        "amplitude": 0.55,
+        "effects": {
+          "reverb": 0.25,
+          "highpass_cutoff": 300,
+          "chorus": 0.3
+        },
+        "frequency_band": "mid",
+        "description": "Complex FM tone with metallic overtones"
+      },
+      "mapping_rule": "Grid patterns with internal complexity → FM synthesis with multiple partials"
+    },
+    {
+      "letter": "D",
+      "name": "Cross-Hatch Texture",
+      "visual": {
+        "shape": "cross_hatch",
+        "orientation": "diagonal_both",
+        "fill_type": "pattern",
+        "hue": "#909090",
+        "value": 0.6,
+        "brightness": 0.6,
+        "size_px": 65,
+        "line_density": 12,
+        "texture": "grainy",
+        "texture_value": 0.85,
+        "motion": "static",
+        "stroke_weight": 0.4
+      },
+      "sound": {
+        "instrument": "filtered_noise",
+        "oscillator_type": "whitenoise",
+        "pitch": {"type": "center_freq", "value": 1200},
+        "octave_range": [4, 6],
+        "duration_ms": 450,
+        "attack_ms": 20,
+        "decay_ms": 180,
+        "sustain_level": 0.4,
+        "release_ms": 250,
+        "amplitude": 0.45,
+        "effects": {
+          "reverb": 0.3,
+          "bandpass_cutoff": 1200,
+          "resonance": 2.5,
+          "highpass_cutoff": 600
+        },
+        "frequency_band": "mid_high",
+        "description": "Filtered noise burst with resonant peak"
+      },
+      "mapping_rule": "Diagonal cross-hatch patterns → bandpass filtered noise"
+    },
+    {
+      "letter": "E",
+      "name": "Treble Dot",
+      "visual": {
+        "shape": "circle",
+        "orientation": "radial",
+        "fill_type": "solid",
+        "hue": "#E0E0E0",
+        "value": 0.9,
+        "brightness": 0.9,
+        "size_px": 4,
+        "width_height_ratio": 1.0,
+        "texture": "smooth",
+        "texture_value": 0.05,
+        "motion": "static",
+        "stroke_weight": 0.3
+      },
+      "sound": {
+        "instrument": "sine_high",
+        "oscillator_type": "sine",
+        "pitch": {"type": "midi", "value": 84},
+        "octave_range": [6, 7],
+        "duration_ms": 120,
+        "attack_ms": 2,
+        "decay_ms": 40,
+        "sustain_level": 0.2,
+        "release_ms": 80,
+        "amplitude": 0.35,
+        "effects": {
+          "reverb": 0.4,
+          "highpass_cutoff": 2000,
+          "delay": 0.15
+        },
+        "frequency_band": "treble",
+        "description": "High, delicate sine tone, very short"
+      },
+      "mapping_rule": "Small bright dots at top → high-frequency short tones"
+    },
+    {
+      "letter": "F",
+      "name": "Beat Marker",
+      "visual": {
+        "shape": "vertical_line_broken",
+        "orientation": "vertical",
+        "fill_type": "stroke",
+        "hue": "#FFFFFF",
+        "value": 1.0,
+        "brightness": 1.0,
+        "size_px": 200,
+        "segment_count": 8,
+        "texture": "segmented",
+        "texture_value": 0.5,
+        "motion": "static",
+        "stroke_weight": 2.0
+      },
+      "sound": {
+        "instrument": "kick_drum",
+        "oscillator_type": "sine_pitch_envelope",
+        "pitch": {"type": "midi", "value": 36, "pitch_envelope": {"start": 80, "end": 36, "duration_ms": 50}},
+        "octave_range": [1, 2],
+        "duration_ms": 250,
+        "attack_ms": 1,
+        "decay_ms": 150,
+        "sustain_level": 0.0,
+        "release_ms": 100,
+        "amplitude": 0.9,
+        "effects": {
+          "reverb": 0.02,
+          "distortion": 0.15
+        },
+        "frequency_band": "sub_bass",
+        "description": "Kick drum with pitch envelope (high to low)"
+      },
+      "mapping_rule": "Tall bright vertical broken lines → percussive transients (kick/beat)"
+    },
+    {
+      "letter": "G",
+      "name": "Thin Horizontal Line",
+      "visual": {
+        "shape": "horizontal_line",
+        "orientation": "horizontal",
+        "fill_type": "stroke",
+        "hue": "#606060",
+        "value": 0.4,
+        "brightness": 0.4,
+        "size_px": 35,
+        "width_height_ratio": 20.0,
+        "texture": "smooth",
+        "texture_value": 0.1,
+        "motion": "static",
+        "stroke_weight": 0.5
+      },
+      "sound": {
+        "instrument": "pad_low",
+        "oscillator_type": "triangle",
+        "pitch": {"type": "midi", "value": 52},
+        "octave_range": [3, 4],
+        "duration_ms": 1200,
+        "attack_ms": 200,
+        "decay_ms": 300,
+        "sustain_level": 0.7,
+        "release_ms": 600,
+        "amplitude": 0.4,
+        "effects": {
+          "reverb": 0.35,
+          "lowpass_cutoff": 600,
+          "lfo_rate": 0.5,
+          "lfo_depth": 0.15
+        },
+        "frequency_band": "low_mid",
+        "description": "Sustained pad with slow LFO modulation"
+      },
+      "mapping_rule": "Long thin horizontal lines → sustained drone/pad tones"
+    },
+    {
+      "letter": "H",
+      "name": "Large Compositional Circle",
+      "visual": {
+        "shape": "circle",
+        "orientation": "radial",
+        "fill_type": "outline",
+        "hue": "#FFFFFF",
+        "value": 1.0,
+        "brightness": 1.0,
+        "size_px": 400,
+        "width_height_ratio": 1.0,
+        "texture": "smooth",
+        "texture_value": 0.05,
+        "motion": "static",
+        "stroke_weight": 1.0,
+        "blend_mode": "difference"
+      },
+      "sound": {
+        "instrument": "glass_resonator",
+        "oscillator_type": "sine_cluster",
+        "pitch": {"type": "chord", "root": 60, "intervals": [0, 7, 12, 19]},
+        "octave_range": [4, 6],
+        "duration_ms": 2400,
+        "attack_ms": 100,
+        "decay_ms": 800,
+        "sustain_level": 0.6,
+        "release_ms": 1500,
+        "amplitude": 0.5,
+        "effects": {
+          "reverb": 0.6,
+          "highpass_cutoff": 400,
+          "shimmer": 0.4,
+          "chorus": 0.5
+        },
+        "frequency_band": "full_spectrum",
+        "description": "Harmonic resonance (chord), long decay, ethereal"
+      },
+      "mapping_rule": "Large thin circles (compositional) → harmonic resonances/chords"
+    },
+    {
+      "letter": "I",
+      "name": "Scattered Field",
+      "visual": {
+        "shape": "scatter_dots",
+        "orientation": "random",
+        "fill_type": "solid",
+        "hue": "#A0A0A0",
+        "value": 0.65,
+        "brightness": 0.65,
+        "size_px": 3,
+        "particle_count": 40,
+        "texture": "distributed",
+        "texture_value": 0.9,
+        "motion": "static",
+        "stroke_weight": 0.3
+      },
+      "sound": {
+        "instrument": "granular",
+        "oscillator_type": "grain_cloud",
+        "pitch": {"type": "range", "min": 72, "max": 84},
+        "octave_range": [5, 6],
+        "duration_ms": 800,
+        "attack_ms": 10,
+        "decay_ms": 50,
+        "sustain_level": 0.5,
+        "release_ms": 200,
+        "amplitude": 0.4,
+        "grain_density": 40,
+        "grain_duration_ms": 20,
+        "effects": {
+          "reverb": 0.45,
+          "highpass_cutoff": 1500,
+          "stereo_spread": 0.8
+        },
+        "frequency_band": "high_mid",
+        "description": "Granular cloud, random pitch scatter"
+      },
+      "mapping_rule": "Scattered dot fields → granular synthesis with pitch randomization"
+    },
+    {
+      "letter": "J",
+      "name": "Wave Pattern",
+      "visual": {
+        "shape": "wave_segments",
+        "orientation": "oscillating",
+        "fill_type": "stroke",
+        "hue": "#787878",
+        "value": 0.5,
+        "brightness": 0.5,
+        "size_px": 55,
+        "wave_cycles": 3,
+        "texture": "rhythmic",
+        "texture_value": 0.65,
+        "motion": "oscillating",
+        "stroke_weight": 0.6
+      },
+      "sound": {
+        "instrument": "arpeggiator",
+        "oscillator_type": "square",
+        "pitch": {"type": "sequence", "notes": [60, 64, 67, 72]},
+        "octave_range": [4, 5],
+        "duration_ms": 600,
+        "attack_ms": 5,
+        "decay_ms": 80,
+        "sustain_level": 0.3,
+        "release_ms": 120,
+        "amplitude": 0.5,
+        "note_interval_ms": 150,
+        "effects": {
+          "reverb": 0.2,
+          "delay": 0.25,
+          "feedback": 0.3
+        },
+        "frequency_band": "mid",
+        "description": "Arpeggiated sequence, rhythmic pulses"
+      },
+      "mapping_rule": "Wave/oscillating patterns → arpeggiated sequences or rhythmic gates"
+    },
+    {
+      "letter": "K",
+      "name": "Cross Symbol",
+      "visual": {
+        "shape": "cross",
+        "orientation": "perpendicular",
+        "fill_type": "stroke",
+        "hue": "#B0B0B0",
+        "value": 0.7,
+        "brightness": 0.7,
+        "size_px": 8,
+        "width_height_ratio": 1.0,
+        "texture": "sharp",
+        "texture_value": 0.3,
+        "motion": "static",
+        "stroke_weight": 0.8
+      },
+      "sound": {
+        "instrument": "click",
+        "oscillator_type": "impulse",
+        "pitch": {"type": "midi", "value": 96},
+        "octave_range": [7, 8],
+        "duration_ms": 15,
+        "attack_ms": 0.5,
+        "decay_ms": 14.5,
+        "sustain_level": 0.0,
+        "release_ms": 1,
+        "amplitude": 0.6,
+        "effects": {
+          "reverb": 0.05,
+          "highpass_cutoff": 3000
+        },
+        "frequency_band": "treble",
+        "description": "Sharp transient click, very short"
+      },
+      "mapping_rule": "Small cross marks → percussive clicks/ticks"
+    },
+    {
+      "letter": "L",
+      "name": "Square with X",
+      "visual": {
+        "shape": "square_with_x",
+        "orientation": "square",
+        "fill_type": "compound",
+        "hue": "#C0C0C0",
+        "value": 0.75,
+        "brightness": 0.75,
+        "size_px": 12,
+        "width_height_ratio": 1.0,
+        "texture": "complex",
+        "texture_value": 0.55,
+        "motion": "static",
+        "stroke_weight": 0.5
+      },
+      "sound": {
+        "instrument": "metallic_hit",
+        "oscillator_type": "fmsine",
+        "modulation_index": 8.0,
+        "pitch": {"type": "midi", "value": 78},
+        "octave_range": [5, 6],
+        "duration_ms": 180,
+        "attack_ms": 1,
+        "decay_ms": 120,
+        "sustain_level": 0.1,
+        "release_ms": 60,
+        "amplitude": 0.55,
+        "effects": {
+          "reverb": 0.15,
+          "highpass_cutoff": 1200,
+          "distortion": 0.1
+        },
+        "frequency_band": "high_mid",
+        "description": "Metallic FM hit, short decay"
+      },
+      "mapping_rule": "Complex compound shapes → metallic/inharmonic FM tones"
+    },
+    {
+      "letter": "M",
+      "name": "Organic Blob",
+      "visual": {
+        "shape": "irregular_blob",
+        "orientation": "organic",
+        "fill_type": "cluster",
+        "hue": "#505050",
+        "value": 0.35,
+        "brightness": 0.35,
+        "size_px": 95,
+        "vertex_count": 18,
+        "texture": "organic",
+        "texture_value": 0.8,
+        "motion": "static",
+        "stroke_weight": 0.7
+      },
+      "sound": {
+        "instrument": "formant_growl",
+        "oscillator_type": "sawtooth_formant",
+        "pitch": {"type": "midi", "value": 42},
+        "octave_range": [2, 3],
+        "duration_ms": 900,
+        "attack_ms": 80,
+        "decay_ms": 200,
+        "sustain_level": 0.7,
+        "release_ms": 450,
+        "amplitude": 0.65,
+        "formant_frequencies": [400, 800, 2400],
+        "effects": {
+          "reverb": 0.12,
+          "lowpass_cutoff": 500,
+          "resonance": 1.8,
+          "lfo_rate": 0.8
+        },
+        "frequency_band": "bass_mid",
+        "description": "Formant-filtered growl, vowel-like quality"
+      },
+      "mapping_rule": "Organic blob clusters → formant synthesis (vowel-like timbres)"
+    },
+    {
+      "letter": "N",
+      "name": "Architectural Bracket",
+      "visual": {
+        "shape": "bracket",
+        "orientation": "vertical",
+        "fill_type": "composite",
+        "hue": "#808080",
+        "value": 0.55,
+        "brightness": 0.55,
+        "size_px": 110,
+        "internal_divisions": 5,
+        "texture": "structured",
+        "texture_value": 0.6,
+        "motion": "static",
+        "stroke_weight": 1.2
+      },
+      "sound": {
+        "instrument": "plucked_string",
+        "oscillator_type": "karplus_strong",
+        "pitch": {"type": "midi", "value": 55},
+        "octave_range": [3, 4],
+        "duration_ms": 1500,
+        "attack_ms": 3,
+        "decay_ms": 600,
+        "sustain_level": 0.4,
+        "release_ms": 900,
+        "amplitude": 0.58,
+        "damping": 0.5,
+        "effects": {
+          "reverb": 0.28,
+          "lowpass_cutoff": 3000,
+          "chorus": 0.2
+        },
+        "frequency_band": "low_mid",
+        "description": "Plucked string (physical modeling), natural decay"
+      },
+      "mapping_rule": "Architectural/structural elements → physically modeled instruments"
+    },
+    {
+      "letter": "O",
+      "name": "Spiral Pattern",
+      "visual": {
+        "shape": "spiral",
+        "orientation": "radial_outward",
+        "fill_type": "pattern",
+        "hue": "#989898",
+        "value": 0.62,
+        "brightness": 0.62,
+        "size_px": 70,
+        "arm_count": 4,
+        "texture": "complex",
+        "texture_value": 0.75,
+        "motion": "rotating_implied",
+        "stroke_weight": 0.5
+      },
+      "sound": {
+        "instrument": "phaser_sweep",
+        "oscillator_type": "sawtooth",
+        "pitch": {"type": "midi", "value": 64},
+        "octave_range": [4, 5],
+        "duration_ms": 1100,
+        "attack_ms": 50,
+        "decay_ms": 300,
+        "sustain_level": 0.6,
+        "release_ms": 750,
+        "amplitude": 0.52,
+        "effects": {
+          "reverb": 0.35,
+          "phaser": {
+            "frequency": 0.3,
+            "depth": 0.8,
+            "stages": 6
+          },
+          "chorus": 0.4
+        },
+        "frequency_band": "mid",
+        "description": "Phaser-swept tone with rotating modulation"
+      },
+      "mapping_rule": "Spiral/rotating patterns → phaser/rotating speaker effects"
+    },
+    {
+      "letter": "P",
+      "name": "Dense Pillar (Very Loud)",
+      "visual": {
+        "shape": "vertical_pillar",
+        "orientation": "vertical",
+        "fill_type": "dense_composite",
+        "hue": "#FFFFFF",
+        "value": 1.0,
+        "brightness": 1.0,
+        "size_px": 300,
+        "fragment_count": 28,
+        "texture": "very_complex",
+        "texture_value": 0.95,
+        "motion": "static",
+        "stroke_weight": 1.8
+      },
+      "sound": {
+        "instrument": "full_spectrum_noise",
+        "oscillator_type": "whitenoise_shaped",
+        "pitch": {"type": "broadband", "center": 1000},
+        "octave_range": [1, 8],
+        "duration_ms": 400,
+        "attack_ms": 5,
+        "decay_ms": 180,
+        "sustain_level": 0.8,
+        "release_ms": 215,
+        "amplitude": 0.85,
+        "spectral_shaping": "broadband_emphasis",
+        "effects": {
+          "reverb": 0.15,
+          "compression": 0.7,
+          "distortion": 0.2
+        },
+        "frequency_band": "full_spectrum",
+        "description": "Full-spectrum noise burst, high energy, compressed"
+      },
+      "mapping_rule": "Dense vertical pillars (very loud) → full-spectrum noise/impact"
+    }
+  ],
+  "mapping_rules_summary": {
+    "shape_to_timbre": {
+      "circle": "simple harmonics (sine, triangle, bell)",
+      "square": "rich harmonics (saw, square, complex)",
+      "rectangle": "bass tones, sustained or plucked",
+      "line": "drones, pads, or percussive clicks",
+      "cross": "transient clicks, percussive",
+      "grid": "FM synthesis, metallic tones",
+      "wave": "rhythmic gates, arpeggios",
+      "spiral": "modulated/rotating effects",
+      "blob": "formant/vocal synthesis",
+      "bracket": "physical modeling"
+    },
+    "brightness_to_pitch": {
+      "formula": "midi = 36 + (brightness * 48)",
+      "range": "MIDI 36 (C2) to 84 (C6)",
+      "dark": "low bass frequencies",
+      "bright": "high treble frequencies"
+    },
+    "size_to_duration": {
+      "formula": "duration_ms = 100 + (size_px * 10)",
+      "small": "short, staccato (100-300ms)",
+      "medium": "moderate (300-800ms)",
+      "large": "sustained (800-2400ms)"
+    },
+    "texture_to_complexity": {
+      "smooth": "pure tones, low noise (texture < 0.3)",
+      "grainy": "added noise, filtered (texture 0.3-0.7)",
+      "complex": "granular, FM, multiple oscillators (texture > 0.7)"
+    },
+    "stroke_weight_to_amplitude": {
+      "formula": "amplitude = 0.3 + (stroke_weight * 0.3)",
+      "thin": "quiet, delicate",
+      "thick": "loud, prominent"
+    },
+    "pattern_density_to_grain_count": {
+      "sparse": "1-5 grains/notes",
+      "medium": "10-20 grains/notes",
+      "dense": "30-60 grains/notes"
+    }
+  },
+  "frequency_band_definitions": {
+    "sub_bass": {"range_hz": "20-60", "midi_range": "24-36", "visual_position": "bottom_10_percent"},
+    "bass": {"range_hz": "60-250", "midi_range": "36-48", "visual_position": "bottom_20_percent"},
+    "low_mid": {"range_hz": "250-500", "midi_range": "48-60", "visual_position": "lower_middle_30_percent"},
+    "mid": {"range_hz": "500-2000", "midi_range": "60-72", "visual_position": "middle_40_percent"},
+    "high_mid": {"range_hz": "2000-6000", "midi_range": "72-84", "visual_position": "upper_middle_60_percent"},
+    "treble": {"range_hz": "6000-20000", "midi_range": "84-108", "visual_position": "top_20_percent"},
+    "full_spectrum": {"range_hz": "20-20000", "midi_range": "24-108", "visual_position": "entire_height"}
+  }
+}

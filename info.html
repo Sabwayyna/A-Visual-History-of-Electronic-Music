@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Info</title>
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-weight: 400;
+            background-color: #fff;
+            color: #000;
+            min-height: 100vh;
+        }
+
+        #header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 30px;
+            z-index: 50;
+        }
+
+        #header-title a {
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        #header-nav {
+            display: flex;
+            gap: 24px;
+        }
+
+        #header-nav a {
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-decoration: none;
+            color: inherit;
+            opacity: 0.5;
+            transition: opacity 0.15s ease;
+        }
+
+        #header-nav a:hover {
+            opacity: 1;
+        }
+
+        #header-nav a.active {
+            opacity: 1;
+        }
+
+        #content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 80px 30px 30px;
+        }
+
+        #content p {
+            font-size: 14px;
+            opacity: 0.4;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <div id="header-title"><a href="index.html">A History of Digital Music</a></div>
+        <nav id="header-nav">
+            <a href="info.html" class="active">Info</a>
+            <a href="visualizer.html">Visualizer</a>
+        </nav>
+    </div>
+
+    <div id="content">
+        <p>Info</p>
+    </div>
+</body>
+</html>

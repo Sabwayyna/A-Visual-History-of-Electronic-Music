@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline - Horizontal</title>
+    <link rel="stylesheet" href="https://use.typekit.net/hdx3amb.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "articulat-cf", sans-serif;
+            font-weight: 400;
+            font-style: normal;
+            background-color: #fff;
+            color: #000;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #song-title {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: 400;
+            font-style: italic;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+            white-space: nowrap;
+            pointer-events: none;
+            letter-spacing: 1px;
+        }
+
+        #click-hint {
+            position: absolute;
+            top: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 400;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+            white-space: nowrap;
+            pointer-events: none;
+            letter-spacing: 1px;
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        body.dark-mode #click-hint {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        #artist-name {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: 400;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+            white-space: nowrap;
+            pointer-events: none;
+            letter-spacing: 1px;
+        }
+
+        #timeline-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            padding: 0 60px;
+        }
+
+        .year-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+            padding: 20px 10px;
+            flex: 1;
+            user-select: none;
+        }
+
+        .year-item:active {
+            opacity: 0.7;
+        }
+
+        .year-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s ease;
+            pointer-events: none;
+        }
+
+        .year-digit {
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Arial", sans-serif;
+            font-size: 32px;
+            font-weight: 400;
+            opacity: 0.6;
+            transition: all 0.15s ease;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            pointer-events: none;
+        }
+
+        .year-item:hover .year-digit {
+            opacity: 1;
+        }
+
+        /* Loading screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-text {
+            font-family: 'articulat-cf', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 18px;
+            margin-top: 20px;
+            opacity: 0.7;
+            color: #fff;
+        }
+
+        .loading-progress {
+            font-family: 'articulat-cf', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 18px;
+            margin-top: 10px;
+            opacity: 0.3;
+            font-variant-numeric: tabular-nums;
+            color: #fff;
+        }
+
+        .icon-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            width: 60px;
+            height: 60px;
+            position: relative;
+        }
+
+        .icon {
+            width: 50px;
+            height: 50px;
+            position: absolute;
+            object-fit: contain;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        .icon.active {
+            display: block;
+        }
+
+        #continue-prompt {
+            display: none;
+            font-size: 18px;
+            opacity: 0.6;
+            margin-top: 20px;
+            color: #fff;
+        }
+
+        #loading-screen.ready {
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Highlight active year */
+        .year-item.active .year-digit {
+            opacity: 1;
+            font-weight: 500;
+        }
+
+        /* Color invert button */
+        #color-toggle {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            width: 40px;
+            height: 40px;
+            border: 2px solid #000;
+            background: transparent;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.15s ease;
+            border-radius: 50%;
+        }
+
+        #color-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        #color-toggle .circle-half {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            top: 0;
+        }
+
+        #color-toggle .left {
+            left: 0;
+            background: #000;
+            border-radius: 50% 0 0 50%;
+        }
+
+        #color-toggle .right {
+            right: 0;
+            background: transparent;
+            border-radius: 0 50% 50% 0;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: #000;
+            color: #fff;
+        }
+
+        body.dark-mode #color-toggle {
+            border-color: #fff;
+        }
+
+        body.dark-mode #color-toggle .left {
+            background: transparent;
+        }
+
+        body.dark-mode #color-toggle .right {
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="icon-container">
+            <img src="bouda.png" alt="Bouba" class="icon">
+            <img src="kiki.png" alt="Kiki" class="icon">
+        </div>
+        <div class="loading-text">Loading audio...</div>
+        <div class="loading-progress" id="loading-progress">0 / 13</div>
+        <div id="continue-prompt">Click anywhere to continue</div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="container">
+        <div id="song-title"></div>
+        <div id="click-hint">click to visualize</div>
+        <div id="timeline-container"></div>
+        <div id="artist-name"></div>
+    </div>
+
+    <!-- Color Toggle Button -->
+    <button id="color-toggle" aria-label="Toggle color mode">
+        <div class="circle-half left"></div>
+        <div class="circle-half right"></div>
+    </button>
+
+    <script>
+        const songs = [
+            { year: 1948, title: "Cinq Etudes de Bruits", artist: "Pierre Schaeffer", audio: "Musique/01 - Pierre Schaeffer - Cinq études de bruits (1948) - Etude aux chemins de fer.mp3", path: "songs/pierre-schaeffer-cinq-études-de-bruits-1948.html", startTime: 0 },
+            { year: 1953, title: "Studie I", artist: "Karlheinz Stockhausen", audio: "Musique/Karlheinz Stockhausen_ Studie I (1953).mp3", path: "songs/karlheinz-stockhausen-studio-i-1953.html", startTime: 0 },
+            { year: 1960, title: "Four Aspects", artist: "Daphne Oram", audio: "Musique/04 - Daphne Oram - Four Aspects.mp3", path: "songs/daphne-oram-four-aspects-1960.html", startTime: 0 },
+            { year: 1963, title: "Doctor Who Theme", artist: "Delia Derbyshire", audio: "Musique/05 - Doctor Who (1963) -  Original Theme music video.mp3", path: "songs/delia-derbyshire-doctor-who-theme-1963.html", startTime: 0 },
+            { year: 1974, title: "Autobahn", artist: "Kraftwerk", audio: "Musique/07 - Kraftwerk - Autobahn - 1974 Full Version.mp3", path: "songs/kraftwerk-autobahn-1974.html", startTime: 0 },
+            { year: 1978, title: "Music for Airports 1/1", artist: "Brian Eno", audio: "Musique/08 - Brian Eno - 1:1  Music for Airports (Remastered 2004).mp3", path: "songs/brian-eno-music-for-airports-11-1978.html", startTime: 0 },
+            { year: 1980, title: "Patchwork", artist: "Laurie Spiegel", audio: "Musique/Patchwork.mp3", path: "songs/laurie-spiegel-patchwork-1980.html", startTime: 0 },
+            { year: 1983, title: "Bhairav", artist: "Charanjit Singh", audio: "Musique/Charanjit Singh - Raga Bhairav (1982).mp3", path: "songs/charanjit-singh-bhairav-1983.html", startTime: 0 },
+            { year: 1986, title: "Can You Feel It", artist: "Mr. Fingers (Larry Heard)", audio: "Musique/09 - Mr Fingers - Can You Feel It.mp3", path: "songs/mr-fingers-larry-heard-can-you-feel-it-1986.html", startTime: 0 },
+            { year: 1995, title: "Tri Repetae", artist: "Autechre", audio: "Musique/11 - Dael · Autechre.mp3", path: "songs/autechre-dael-1995.html", startTime: 0 },
+            { year: 1998, title: "Roygbiv", artist: "Boards of Canada", audio: "Musique/12 - Boards of Canada — Roygbiv (1998).mp3", path: "songs/boards-of-canada-roygbiv-1998.html", startTime: 0 },
+            { year: 2005, title: "Data Matrix", artist: "Ryoji Ikeda", audio: "Musique/13 - Ryoji Ikeda - data.matrix.mp3", path: "songs/ryoji-ikeda-datamatrix-2005.html", startTime: 0 },
+            { year: 2025, title: "Busy Ready What, Corroborators", artist: "Rashad Becker", audio: "Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3", path: "songs/rashad-becker-busy-ready-what-corroborators-2025.html", startTime: 0 }
+        ];
+
+        const MIN_SCALE = 0.5;
+        const MAX_SCALE = 3.0;
+        const FALLOFF_FACTOR = 4.5;
+
+        let audioCache = {};
+        let currentAudio = null;
+        let hoveredIndex = null;
+
+        const songTitle = document.getElementById('song-title');
+        const artistName = document.getElementById('artist-name');
+        const clickHint = document.getElementById('click-hint');
+        const timelineContainer = document.getElementById('timeline-container');
+        const loadingScreen = document.getElementById('loading-screen');
+        const continuePrompt = document.getElementById('continue-prompt');
+        const loadingProgress = document.getElementById('loading-progress');
+
+        // Alternating icon animation (kiki/bouba switching)
+        const icons = document.querySelectorAll('.icon');
+        let currentIconIndex = 0;
+        icons[currentIconIndex].classList.add('active');
+
+        setInterval(() => {
+            icons[currentIconIndex].classList.remove('active');
+            currentIconIndex = (currentIconIndex + 1) % icons.length;
+            icons[currentIconIndex].classList.add('active');
+        }, 500); // Switch every 500ms
+
+        // Preload all audio
+        async function preloadAudio() {
+            let loadedCount = 0;
+            const totalCount = songs.length;
+
+            const promises = songs.map((song, index) => {
+                return new Promise((resolve) => {
+                    const audio = new Audio();
+                    audio.preload = 'auto';
+
+                    let resolved = false;
+
+                    const onSuccess = () => {
+                        if (!resolved) {
+                            resolved = true;
+                            audioCache[song.year] = audio;
+                            loadedCount++;
+                            loadingProgress.textContent = `${loadedCount} / ${totalCount}`;
+                            console.log(`Loaded: ${song.title} (${song.year})`);
+                            resolve(true);
+                        }
+                    };
+
+                    const onError = (e) => {
+                        if (!resolved) {
+                            resolved = true;
+                            loadedCount++;
+                            loadingProgress.textContent = `${loadedCount} / ${totalCount}`;
+                            console.warn(`Failed to load: ${song.title} (${song.year})`, e);
+                            resolve(false);
+                        }
+                    };
+
+                    // Multiple event listeners to catch when audio is ready
+                    audio.addEventListener('canplaythrough', onSuccess, { once: true });
+                    audio.addEventListener('loadeddata', onSuccess, { once: true });
+                    audio.addEventListener('error', onError, { once: true });
+
+                    // Set timeout to resolve after 10 seconds regardless
+                    setTimeout(() => {
+                        if (!resolved) {
+                            console.warn(`Timeout loading: ${song.title} (${song.year})`);
+                            onError(new Error('Timeout'));
+                        }
+                    }, 10000);
+
+                    // Set the source AFTER setting up listeners
+                    audio.src = song.audio;
+                    audio.load();
+                });
+            });
+
+            await Promise.all(promises);
+            console.log('All audio files processed');
+
+            // Hide loading text and show continue prompt
+            const loadingText = document.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.style.display = 'none';
+            }
+            continuePrompt.style.display = 'block';
+            loadingScreen.classList.add('ready');
+        }
+
+        // Create timeline with vertically stacked year digits
+        function createTimeline() {
+            songs.forEach((song, index) => {
+                const yearItem = document.createElement('div');
+                yearItem.className = 'year-item';
+                yearItem.dataset.index = index;
+
+                const yearColumn = document.createElement('div');
+                yearColumn.className = 'year-column';
+
+                // Split year into individual digits and create vertical stack
+                const yearString = song.year.toString();
+                yearString.split('').forEach(digit => {
+                    const digitElement = document.createElement('div');
+                    digitElement.className = 'year-digit';
+                    digitElement.textContent = digit;
+                    yearColumn.appendChild(digitElement);
+                });
+
+                yearItem.appendChild(yearColumn);
+
+                yearItem.addEventListener('mouseenter', () => handleHover(index));
+                yearItem.addEventListener('mouseleave', handleLeave);
+                yearItem.addEventListener('click', () => handleClick(index));
+
+                timelineContainer.appendChild(yearItem);
+            });
+        }
+
+        function handleHover(index) {
+            hoveredIndex = index;
+            updateWaveform();
+
+            const song = songs[index];
+            songTitle.textContent = song.title;
+            artistName.textContent = song.artist;
+            songTitle.style.opacity = '1';
+            artistName.style.opacity = '1';
+            clickHint.style.opacity = '1';
+
+            // Add active class
+            document.querySelectorAll('.year-item').forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Play audio starting from the specified startTime (skips silence)
+            if (audioCache[song.year]) {
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                }
+                currentAudio = audioCache[song.year];
+                currentAudio.currentTime = song.startTime || 0;
+                currentAudio.play().catch(e => console.warn('Audio play failed:', e));
+            }
+        }
+
+        function handleLeave() {
+            hoveredIndex = null;
+            updateWaveform();
+
+            songTitle.style.opacity = '0';
+            artistName.style.opacity = '0';
+            clickHint.style.opacity = '0';
+
+            // Remove active class
+            document.querySelectorAll('.year-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Stop audio
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+        }
+
+        function handleClick(index) {
+            const song = songs[index];
+            console.log('Clicked year:', song.year, 'Path:', song.path);
+
+            // Stop any playing audio
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+
+            // Navigate to song page
+            if (song.path) {
+                console.log('Navigating to:', song.path);
+                window.location.href = song.path;
+            } else {
+                console.error('No path defined for song:', song);
+            }
+        }
+
+        function updateWaveform() {
+            const yearItems = document.querySelectorAll('.year-item');
+
+            yearItems.forEach((yearItem, index) => {
+                const yearColumn = yearItem.querySelector('.year-column');
+                const yearDigits = yearItem.querySelectorAll('.year-digit');
+
+                if (hoveredIndex === null) {
+                    // Reset to default state
+                    yearColumn.style.transform = `scale(0.55)`;
+                    yearDigits.forEach(digit => {
+                        digit.style.opacity = '0.6';
+                    });
+                } else {
+                    // Calculate distance from hovered item
+                    const distance = Math.abs(index - hoveredIndex);
+                    const normalizedDistance = Math.min(distance / FALLOFF_FACTOR, 1);
+
+                    // Calculate scale with gradual exponential falloff for smooth wave
+                    const scaleRange = MAX_SCALE - MIN_SCALE;
+                    const scale = MAX_SCALE - (scaleRange * Math.pow(normalizedDistance, 1.3));
+
+                    // Calculate opacity with gradual falloff
+                    const opacity = 1 - (0.4 * Math.pow(normalizedDistance, 1.2));
+
+                    yearColumn.style.transform = `scale(${scale})`;
+                    yearDigits.forEach(digit => {
+                        digit.style.opacity = opacity;
+                    });
+                }
+            });
+        }
+
+        // Initialize
+        createTimeline();
+        preloadAudio();
+
+        // Click anywhere on loading screen to continue (when ready)
+        loadingScreen.addEventListener('click', () => {
+            if (loadingScreen.classList.contains('ready')) {
+                loadingScreen.classList.add('hidden');
+            }
+        });
+
+        // Color toggle functionality
+        const colorToggle = document.getElementById('color-toggle');
+        colorToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+    </script>
+</body>
+</html>

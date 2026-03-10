@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visual-Sonic Alphabet Chart</title>
+  <script src="https://unpkg.com/tone@14.8.49/build/Tone.js"></script>
+  <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("../fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "LinotypeUnivers", sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      background: #000;
+      color: #fff;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .main-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    .chart-area {
+      flex: 1;
+      position: relative;
+      background: #000;
+      border-right: 1px solid #333;
+    }
+
+    canvas {
+      display: block;
+      cursor: crosshair;
+    }
+
+    .axes-labels {
+      position: absolute;
+      color: #666;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .x-axis-label {
+      bottom: 8px;
+      right: 50%;
+      transform: translateX(50%);
+    }
+
+    .y-axis-label {
+      top: 50%;
+      left: 8px;
+      transform: rotate(-90deg) translateX(-50%);
+      transform-origin: left center;
+    }
+
+    .sidebar {
+      width: 420px;
+      background: #0a0a0a;
+      border-left: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid #333;
+    }
+
+    .sidebar-header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-header p {
+      font-size: 11px;
+      color: #888;
+      line-height: 1.6;
+    }
+
+    .info-panel {
+      padding: 24px;
+      flex: 1;
+    }
+
+    .info-section {
+      margin-bottom: 24px;
+    }
+
+    .info-section h3 {
+      font-size: 12px;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #222;
+      padding-bottom: 6px;
+    }
+
+    .letter-display {
+      font-size: 64px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 8px;
+      text-align: center;
+      font-family: 'Georgia', serif;
+    }
+
+    .name-display {
+      font-size: 14px;
+      color: #ccc;
+      text-align: center;
+      margin-bottom: 16px;
+      font-style: italic;
+    }
+
+    .visual-preview {
+      width: 100%;
+      height: 150px;
+      background: #000;
+      border: 1px solid #333;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .param-list {
+      font-size: 10px;
+      line-height: 1.8;
+      color: #999;
+      font-family: 'Courier New', monospace;
+    }
+
+    .param-list .key {
+      color: #6a9fb5;
+    }
+
+    .param-list .value {
+      color: #ccc;
+    }
+
+    .play-button {
+      width: 100%;
+      padding: 14px;
+      background: #fff;
+      color: #000;
+      border: none;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      transition: all 0.15s ease;
+    }
+
+    .play-button:hover {
+      background: #ddd;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(255,255,255,0.2);
+    }
+
+    .play-button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .controls {
+      padding: 24px;
+      border-top: 1px solid #333;
+      background: #050505;
+    }
+
+    .control-group {
+      margin-bottom: 16px;
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .control-group input[type="range"] {
+      width: 100%;
+      height: 2px;
+      background: #333;
+      outline: none;
+  
+    }
+
+    .control-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      background: #fff;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+
+    .control-group input[type="range"]::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      background: #fff;
+      cursor: pointer;
+      border-radius: 50%;
+      border: none;
+    }
+
+    .control-value {
+      font-size: 11px;
+      color: #ccc;
+      margin-top: 4px;
+    }
+
+    .download-button {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      color: #fff;
+      border: 1px solid #333;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.15s ease;
+    }
+
+    .download-button:hover {
+      background: #111;
+      border-color: #666;
+    }
+
+    .instructions {
+      font-size: 10px;
+      color: #666;
+      line-height: 1.6;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #222;
+    }
+
+    /* Back to visualizer link - top-left corner */
+    #backLink {
+      position: fixed;
+      top: 24px;
+      left: 24px;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      color: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      z-index: 100;
+      transition: all 0.3s ease;
+      font-family: 'Courier New', monospace;
+      text-transform: uppercase;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #backLink:hover {
+      color: rgba(255, 255, 255, 1);
+      letter-spacing: 3px;
+      transform: translateX(-2px);
+    }
+
+    #backLink::before {
+      content: "←";
+      font-size: 14px;
+      transition: transform 0.3s ease;
+    }
+
+    #backLink:hover::before {
+      transform: translateX(-4px);
+    }
+
+    .legend {
+      position: absolute;
+      top: 76px;
+      right: 16px;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid #333;
+      padding: 12px;
+      font-size: 9px;
+      color: #888;
+      max-width: 180px;
+    }
+
+    .legend h4 {
+      font-size: 10px;
+      color: #ccc;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .legend-item {
+      margin: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border: 1px solid #666;
+    }
+
+    .hover-tooltip {
+      position: absolute;
+      background: rgba(0,0,0,0.95);
+      border: 1px solid #fff;
+      padding: 8px 12px;
+      font-size: 10px;
+      color: #fff;
+      pointer-events: none;
+      display: none;
+      z-index: 100;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <!-- Back to visualizer link -->
+    <a href="visualizer.html" id="backLink">
+      <span>Visualizer</span>
+    </a>
+
+    <!-- Chart Area -->
+    <div class="chart-area">
+      <canvas id="chart"></canvas>
+
+      <div class="axes-labels x-axis-label">
+        Texture / Complexity →
+      </div>
+      <div class="axes-labels y-axis-label">
+        ← Brightness / Pitch
+      </div>
+
+      <div class="legend">
+        <h4>Shape Legend</h4>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #fff; border-radius: 50%;"></div>
+          <span>Circle</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #fff;"></div>
+          <span>Square/Rect</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: none; border: 1px solid #fff;"></div>
+          <span>Line/Stroke</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #888;"></div>
+          <span>Pattern</span>
+        </div>
+      </div>
+
+      <div class="hover-tooltip" id="tooltip"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h1>Visual-Sonic Alphabet</h1>
+        <p>Interactive mapping between visual attributes and sound parameters. Hover over points to preview, click to select and play.</p>
+      </div>
+
+      <div class="info-panel" id="infoPanel">
+        <div class="info-section">
+          <div style="text-align: center; color: #666; padding: 40px 20px; font-size: 11px;">
+            Select a letter from the chart to view details and play sound.
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label for="volume">Master Volume</label>
+          <input type="range" id="volume" min="0" max="100" value="70">
+          <div class="control-value" id="volumeValue">70%</div>
+        </div>
+
+        <div class="control-group">
+          <label for="reverbMix">Global Reverb</label>
+          <input type="range" id="reverbMix" min="0" max="100" value="30">
+          <div class="control-value" id="reverbValue">30%</div>
+        </div>
+
+        <button class="download-button" id="downloadBtn">Download JSON</button>
+
+        <div class="instructions">
+          <strong>Controls:</strong><br>
+          • Hover: Preview letter info<br>
+          • Click: Select & play sound<br>
+          • Adjust volume & reverb above
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load alphabet data
+    let alphabetData = null;
+    let selectedLetter = null;
+    let synth = null;
+    let reverb = null;
+    let masterVolume = null;
+
+    // Canvas setup
+    const canvas = document.getElementById('chart');
+    const ctx = canvas.getContext('2d');
+    const tooltip = document.getElementById('tooltip');
+
+    // Resize canvas
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      if (alphabetData) drawChart();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Initialize Tone.js
+    async function initAudio() {
+      await Tone.start();
+
+      // Master volume
+      masterVolume = new Tone.Volume(-10).toDestination();
+
+      // Global reverb
+      reverb = new Tone.Reverb({
+        decay: 2.5,
+        wet: 0.3
+      }).connect(masterVolume);
+
+      // Multi-synth for different instruments
+      synth = {
+        sine: new Tone.Synth({ oscillator: { type: 'sine' }}).connect(reverb),
+        saw: new Tone.Synth({ oscillator: { type: 'sawtooth' }}).connect(reverb),
+        square: new Tone.Synth({ oscillator: { type: 'square' }}).connect(reverb),
+        triangle: new Tone.Synth({ oscillator: { type: 'triangle' }}).connect(reverb),
+        fm: new Tone.FMSynth().connect(reverb),
+        am: new Tone.AMSynth().connect(reverb),
+        pluck: new Tone.PluckSynth().connect(reverb),
+        noise: new Tone.NoiseSynth().connect(reverb),
+      };
+    }
+
+    // Load JSON data
+    fetch('assets/visual-sonic-alphabet.json')
+      .then(res => res.json())
+      .then(data => {
+        alphabetData = data;
+        drawChart();
+        initAudio();
+      })
+      .catch(err => {
+        console.error('Error loading alphabet data:', err);
+        alert('Could not load visual-sonic-alphabet.json');
+      });
+
+    // Map visual to x,y coordinates
+    function mapToXY(visual, padding = 60) {
+      const x = padding + visual.texture_value * (canvas.width - padding * 2);
+      const y = padding + (1 - visual.value) * (canvas.height - padding * 2);
+      return { x, y };
+    }
+
+    // Draw chart
+    function drawChart() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const padding = 60;
+
+      // Draw grid
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth = 1;
+
+      // Vertical lines
+      for (let i = 0; i <= 10; i++) {
+        const x = padding + (i / 10) * (canvas.width - padding * 2);
+        ctx.beginPath();
+        ctx.moveTo(x, padding);
+        ctx.lineTo(x, canvas.height - padding);
+        ctx.stroke();
+      }
+
+      // Horizontal lines
+      for (let i = 0; i <= 10; i++) {
+        const y = padding + (i / 10) * (canvas.height - padding * 2);
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(canvas.width - padding, y);
+        ctx.stroke();
+      }
+
+      // Draw axes
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(padding, padding);
+      ctx.lineTo(padding, canvas.height - padding);
+      ctx.lineTo(canvas.width - padding, canvas.height - padding);
+      ctx.stroke();
+
+      // Draw each letter
+      alphabetData.alphabet.forEach((entry, index) => {
+        const pos = mapToXY(entry.visual);
+        entry._screenPos = pos;
+        entry._radius = Math.max(8, entry.visual.size_px / 8);
+
+        drawVisualElement(entry, pos.x, pos.y);
+      });
+    }
+
+    // Draw visual element
+    function drawVisualElement(entry, x, y) {
+      const v = entry.visual;
+      const isSelected = selectedLetter && selectedLetter.letter === entry.letter;
+
+      ctx.save();
+
+      // Selection highlight
+      if (isSelected) {
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y, entry._radius + 8, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Set color (grayscale from value)
+      const gray = Math.floor(v.value * 255);
+      ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
+      ctx.strokeStyle = `rgb(${gray}, ${gray}, ${gray})`;
+
+      // Draw shape
+      const size = entry._radius;
+
+      if (v.shape.includes('circle')) {
+        ctx.beginPath();
+        if (v.fill_type === 'outline' || v.fill_type === 'stroke') {
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.lineWidth = v.stroke_weight || 1;
+          ctx.stroke();
+        } else {
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (v.shape.includes('square') || v.shape.includes('rectangle')) {
+        const w = size * (v.width_height_ratio || 1);
+        const h = size;
+        if (v.fill_type === 'solid') {
+          ctx.fillRect(x - w/2, y - h/2, w, h);
+        } else {
+          ctx.lineWidth = v.stroke_weight || 1;
+          ctx.strokeRect(x - w/2, y - h/2, w, h);
+        }
+      } else if (v.shape.includes('line')) {
+        ctx.lineWidth = v.stroke_weight || 1;
+        ctx.beginPath();
+        if (v.orientation === 'horizontal') {
+          ctx.moveTo(x - size, y);
+          ctx.lineTo(x + size, y);
+        } else if (v.orientation === 'vertical') {
+          ctx.moveTo(x, y - size);
+          ctx.lineTo(x, y + size);
+        } else {
+          ctx.moveTo(x - size, y - size);
+          ctx.lineTo(x + size, y + size);
+        }
+        ctx.stroke();
+      } else if (v.shape.includes('cross')) {
+        ctx.lineWidth = v.stroke_weight || 1;
+        ctx.beginPath();
+        ctx.moveTo(x - size, y);
+        ctx.lineTo(x + size, y);
+        ctx.moveTo(x, y - size);
+        ctx.lineTo(x, y + size);
+        ctx.stroke();
+      } else if (v.shape.includes('grid')) {
+        const cells = 4;
+        const cellSize = (size * 2) / cells;
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i <= cells; i++) {
+          ctx.beginPath();
+          ctx.moveTo(x - size + i * cellSize, y - size);
+          ctx.lineTo(x - size + i * cellSize, y + size);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(x - size, y - size + i * cellSize);
+          ctx.lineTo(x + size, y - size + i * cellSize);
+          ctx.stroke();
+        }
+      } else {
+        // Default: circle
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw letter label
+      ctx.fillStyle = isSelected ? '#fff' : '#666';
+      ctx.font = '10px "Courier New"';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(entry.letter, x, y - size - 12);
+
+      ctx.restore();
+    }
+
+    // Find letter at position
+    function findLetterAt(mx, my) {
+      if (!alphabetData) return null;
+
+      for (const entry of alphabetData.alphabet) {
+        if (!entry._screenPos) continue;
+        const dx = mx - entry._screenPos.x;
+        const dy = my - entry._screenPos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist <= entry._radius + 8) {
+          return entry;
+        }
+      }
+      return null;
+    }
+
+    // Mouse move handler (tooltip)
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      const letter = findLetterAt(mx, my);
+
+      if (letter) {
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 15) + 'px';
+        tooltip.style.top = (e.clientY + 15) + 'px';
+        tooltip.innerHTML = `<strong>${letter.letter}</strong> — ${letter.name}<br>
+          <span style="color: #888;">${letter.sound.description}</span>`;
+        canvas.style.cursor = 'pointer';
+      } else {
+        tooltip.style.display = 'none';
+        canvas.style.cursor = 'crosshair';
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+    });
+
+    // Click handler (select and play)
+    canvas.addEventListener('click', async (e) => {
+      await initAudio();
+
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      const letter = findLetterAt(mx, my);
+
+      if (letter) {
+        selectedLetter = letter;
+        drawChart();
+        updateInfoPanel(letter);
+        playSound(letter);
+      }
+    });
+
+    // Update info panel
+    function updateInfoPanel(entry) {
+      const panel = document.getElementById('infoPanel');
+
+      const visualParams = Object.entries(entry.visual)
+        .map(([key, val]) => {
+          const valStr = typeof val === 'number' ? val.toFixed(2) : val;
+          return `<div><span class="key">${key}:</span> <span class="value">${valStr}</span></div>`;
+        })
+        .join('');
+
+      const soundParams = Object.entries(entry.sound)
+        .filter(([key]) => !['effects', 'pitch'].includes(key))
+        .map(([key, val]) => {
+          const valStr = typeof val === 'object' ? JSON.stringify(val) : val;
+          return `<div><span class="key">${key}:</span> <span class="value">${valStr}</span></div>`;
+        })
+        .join('');
+
+      panel.innerHTML = `
+        <div class="info-section">
+          <div class="letter-display">${entry.letter}</div>
+          <div class="name-display">${entry.name}</div>
+
+          <canvas id="visualPreview" class="visual-preview"></canvas>
+
+          <button class="play-button" onclick="playSound(selectedLetter)">
+            ▶ Play Sound
+          </button>
+        </div>
+
+        <div class="info-section">
+          <h3>Visual Attributes</h3>
+          <div class="param-list">${visualParams}</div>
+        </div>
+
+        <div class="info-section">
+          <h3>Sound Parameters</h3>
+          <div class="param-list">${soundParams}</div>
+        </div>
+
+        <div class="info-section">
+          <h3>Mapping Rule</h3>
+          <div class="param-list">
+            <div style="color: #aaa; line-height: 1.6;">${entry.mapping_rule}</div>
+          </div>
+        </div>
+      `;
+
+      // Draw visual preview
+      setTimeout(() => {
+        const previewCanvas = document.getElementById('visualPreview');
+        if (previewCanvas) {
+          previewCanvas.width = previewCanvas.clientWidth;
+          previewCanvas.height = 150;
+          const pctx = previewCanvas.getContext('2d');
+          const centerX = previewCanvas.width / 2;
+          const centerY = previewCanvas.height / 2;
+
+          // Scale up the visual element
+          const scaledEntry = {
+            ...entry,
+            _radius: Math.min(entry.visual.size_px, 60),
+            visual: entry.visual
+          };
+
+          pctx.save();
+          pctx.translate(centerX, centerY);
+          drawVisualElement.call({ctx: pctx}, scaledEntry, 0, 0);
+          pctx.restore();
+        }
+      }, 10);
+    }
+
+    // Play sound
+    function playSound(entry) {
+      if (!entry || !synth) return;
+
+      const sound = entry.sound;
+      const midi = typeof sound.pitch === 'object' ? sound.pitch.value : sound.pitch.value || 60;
+      const note = Tone.Frequency(midi, 'midi').toNote();
+      const duration = (sound.duration_ms || 400) / 1000;
+
+      // Select appropriate synth
+      let instrument = synth.sine;
+      if (sound.instrument.includes('fm') || sound.oscillator_type.includes('fm')) {
+        instrument = synth.fm;
+      } else if (sound.instrument.includes('pluck') || sound.oscillator_type === 'karplus_strong') {
+        instrument = synth.pluck;
+      } else if (sound.instrument.includes('noise')) {
+        instrument = synth.noise;
+        instrument.triggerAttackRelease(duration);
+        return;
+      } else if (sound.oscillator_type === 'sawtooth' || sound.oscillator_type.includes('saw')) {
+        instrument = synth.saw;
+      } else if (sound.oscillator_type === 'square') {
+        instrument = synth.square;
+      } else if (sound.oscillator_type === 'triangle') {
+        instrument = synth.triangle;
+      }
+
+      // Set envelope
+      if (sound.attack_ms) {
+        instrument.envelope.attack = sound.attack_ms / 1000;
+      }
+      if (sound.decay_ms) {
+        instrument.envelope.decay = sound.decay_ms / 1000;
+      }
+      if (sound.sustain_level !== undefined) {
+        instrument.envelope.sustain = sound.sustain_level;
+      }
+      if (sound.release_ms) {
+        instrument.envelope.release = sound.release_ms / 1000;
+      }
+
+      // Play
+      instrument.triggerAttackRelease(note, duration);
+    }
+
+    // Volume control
+    document.getElementById('volume').addEventListener('input', (e) => {
+      const vol = parseInt(e.target.value);
+      document.getElementById('volumeValue').textContent = vol + '%';
+      if (masterVolume) {
+        masterVolume.volume.value = (vol / 100) * 20 - 20; // -20 to 0 dB
+      }
+    });
+
+    // Reverb control
+    document.getElementById('reverbMix').addEventListener('input', (e) => {
+      const mix = parseInt(e.target.value);
+      document.getElementById('reverbValue').textContent = mix + '%';
+      if (reverb) {
+        reverb.wet.value = mix / 100;
+      }
+    });
+
+    // Download JSON
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      if (!alphabetData) return;
+
+      const blob = new Blob([JSON.stringify(alphabetData, null, 2)], {
+        type: 'application/json'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'visual-sonic-alphabet.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Make playSound globally accessible for the play button
+    window.playSound = playSound;
+  </script>
+</body>
+</html>

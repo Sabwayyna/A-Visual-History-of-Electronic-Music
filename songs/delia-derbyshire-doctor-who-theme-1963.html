@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Who Theme - Delia Derbyshire (1963)</title>
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("../fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        /* Video container */
+        #video-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        #video-container video {
+            max-width: 100%;
+            max-height: 100%;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Start overlay */
+        #startOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            cursor: pointer;
+            transition: opacity 0.4s ease;
+        }
+
+        #startOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #startOverlay span {
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.5;
+        }
+
+        /* Back to timeline link */
+        #backLink {
+            position: fixed;
+            top: 20px;
+            left: 24px;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #backLink:hover {
+            color: rgba(255, 255, 255, 1);
+            letter-spacing: 3px;
+            transform: translateX(-2px);
+        }
+
+        #backLink::before {
+            content: "\2190";
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+
+        #backLink:hover::before {
+            transform: translateX(-4px);
+        }
+
+        /* Bottom-left navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            display: flex;
+            gap: 16px;
+            z-index: 100;
+        }
+
+        .nav-link {
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+
+        .nav-link svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .nav-tooltip {
+            position: fixed;
+            bottom: 76px;
+            background: rgba(255, 255, 255, 0.9);
+            color: black;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover .nav-tooltip {
+            opacity: 1;
+        }
+
+
+        #song-header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            white-space: nowrap;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* ── Info Panel ── */
+        #song-header {
+            cursor: pointer;
+            pointer-events: auto;
+            transition: color 0.15s ease;
+        }
+
+        #song-header:hover {
+            color: rgba(255, 255, 255, 1.0);
+        }
+
+        #song-header:active {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        #song-header.open {
+            color: rgba(255, 255, 255, 1.0);
+        }
+
+        #info-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.76);
+            z-index: 9998;
+            transform: translateY(-100%);
+            transition: transform 0.38s cubic-bezier(0.77, 0, 0.175, 1);
+            overflow-y: auto;
+        }
+
+        #info-panel.open {
+            transform: translateY(0);
+        }
+
+        #info-panel-inner {
+            padding: 2vh 7vw 12vh;
+        }
+
+        .ip-close-btn {
+            position: sticky;
+            top: 0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 2.5vh 0 2vh;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 0.85vw;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.28);
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: color 0.2s;
+            user-select: none;
+        }
+
+        .ip-close-btn:hover {
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .ip-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: 2.5vw;
+            row-gap: 1vh;
+            margin-bottom: 4vh;
+        }
+
+        .ip-year {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 3.8vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.0;
+            color: rgba(255, 255, 255, 0.72);
+            text-transform: uppercase;
+            order: 2;
+        }
+
+        .ip-title {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 8vw;
+            font-weight: 400;
+            letter-spacing: -0.03em;
+            line-height: 0.88;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.88);
+            text-transform: uppercase;
+            width: 100%;
+            order: 1;
+            margin-bottom: 2vh;
+        }
+
+        .ip-artist {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 3.8vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.0;
+            color: rgba(255, 255, 255, 0.72);
+            text-transform: uppercase;
+            order: 3;
+        }
+
+        .ip-images {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1vw;
+            margin-bottom: 4vh;
+        }
+
+        .ip-img-slot {
+            aspect-ratio: 4 / 3;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .ip-text {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 3.5vh;
+        }
+
+        .ip-text p {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 2.4vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.15;
+            color: rgba(255, 255, 255, 0.78);
+            margin-bottom: 2.5vh;
+        }
+
+        .ip-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        #nav-prev, #nav-next {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.55);
+            text-decoration: none;
+            z-index: 100;
+        }
+        #nav-prev { left: 24px; }
+        #nav-next { right: 24px; }
+    </style>
+</head>
+<body>
+    <div id="song-header">1963  -  Doctor Who Theme  -  Delia Derbyshire</div>
+    <div id="info-panel">
+        <div id="info-panel-inner">
+            <div class="ip-close-btn">CLOSE &#215;</div>
+            <div class="ip-meta">
+                <div class="ip-year">1963</div>
+                <div class="ip-title">Doctor Who Theme</div>
+                <div class="ip-artist">Delia Derbyshire</div>
+            </div>
+            <div class="ip-text">
+                <p>Derbyshire realised Ron Grainer&#8217;s theme by cutting hundreds of pieces of magnetic tape by hand at the BBC Radiophonic Workshop. Each note was a physical splice. The alien quality comes from this material precision  -  sound built object by object.</p>
+                <p>Presented here as footage rather than abstraction. The Radiophonic Workshop&#8217;s methods were visual  -  tape, splice marks, physical frequencies. The original recording is itself the document.</p>
+            </div>
+        </div>
+    </div>    <!-- Start overlay -->
+    <div id="startOverlay">
+        <span>Click to play</span>
+    </div>
+
+    <!-- Back to timeline -->
+    <a href="../index.html" id="backLink">
+        <span>Timeline</span>
+    </a>
+    <a href="daphne-oram-four-aspects-1960.html" id="nav-prev">&#8592;</a>
+    <a href="brian-eno-music-for-airports-11-1978.html" id="nav-next">&#8594;</a>
+
+    <!-- Video -->
+    <div id="video-container">
+        <video id="video" preload="auto">
+            <source src="../Videos/DoctorWho Video.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- Bottom-left navigation -->
+    <div class="bottom-nav">
+        <a href="../visualizer.html" class="nav-link">
+            <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="white" stroke-width="1.5" fill="none">
+                    <path d="M8 21 L14 12 L20 28 L26 15 L32 24 L38 21" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="14" cy="12" r="2" fill="white"/>
+                    <circle cx="26" cy="15" r="2" fill="white"/>
+                </g>
+            </svg>
+            <div class="nav-tooltip">Visualizer</div>
+        </a>
+
+        <a href="../alphabet-chart.html" class="nav-link">
+            <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="white" stroke-width="1.5" fill="none">
+                    <line x1="14" y1="8" x2="14" y2="34" />
+                    <line x1="28" y1="8" x2="28" y2="34" />
+                    <line x1="8" y1="14" x2="34" y2="14" />
+                    <line x1="8" y1="28" x2="34" y2="28" />
+                    <circle cx="14" cy="14" r="2" fill="white" />
+                    <circle cx="28" cy="28" r="2" fill="white" />
+                    <line x1="19" y1="19" x2="23" y2="23" />
+                    <line x1="23" y1="19" x2="19" y2="23" />
+                </g>
+            </svg>
+            <div class="nav-tooltip">Alphabet</div>
+        </a>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const overlay = document.getElementById('startOverlay');
+
+        overlay.addEventListener('click', () => {
+            overlay.classList.add('hidden');
+            video.play().catch(() => {});
+        });
+
+        video.addEventListener('ended', () => {
+            video.currentTime = 0;
+        });
+    </script>
+
+
+    <script>
+    (function() {
+        var header = document.getElementById('song-header');
+        var panel  = document.getElementById('info-panel');
+        if (!header || !panel) return;
+
+        function closePanel() {
+            panel.classList.remove('open');
+            header.classList.remove('open');
+        }
+
+        header.addEventListener('click', function() {
+            panel.classList.toggle('open');
+            header.classList.toggle('open');
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closePanel();
+        });
+
+        var closeBtn = panel.querySelector('.ip-close-btn');
+        if (closeBtn) closeBtn.addEventListener('click', closePanel);
+
+        panel.addEventListener('click', function(e) {
+            if (e.target === panel) closePanel();
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!panel.classList.contains('open')) return;
+            if (!panel.contains(e.target) && e.target !== header) {
+                closePanel();
+            }
+        });
+    })();
+    </script>
+</body>
+</html>
