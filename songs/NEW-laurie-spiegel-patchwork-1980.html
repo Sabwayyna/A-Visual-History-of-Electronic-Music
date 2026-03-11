@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPIEGEL_3D_ARCHIVE</title>
+    <style>
+        body, html { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100vh; width: 100vw; }
+        canvas { display: block; }
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100; background: #000; cursor: pointer;
+            color: #555; font-family: 'Courier New', monospace; letter-spacing: 10px; font-size: 14px;
+            transition: opacity 1s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">CONSTRUCT_PATCHWORK</div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+<script type="module">
+    import * as THREE from 'three';
+
+    let scene, camera, renderer, audioCtx;
+    let isStarted = false;
+    let towerHeight = 0;
+    let zoomDistance = 60;
+    let targetZoom = 80;
+    const voices = [];
+
+    // --- MUSICAL LOGIC (Laurie Spiegel 4x4) ---
+    const motives = [
+        [0, 2, 4, 7, 12], [0, 5, 7, 10, 15], 
+        [12, 9, 7, 4, 0], [0, 1, 6, 11, 13]
+    ];
+    const rhythms = [
+        [1, 1, 1, 1], [2, 0.5, 0.5, 1], 
+        [0.5, 0.5, 1.5, 1], [1, 0.25, 0.25, 2]
+    ];
+
+    class Voice {
+        constructor(id) {
+            this.id = id;
+            this.motiveIdx = id;
+            this.rhythmIdx = id;
+            this.step = 0;
+            this.yPos = 0;
+            this.nextTime = 0;
+            this.baseFreq = 55 * Math.pow(2, id - 1);
+            
+            // Layout in a 4-pillar square grid
+            const d = 15;
+            this.posX = (id % 2 === 0 ? -d : d);
+            this.posZ = (id < 2 ? -d : d);
+        }
+
+        update(now) {
+            if (now >= this.nextTime) {
+                const r = rhythms[this.rhythmIdx][this.step % 4];
+                const duration = r * 0.4; // Fixed tempo, scroll now controls zoom
+                this.trigger(now, duration);
+                this.nextTime = now + duration;
+                this.step++;
+
+                // Occasional motive shift
+                if (this.step % 16 === 0) this.motiveIdx = Math.floor(Math.random() * 4);
+            }
+        }
+
+        trigger(time, duration) {
+            const note = motives[this.motiveIdx][this.step % 5];
+            const freq = this.baseFreq * Math.pow(2, (note + (this.id*2)) / 12);
+
+            // Synth: A bit more "weighty" for the 3D space
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            
+            osc.type = this.id % 2 === 0 ? 'square' : 'sawtooth';
+            osc.frequency.setValueAtTime(freq, time);
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(freq * 3, time);
+
+            g.gain.setValueAtTime(0, time);
+            g.gain.linearRampToValueAtTime(0.08, time + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+            osc.connect(filter);
+            filter.connect(g);
+            g.connect(audioCtx.destination);
+            osc.start(time);
+            osc.stop(time + duration);
+
+            // 3D Geometry
+            const h = duration * 15;
+            const w = (note + 3) * 1.8;
+            this.createGeometricBlock(w, h, note);
+        }
+
+        createGeometricBlock(w, h, note) {
+            let geometry;
+            const type = Math.floor(Math.random() * 5);
+            
+            // Unique Brutalist Shapes
+            switch(type) {
+                case 0: // Massive Slab
+                    geometry = new THREE.BoxGeometry(w * 1.5, h, w * 0.5);
+                    break;
+                case 1: // Hollowed Frame (Wireframe handled in material)
+                    geometry = new THREE.BoxGeometry(w, h, w);
+                    break;
+                case 2: // The "Needle"
+                    geometry = new THREE.BoxGeometry(2, h, 2);
+                    break;
+                case 3: // Offset Pylons
+                    geometry = new THREE.BoxGeometry(w, h, 2);
+                    break;
+                default: // Standard Block
+                    geometry = new THREE.BoxGeometry(w, h, w);
+            }
+
+            const material = new THREE.MeshStandardMaterial({ 
+                color: type === 1 ? 0x000000 : 0xffffff,
+                transparent: type === 1,
+                opacity: type === 1 ? 0 : 1,
+                roughness: 0.1,
+                metalness: 0.5
+            });
+
+            const block = new THREE.Mesh(geometry, material);
+            
+            // Adding technical edge lines to every block
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+            block.add(line);
+
+            block.position.set(this.posX, this.yPos + h/2, this.posZ);
+            scene.add(block);
+
+            this.yPos += h;
+            if (this.yPos > towerHeight) towerHeight = this.yPos;
+        }
+    }
+
+    function init() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        scene.fog = new THREE.FogExp2(0x000000, 0.002);
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+        
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Lights to emphasize Brutalist forms
+        const mainLight = new THREE.DirectionalLight(0xffffff, 2);
+        mainLight.position.set(10, 10, 10);
+        scene.add(mainLight);
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.1);
+        scene.add(ambient);
+
+        for (let i = 0; i < 4; i++) voices.push(new Voice(i));
+
+        animate();
+    }
+
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth) - 0.5;
+        mouseY = (e.clientY / window.innerHeight) - 0.5;
+    });
+
+    window.addEventListener('wheel', (e) => {
+        if (!isStarted) return;
+        // Scroll adjusts the Target Zoom
+        targetZoom += e.deltaY * 0.1;
+        targetZoom = Math.max(10, Math.min(targetZoom, 2000)); // Constraint
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        if (isStarted) {
+            const now = audioCtx.currentTime;
+            voices.forEach(v => v.update(now));
+
+            // Smooth Zoom Camera Logic
+            zoomDistance += (targetZoom - zoomDistance) * 0.05;
+
+            const time = Date.now() * 0.0005;
+            const rotX = Math.sin(time * 0.2) * 0.2 + (mouseX * 2);
+            const rotZ = Math.cos(time * 0.2) * 0.2 + (mouseY * 2);
+
+            // Follow tower height
+            camera.position.y += (towerHeight - camera.position.y + 10) * 0.05;
+            camera.position.x = Math.sin(mouseX * 4) * zoomDistance;
+            camera.position.z = Math.cos(mouseX * 4) * zoomDistance;
+            
+            camera.lookAt(0, camera.position.y - (zoomDistance * 0.2), 0);
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    document.getElementById('overlay').addEventListener('click', () => {
+        if (isStarted) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        isStarted = true;
+        document.getElementById('overlay').style.opacity = '0';
+        setTimeout(() => document.getElementById('overlay').remove(), 1000);
+        init();
+    });
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+</script>
+</body>
+</html>
