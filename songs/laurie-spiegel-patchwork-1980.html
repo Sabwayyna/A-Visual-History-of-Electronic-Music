@@ -32,23 +32,6 @@
 
         canvas { display: block; }
 
-        #overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 50;
-            background: #000;
-            cursor: pointer;
-            color: #555;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 10px;
-            font-size: 14px;
-            transition: opacity 1s;
-        }
-
         /* Controls button - minimalist top right */
         #controlsBtn {
             position: fixed;
@@ -395,8 +378,6 @@
 </head>
 <body>
 
-    <div id="overlay">CONSTRUCT_PATCHWORK</div>
-
     <div id="song-header">1980  -  Patchwork  -  Laurie Spiegel</div>
     <div id="info-panel">
         <div id="info-panel-inner">
@@ -484,195 +465,140 @@
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
             }
         }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        let scene, camera, renderer, audioCtx;
-        let isStarted = false;
-        let towerHeight = 0;
-        let zoomDistance = 60;
-        let targetZoom = 80;
-        const voices = [];
+        let scene, camera, renderer, controls, audioCtx, analyser, dataArray;
+        let audioStarted = false;
+        let towerHeight  = 0;
 
-        // --- MUSICAL LOGIC (Laurie Spiegel 4x4) ---
-        const motives = [
-            [0, 2, 4, 7, 12], [0, 5, 7, 10, 15],
-            [12, 9, 7, 4, 0], [0, 1, 6, 11, 13]
-        ];
-        const rhythms = [
-            [1, 1, 1, 1], [2, 0.5, 0.5, 1],
-            [0.5, 0.5, 1.5, 1], [1, 0.25, 0.25, 2]
+        const d = 15;
+        const towers = [
+            { posX: -d, posZ: -d, yPos: 0, cooldown: 0, smoothed: 1, blockCount: 0 },
+            { posX:  d, posZ: -d, yPos: 0, cooldown: 0, smoothed: 1, blockCount: 0 },
+            { posX: -d, posZ:  d, yPos: 0, cooldown: 0, smoothed: 1, blockCount: 0 },
+            { posX:  d, posZ:  d, yPos: 0, cooldown: 0, smoothed: 1, blockCount: 0 },
         ];
 
-        class Voice {
-            constructor(id) {
-                this.id = id;
-                this.motiveIdx = id;
-                this.rhythmIdx = id;
-                this.step = 0;
-                this.yPos = 0;
-                this.nextTime = 0;
-                this.baseFreq = 55 * Math.pow(2, id - 1);
+        const bands = [
+            { lo: 3,   hi: 14  },
+            { lo: 14,  hi: 42  },
+            { lo: 42,  hi: 116 },
+            { lo: 116, hi: 280 },
+        ];
 
-                // Layout in a 4-pillar square grid
-                const d = 15;
-                this.posX = (id % 2 === 0 ? -d : d);
-                this.posZ = (id < 2 ? -d : d);
-            }
+        const BLOCK_COOLDOWN = 7;
+        const HEIGHT_RANGES  = [[2,5], [6,14], [15,32]];
+        const WIDTH_RANGES   = [[2,4], [5,11], [12,22]];
+        const FILL_COLORS    = [0xffffff, 0x3a3a3a, 0x000000];
 
-            update(now) {
-                if (now >= this.nextTime) {
-                    const r = rhythms[this.rhythmIdx][this.step % 4];
-                    const duration = r * 0.4;
-                    this.trigger(now, duration);
-                    this.nextTime = now + duration;
-                    this.step++;
+        function randRange(min, max) { return min + Math.random() * (max - min); }
 
-                    if (this.step % 16 === 0) this.motiveIdx = Math.floor(Math.random() * 4);
-                }
-            }
-
-            trigger(time, duration) {
-                const note = motives[this.motiveIdx][this.step % 5];
-                const freq = this.baseFreq * Math.pow(2, (note + (this.id * 2)) / 12);
-
-                const osc = audioCtx.createOscillator();
-                const g = audioCtx.createGain();
-                const filter = audioCtx.createBiquadFilter();
-
-                osc.type = this.id % 2 === 0 ? 'square' : 'sawtooth';
-                osc.frequency.setValueAtTime(freq, time);
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(freq * 3, time);
-
-                g.gain.setValueAtTime(0, time);
-                g.gain.linearRampToValueAtTime(0.08, time + 0.01);
-                g.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-
-                osc.connect(filter);
-                filter.connect(g);
-                g.connect(audioCtx.destination);
-                osc.start(time);
-                osc.stop(time + duration);
-
-                const h = duration * 15;
-                const w = (note + 3) * 1.8;
-                this.createGeometricBlock(w, h, note);
-            }
-
-            createGeometricBlock(w, h, note) {
-                let geometry;
-                const type = Math.floor(Math.random() * 5);
-
-                switch (type) {
-                    case 0: // Massive Slab
-                        geometry = new THREE.BoxGeometry(w * 1.5, h, w * 0.5);
-                        break;
-                    case 1: // Frame block
-                        geometry = new THREE.BoxGeometry(w, h, w);
-                        break;
-                    case 2: // Needle
-                        geometry = new THREE.BoxGeometry(2, h, 2);
-                        break;
-                    case 3: // Offset Pylon
-                        geometry = new THREE.BoxGeometry(w, h, 2);
-                        break;
-                    default: // Standard Block
-                        geometry = new THREE.BoxGeometry(w, h, w);
-                }
-
-                const material = new THREE.MeshStandardMaterial({
-                    color: type === 1 ? 0x000000 : 0xffffff,
-                    transparent: type === 1,
-                    opacity: type === 1 ? 0 : 1,
-                    roughness: 0.1,
-                    metalness: 0.5
-                });
-
-                const block = new THREE.Mesh(geometry, material);
-
-                // Edge lines on every block
-                const edges = new THREE.EdgesGeometry(geometry);
-                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
-                block.add(line);
-
-                block.position.set(this.posX, this.yPos + h / 2, this.posZ);
-                scene.add(block);
-
-                this.yPos += h;
-                if (this.yPos > towerHeight) towerHeight = this.yPos;
-            }
+        function bandEnergy(band) {
+            let sum = 0;
+            for (let i = band.lo; i < band.hi; i++) sum += dataArray[i];
+            return sum / (band.hi - band.lo);
         }
 
-        function init() {
+        function spawnBlock(tower, energy) {
+            const scale  = 0.5 + (energy / 255) * 1.0;
+            const hRange = HEIGHT_RANGES[Math.floor(Math.random() * 3)];
+            const wRange = WIDTH_RANGES[Math.floor(Math.random() * 3)];
+            const h      = randRange(hRange[0], hRange[1]) * scale;
+            const w      = randRange(wRange[0], wRange[1]) * scale;
+            const depth  = randRange(wRange[0], wRange[1]) * scale * 0.6;
+
+            const geometry  = new THREE.BoxGeometry(w, h, depth);
+            const fillColor = FILL_COLORS[tower.blockCount % 3];
+            const block     = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: fillColor }));
+
+            const edges = new THREE.EdgesGeometry(geometry);
+            block.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff })));
+
+            block.position.set(tower.posX, tower.yPos + h / 2, tower.posZ);
+            scene.add(block);
+            tower.yPos += h;
+            tower.blockCount++;
+            if (tower.yPos > towerHeight) towerHeight = tower.yPos;
+        }
+
+        function initScene() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x000000);
-            scene.fog = new THREE.FogExp2(0x000000, 0.002);
+            scene.fog = new THREE.FogExp2(0x000000, 0.0015);
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+            // Start directly overhead — tiny z offset avoids OrbitControls gimbal lock at exactly 90°
+            camera.position.set(0, 120, 0.01);
+            camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            const mainLight = new THREE.DirectionalLight(0xffffff, 2);
-            mainLight.position.set(10, 10, 10);
-            scene.add(mainLight);
+            scene.add(new THREE.AmbientLight(0xffffff, 1.0));
 
-            const ambient = new THREE.AmbientLight(0xffffff, 0.1);
-            scene.add(ambient);
-
-            for (let i = 0; i < 4; i++) voices.push(new Voice(i));
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.minDistance   = 5;
+            controls.maxDistance   = 2000;
+            controls.target.set(0, 0, 0);
+            controls.update();
 
             animate();
         }
 
-        let mouseX = 0, mouseY = 0;
-        window.addEventListener('mousemove', (e) => {
-            mouseX = (e.clientX / window.innerWidth) - 0.5;
-            mouseY = (e.clientY / window.innerHeight) - 0.5;
-        });
+        function initAudio() {
+            if (audioStarted) return;
+            audioStarted = true;
+            audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+            analyser  = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            analyser.smoothingTimeConstant = 0.6;
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-        window.addEventListener('wheel', (e) => {
-            if (!isStarted) return;
-            targetZoom += e.deltaY * 0.1;
-            targetZoom = Math.max(10, Math.min(targetZoom, 2000));
-        });
+            const audioEl = new Audio('../Musique/Patchwork.mp3');
+            audioEl.crossOrigin = 'anonymous';
+            const source = audioCtx.createMediaElementSource(audioEl);
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            audioEl.play();
+        }
+
+        document.addEventListener('click', initAudio, { once: true });
 
         function animate() {
             requestAnimationFrame(animate);
 
-            if (isStarted) {
-                const now = audioCtx.currentTime;
-                voices.forEach(v => v.update(now));
-
-                // Smooth zoom
-                zoomDistance += (targetZoom - zoomDistance) * 0.05;
-
-                // Follow tower height, orbit with mouse
-                camera.position.y += (towerHeight - camera.position.y + 10) * 0.05;
-                camera.position.x = Math.sin(mouseX * 4) * zoomDistance;
-                camera.position.z = Math.cos(mouseX * 4) * zoomDistance;
-                camera.lookAt(0, camera.position.y - (zoomDistance * 0.2), 0);
+            if (audioStarted && analyser) {
+                analyser.getByteFrequencyData(dataArray);
+                towers.forEach((tower, i) => {
+                    tower.cooldown = Math.max(0, tower.cooldown - 1);
+                    const energy = bandEnergy(bands[i]);
+                    tower.smoothed = tower.smoothed * 0.92 + energy * 0.08;
+                    if (energy > Math.max(8, tower.smoothed * 1.15) && tower.cooldown === 0) {
+                        spawnBlock(tower, energy);
+                        tower.cooldown = BLOCK_COOLDOWN;
+                    }
+                });
             }
 
+            // Keep orbit target centred on mid-height of towers as they grow
+            if (towerHeight > 0) {
+                controls.target.y += (towerHeight * 0.5 - controls.target.y) * 0.02;
+            }
+
+            controls.update();
             renderer.render(scene, camera);
         }
-
-        document.getElementById('overlay').addEventListener('click', () => {
-            if (isStarted) return;
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            isStarted = true;
-            const overlay = document.getElementById('overlay');
-            overlay.style.opacity = '0';
-            setTimeout(() => overlay.remove(), 1000);
-            init();
-        });
 
         window.addEventListener('resize', () => {
             if (!camera || !renderer) return;
@@ -680,6 +606,8 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        initScene();
     </script>
 
     <script>
