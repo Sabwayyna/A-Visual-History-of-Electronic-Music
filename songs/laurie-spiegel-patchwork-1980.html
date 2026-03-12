@@ -22,7 +22,7 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background: #000000;
+            background: #000;
             font-family: "LinotypeUnivers", sans-serif;
             font-weight: 400;
             font-size: 14px;
@@ -31,6 +31,28 @@
         }
 
         canvas { display: block; }
+
+        /* ── Film grain overlay ── */
+
+        #grain {
+            position: fixed;
+            inset: -40px;           /* oversized so pixel shifts never expose an edge */
+            pointer-events: none;
+            z-index: 9990;
+            opacity: 0.16;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 180px 180px;
+            animation: grain-shift 0.08s steps(1) infinite;
+        }
+
+        @keyframes grain-shift {
+            0%   { transform: translate(0px, 0px); }
+            20%  { transform: translate(-7px, 11px); }
+            40%  { transform: translate(11px, -5px); }
+            60%  { transform: translate(-9px, -8px); }
+            80%  { transform: translate(7px, 13px); }
+            100% { transform: translate(-4px, -7px); }
+        }
 
         /* Controls button - minimalist top right */
         #controlsBtn {
@@ -378,6 +400,8 @@
 </head>
 <body>
 
+    <div id="grain"></div>
+
     <div id="song-header">1980  -  Patchwork  -  Laurie Spiegel</div>
     <div id="info-panel">
         <div id="info-panel-inner">
@@ -473,11 +497,17 @@
 
     <script type="module">
         import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { OrbitControls }                        from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject }           from 'three/addons/renderers/CSS2DRenderer.js';
 
-        let scene, camera, renderer, controls, audioCtx, analyser, dataArray;
+        let scene, camera, renderer, labelRenderer, controls, audioCtx, analyser, dataArray;
         let audioStarted = false;
         let towerHeight  = 0;
+        const bgColor = new THREE.Color(0x000000); // lerped each frame, never jitters
+
+        // Timestamp tracking
+        let lastStampSec = -1;
+        const STAMP_INTERVAL = 30; // every 30 seconds of song time
 
         const d = 15;
         const towers = [
@@ -495,8 +525,8 @@
         ];
 
         const BLOCK_COOLDOWN = 7;
-        const HEIGHT_RANGES  = [[2,5], [6,14], [15,32]];
-        const WIDTH_RANGES   = [[2,4], [5,11], [12,22]];
+        const HEIGHT_RANGES  = [[3,8], [9,20], [20,46]];
+        const WIDTH_RANGES   = [[3,6], [7,16], [16,32]];
         const FILL_COLORS    = [0xffffff, 0x3a3a3a, 0x000000];
 
         function randRange(min, max) { return min + Math.random() * (max - min); }
@@ -507,20 +537,42 @@
             return sum / (band.hi - band.lo);
         }
 
-        function spawnBlock(tower, energy) {
-            const scale  = 0.5 + (energy / 255) * 1.0;
+        // Shared materials — created once in initScene, reused by every block
+        let blockMaterials, edgeMaterial;
+
+        // Grain texture for blocks — created once, shared across all materials
+        let noiseTexture;
+        function createNoiseTexture() {
+            const size = 256;
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = size;
+            const ctx  = canvas.getContext('2d');
+            const data = ctx.createImageData(size, size);
+            for (let i = 0; i < data.data.length; i += 4) {
+                const v = 140 + Math.random() * 115; // 140–255: visible but not gray-washing
+                data.data[i] = data.data[i+1] = data.data[i+2] = v;
+                data.data[i+3] = 255;
+            }
+            ctx.putImageData(data, 0, 0);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(3, 3);
+            return tex;
+        }
+
+        function spawnBlock(tower, energy, sizeScale) {
+            const scale  = (0.5 + (energy / 255) * 1.0) * sizeScale;
             const hRange = HEIGHT_RANGES[Math.floor(Math.random() * 3)];
             const wRange = WIDTH_RANGES[Math.floor(Math.random() * 3)];
             const h      = randRange(hRange[0], hRange[1]) * scale;
             const w      = randRange(wRange[0], wRange[1]) * scale;
             const depth  = randRange(wRange[0], wRange[1]) * scale * 0.6;
 
-            const geometry  = new THREE.BoxGeometry(w, h, depth);
-            const fillColor = FILL_COLORS[tower.blockCount % 3];
-            const block     = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: fillColor }));
+            const geometry = new THREE.BoxGeometry(w, h, depth);
+            const block    = new THREE.Mesh(geometry, blockMaterials[tower.blockCount % 3]);
 
             const edges = new THREE.EdgesGeometry(geometry);
-            block.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff })));
+            block.add(new THREE.LineSegments(edges, edgeMaterial));
 
             block.position.set(tower.posX, tower.yPos + h / 2, tower.posZ);
             scene.add(block);
@@ -558,21 +610,45 @@
             }
         }
 
+
         function initScene() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x000000);
             scene.fog = new THREE.FogExp2(0x000000, 0.0015);
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-            // Directly overhead — tiny z offset prevents OrbitControls gimbal lock at exactly 90°
-            camera.position.set(0, 120, 0.01);
+            // Closer overhead start — tiny z offset avoids OrbitControls gimbal lock at exactly 90°
+            camera.position.set(0, 55, 0.01);
             camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setClearColor(0x000000, 1);
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+            // CSS2D renderer — renders HTML labels anchored in 3D world space
+            labelRenderer = new CSS2DRenderer();
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.domElement.style.position      = 'fixed';
+            labelRenderer.domElement.style.top           = '0';
+            labelRenderer.domElement.style.left          = '0';
+            labelRenderer.domElement.style.pointerEvents = 'none';
+            labelRenderer.domElement.style.zIndex        = '1';
+            document.body.appendChild(labelRenderer.domElement);
+
+            // Soft fill from all sides + directional key light from upper-left
+            scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+            const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
+            keyLight.position.set(-4, 6, 2); // upper-left-front
+            scene.add(keyLight);
+
+            // Build shared noise texture + pre-create all block materials
+            noiseTexture = createNoiseTexture();
+            blockMaterials = FILL_COLORS.map(c => new THREE.MeshLambertMaterial({ color: c, map: noiseTexture }));
+            edgeMaterial   = new THREE.LineBasicMaterial({ color: 0xffffff });
+            // Pre-warm: force shader compile before any block appears
+            const _warmGeo = new THREE.BoxGeometry(1, 1, 1);
+            blockMaterials.forEach(m => { const _m = new THREE.Mesh(_warmGeo, m); renderer.compile(scene, camera); _m.geometry.dispose(); });
+            _warmGeo.dispose();
 
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
@@ -582,7 +658,31 @@
             controls.target.set(0, 0, 0);
             controls.update();
 
+
             animate();
+        }
+
+        function fmtTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = String(sec % 60).padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function addTimestamp(sec) {
+            const div = document.createElement('div');
+            div.textContent = fmtTime(sec);
+            div.style.cssText = [
+                'color: rgba(255,255,255,0.45)',
+                'font-family: "Courier New", monospace',
+                'font-size: 8px',
+                'letter-spacing: 1.5px',
+                'white-space: nowrap',
+                'user-select: none',
+            ].join(';');
+            const label = new CSS2DObject(div);
+            // Place label to the left of the tower cluster, at current top
+            label.position.set(-30, towerHeight, 0);
+            scene.add(label);
         }
 
         function animate() {
@@ -590,30 +690,59 @@
 
             if (audioStarted && analyser) {
                 analyser.getByteFrequencyData(dataArray);
+
+                // Song progress 0→1 drives a gradual size ramp: 0.25 at start, 1.0 at end
+                const songProgress = (audioEl && audioEl.duration)
+                    ? Math.min(audioEl.currentTime / audioEl.duration, 1) : 0;
+                const sizeScale = 0.25 + songProgress * 0.75;
+
+                // Height of the tallest tower — used to equalise growth rates
+                const maxH = Math.max(...towers.map(t => t.yPos), 1);
+
                 towers.forEach((tower, i) => {
                     tower.cooldown = Math.max(0, tower.cooldown - 1);
                     const energy = bandEnergy(bands[i]);
                     tower.smoothed = tower.smoothed * 0.92 + energy * 0.08;
-                    if (energy > Math.max(8, tower.smoothed * 1.15) && tower.cooldown === 0) {
-                        spawnBlock(tower, energy);
-                        tower.cooldown = BLOCK_COOLDOWN;
+
+                    const relHeight = tower.yPos / maxH;
+                    const threshold = Math.max(5, tower.smoothed * (0.85 + relHeight * 0.55));
+
+                    if (energy > threshold && tower.cooldown === 0) {
+                        spawnBlock(tower, energy, sizeScale);
+                        tower.cooldown = BLOCK_COOLDOWN + Math.round(relHeight * 14);
                     }
                 });
+
+                // Drop a timestamp label every 30 s of song time
+                if (audioEl && audioEl.currentTime > 0) {
+                    const elapsed = Math.floor(audioEl.currentTime);
+                    const next = (Math.floor(lastStampSec / STAMP_INTERVAL) + 1) * STAMP_INTERVAL;
+                    if (elapsed >= next && next > lastStampSec) {
+                        addTimestamp(next);
+                        lastStampSec = next;
+                    }
+                }
             }
 
-            // Keep camera directly overhead, rising with the tower top.
-            // Move BOTH target and camera.position.y by the same delta so
-            // OrbitControls sees an unchanged offset and stays top-down.
+            // Always drift upward with the towers — user can still orbit/zoom freely
             if (towerHeight > 0) {
                 const prevY  = controls.target.y;
                 const nextY  = prevY + (towerHeight - prevY) * 0.06;
                 const deltaY = nextY - prevY;
-                controls.target.y    = nextY;
-                camera.position.y   += deltaY;
+                controls.target.y  = nextY;
+                camera.position.y += deltaY;
             }
+
+
+            // Background: pure black up close, creeps toward dark gray as you zoom out
+            const _dist = camera.position.distanceTo(controls.target);
+            const _t    = Math.min(Math.max((_dist - 55) / 380, 0), 1);
+            bgColor.lerp(new THREE.Color(_t * 0.09, _t * 0.09, _t * 0.09), 0.006);
+            renderer.setClearColor(bgColor, 1);
 
             controls.update();
             renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
         }
 
         window.addEventListener('resize', () => {
@@ -621,6 +750,7 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
         });
 
         initScene();
