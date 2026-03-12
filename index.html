@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Electronic Music Timeline</title>
+    <title>A Visual History of Electronic Music</title>
     <style>
         @font-face {
             font-family: "LinotypeUnivers";
@@ -11,385 +11,575 @@
             font-weight: 400;
             font-style: normal;
         }
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegularItalic.otf") format("opentype");
+            font-weight: 400;
+            font-style: italic;
+        }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            background: #0d0d0d;
+            color: #fff;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-weight: 400;
+            height: 100vh;
+            overflow: hidden;
         }
 
         body {
-            background: #000;
-            color: #fff;
-            font-family: "LinotypeUnivers", sans-serif;
-            overflow-x: hidden;
-            overflow-y: auto;
-            min-height: 100vh;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 9997;
-            opacity: 0.12;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-            background-repeat: repeat;
-            background-size: 200px 200px;
-        }
-
-        /* === HEADER === */
-        #header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: baseline;
-            padding: 18px 24px;
-            z-index: 100;
-        }
-
-        #header-logo {
-            justify-self: start;
-        }
-
-        #header-logo a {
-            display: block;
-            opacity: 0.75;
-            transition: opacity 0.2s ease;
-        }
-
-        #header-logo a:hover {
-            opacity: 1;
-        }
-
-        #header-logo img {
-            height: 34px;
-            width: auto;
-            display: block;
-        }
-
-        #header-title {
-            font-family: "LinotypeUnivers", sans-serif;
-            font-size: 10px;
-            font-weight: 400;
-            letter-spacing: 0.08em;
-            color: rgba(255, 255, 255, 0.6);
-            text-align: center;
-            white-space: nowrap;
-        }
-
-        #header-nav {
-            justify-self: end;
-            display: flex;
-            gap: 20px;
-        }
-
-        #header-nav a {
-            font-family: "LinotypeUnivers", sans-serif;
-            font-size: 10px;
-            font-weight: 400;
-            letter-spacing: 0.05em;
-            color: rgba(255, 255, 255, 0.5);
-            text-decoration: none;
-            transition: color 0.15s;
-        }
-
-        #header-nav a:hover {
-            color: #fff;
-        }
-
-        /* === LOADING SCREEN === */
-        #loading-screen {
-            position: fixed;
-            inset: 0;
-            background: #000;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.8s ease;
         }
 
-        #loading-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loading-icons {
-            width: 120px;
-            height: 120px;
-            position: relative;
-            margin-bottom: 16px;
-        }
-
-        .loading-icon {
-            width: 120px;
-            height: 120px;
-            position: absolute;
-            object-fit: contain;
+        /* Shape image — shows in idle state */
+        #shape-img {
+            position: fixed;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            display: none;
+            height: 80vh;
+            width: auto;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.45;
+            transition: opacity 0.3s;
+        }
+        #shape-img.hidden { opacity: 0; }
+
+        /* Visualization canvas — overlays shape on hover */
+        #viz-canvas {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 6;
         }
 
-        .loading-icon.active {
-            display: block;
+        /* Shared 3-col grid — rows and footer use identical column positions */
+        .song-row,
+        #site-footer {
+            display: grid;
+            grid-template-columns: 2.8em 40% 1fr;
+            column-gap: 3.5vw;
+            width: 92vw;
+            align-items: baseline;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
-        .loading-text {
-            font-size: 18px;
-            font-weight: 400;
-            letter-spacing: 0.05em;
-        }
-
-        .loading-progress {
-            margin-top: 12px;
-            font-size: 18px;
-            font-weight: 400;
-            opacity: 0.3;
-        }
-
-        /* === MAIN CONTAINER === */
-        #timeline-container {
-            min-height: 100vh;
+        /* Song list — packed tight from top, fills flex space */
+        .list-section {
+            flex: 1;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 80px 0 48px;
-            opacity: 0;
-            transition: opacity 0.8s ease;
+            flex-direction: column;
+            justify-content: flex-end;
+            gap: 0;
+            padding: 3.5vh 0 0;
+            width: 92vw;
+            position: relative;
+            z-index: 10;
         }
 
-        #timeline-container.visible {
-            opacity: 1;
-        }
-
-        /* === SONG LIST === */
-        .song-list {
-            width: 74vw;
-        }
-
-        /* === ENTRIES === */
-        .entry {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .song-row {
             text-decoration: none;
             color: #fff;
-            font-family: "LinotypeUnivers", sans-serif;
-            text-transform: uppercase;
+            line-height: 1.15;
+            transition: opacity 0.12s;
+        }
+
+        .song-row:hover { opacity: 0.4; }
+
+        .song-year,
+        .song-artist,
+        .song-title {
+            font-size: clamp(16px, 3.5vw, 64px);
+            letter-spacing: -0.02em;
+            line-height: inherit;
+            color: #fff;
+        }
+
+        .song-artist { text-transform: uppercase; }
+        .song-title  { text-transform: uppercase; }
+
+        /* Footer — same grid, three labels at year / artist / title positions */
+        #site-footer {
+            margin: 2.5vh 0 3vh;
+            position: relative;
+            z-index: 10;
+        }
+
+        #site-footer span,
+        #site-footer a {
             font-size: 11px;
-            font-weight: 400;
-            line-height: 1;
-            padding: 4px 0;
-            cursor: pointer;
-            transition: background-color 0.06s, color 0.06s;
+            letter-spacing: 0.06em;
+            color: rgba(255,255,255,0.38);
+            text-decoration: none;
+            text-transform: uppercase;
         }
 
-        .entry:hover {
-            background: #fff;
-            color: #000;
-        }
-
-        .t {
-            font-style: italic;
-        }
+        #site-footer a:hover { color: #fff; }
     </style>
 </head>
 <body>
 
-    <!-- LOADING SCREEN -->
-    <div id="loading-screen">
-        <div class="loading-icons">
-            <img src="kiki.png" alt="kiki" class="loading-icon">
-            <img src="bouda.png" alt="bouba" class="loading-icon">
-        </div>
-        <div class="loading-text">Loading Music</div>
-        <div class="loading-progress" id="loading-progress">0 / 13</div>
-    </div>
+    <img id="shape-img" src="BouKi-Center-Combined.png" alt="">
+    <canvas id="viz-canvas"></canvas>
+    <audio id="preview-audio" preload="none"></audio>
 
-    <!-- HEADER -->
-    <div id="header">
-        <div id="header-logo">
-            <a href="bouba-kiki.html">
-                <img src="Booba-Kiki.svg.png" alt="Bouba &amp; Kiki">
-            </a>
-        </div>
-        <div id="header-title">A History of Digital Music</div>
-        <nav id="header-nav">
-            <a href="info.html">Info</a>
-            <a href="timeline-horizontal.html">Timeline</a>
-        </nav>
-    </div>
+    <section class="list-section">
+        <a class="song-row" href="songs/pierre-schaeffer-cinq-études-de-bruits-1948.html" data-audio="Musique/01 - Pierre Schaeffer - Cinq études de bruits (1948) - Etude aux chemins de fer.mp3" data-mode="0">
+            <span class="song-year">1948</span>
+            <span class="song-artist">PIERRE SCHAEFFER</span>
+            <span class="song-title">CINQ ETUDES DE BRUITS</span>
+        </a>
+        <a class="song-row" href="songs/karlheinz-stockhausen-studio-i-1953.html" data-audio="Musique/Karlheinz Stockhausen_ Studie I (1953).mp3" data-mode="1">
+            <span class="song-year">1953</span>
+            <span class="song-artist">KARLHEINZ STOCKHAUSEN</span>
+            <span class="song-title">STUDIE I</span>
+        </a>
+        <a class="song-row" href="songs/daphne-oram-four-aspects-1960.html" data-audio="Musique/04 - Daphne Oram - Four Aspects.mp3" data-mode="2">
+            <span class="song-year">1960</span>
+            <span class="song-artist">DAPHNE ORAM</span>
+            <span class="song-title">FOUR ASPECTS</span>
+        </a>
+        <a class="song-row" href="songs/delia-derbyshire-doctor-who-theme-1963.html" data-audio="Musique/05 - Doctor Who (1963) -  Original Theme music video.mp3" data-mode="3">
+            <span class="song-year">1963</span>
+            <span class="song-artist">DELIA DERBYSHIRE</span>
+            <span class="song-title">DOCTOR WHO THEME</span>
+        </a>
+        <a class="song-row" href="songs/brian-eno-music-for-airports-11-1978.html" data-audio="Musique/08 - Brian Eno - 1:1  Music for Airports (Remastered 2004).mp3" data-mode="4">
+            <span class="song-year">1978</span>
+            <span class="song-artist">BRIAN ENO</span>
+            <span class="song-title">MUSIC FOR AIRPORTS 1/1</span>
+        </a>
+        <a class="song-row" href="songs/laurie-spiegel-patchwork-1980.html" data-audio="Musique/Patchwork.mp3" data-mode="5">
+            <span class="song-year">1980</span>
+            <span class="song-artist">LAURIE SPIEGEL</span>
+            <span class="song-title">PATCHWORK</span>
+        </a>
+        <a class="song-row" href="songs/charanjit-singh-bhairav-1983.html" data-audio="Musique/Charanjit Singh - Raga Bhairav (1982).mp3" data-mode="6">
+            <span class="song-year">1983</span>
+            <span class="song-artist">CHARANJIT SINGH</span>
+            <span class="song-title">BHAIRAV</span>
+        </a>
+        <a class="song-row" href="songs/mr-fingers-larry-heard-can-you-feel-it-1986.html" data-audio="Musique/09 - Mr Fingers - Can You Feel It.mp3" data-mode="7">
+            <span class="song-year">1986</span>
+            <span class="song-artist">MR. FINGERS</span>
+            <span class="song-title">CAN YOU FEEL IT</span>
+        </a>
+        <a class="song-row" href="songs/autechre-dael-1995.html" data-audio="Musique/11 - Dael · Autechre.mp3" data-mode="8">
+            <span class="song-year">1995</span>
+            <span class="song-artist">AUTECHRE</span>
+            <span class="song-title">DAEL</span>
+        </a>
+        <a class="song-row" href="songs/boards-of-canada-roygbiv-1998.html" data-audio="Musique/12 - Boards of Canada — Roygbiv (1998).mp3" data-mode="9">
+            <span class="song-year">1998</span>
+            <span class="song-artist">BOARDS OF CANADA</span>
+            <span class="song-title">ROYGBIV</span>
+        </a>
+        <a class="song-row" href="songs/ryoji-ikeda-datamatrix-2005.html" data-audio="Musique/13 - Ryoji Ikeda - data.matrix.mp3" data-mode="10">
+            <span class="song-year">2005</span>
+            <span class="song-artist">RYOJI IKEDA</span>
+            <span class="song-title">DATA MATRIX</span>
+        </a>
+        <a class="song-row" href="songs/rashad-becker-busy-ready-what-corroborators-2025.html" data-audio="Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3" data-mode="11">
+            <span class="song-year">2025</span>
+            <span class="song-artist">RASHAD BECKER</span>
+            <span class="song-title">BUSY READY WHAT, CORROBORATORS</span>
+        </a>
+    </section>
 
-    <!-- SONG LIST -->
-    <div id="timeline-container">
-        <div class="song-list">
+    <footer id="site-footer">
+        <span>A History of Electronic Music</span>
+        <a href="info.html">Info</a>
+        <a href="timeline-horizontal.html">Learn More</a>
+    </footer>
 
-            <a class="entry"
-               href="songs/pierre-schaeffer-cinq-études-de-bruits-1948.html"
-               data-audio="Musique/01 - Pierre Schaeffer - Cinq études de bruits (1948) - Etude aux chemins de fer.mp3">
-                <span>1948</span><span>—</span><span class="t">Cinq</span><span class="t">Etudes</span><span class="t">De</span><span class="t">Bruits</span><span>—</span><span>Pierre</span><span>Schaeffer</span>
-            </a>
+<script>
+(function () {
+    const shapeImg = document.getElementById('shape-img');
+    const canvas   = document.getElementById('viz-canvas');
+    const ctx      = canvas.getContext('2d');
 
-            <a class="entry"
-               href="songs/karlheinz-stockhausen-studio-i-1953.html"
-               data-audio="Musique/Karlheinz Stockhausen_ Studie I (1953).mp3">
-                <span>1953</span><span>—</span><span class="t">Studie</span><span class="t">I</span><span>—</span><span>Karlheinz</span><span>Stockhausen</span>
-            </a>
+    const buf = document.createElement('canvas');
+    const bc  = buf.getContext('2d');
 
-            <a class="entry"
-               href="songs/daphne-oram-four-aspects-1960.html"
-               data-audio="Musique/04 - Daphne Oram - Four Aspects.mp3">
-                <span>1960</span><span>—</span><span class="t">Four</span><span class="t">Aspects</span><span>—</span><span>Daphne</span><span>Oram</span>
-            </a>
+    let W = 0, H = 0;
+    let t = 0;
+    let currentMode = -1;
+    let prevMode    = -99;
+    let imgReady    = false;
 
-            <a class="entry"
-               href="songs/delia-derbyshire-doctor-who-theme-1963.html"
-               data-audio="Musique/05 - Doctor Who (1963) -  Original Theme music video.mp3">
-                <span>1963</span><span>—</span><span class="t">Doctor</span><span class="t">Who</span><span class="t">Theme</span><span>—</span><span>Delia</span><span>Derbyshire</span>
-            </a>
+    function syncSize() {
+        const r = shapeImg.getBoundingClientRect();
+        W = Math.round(r.width);
+        H = Math.round(r.height);
+        canvas.width  = buf.width  = W;
+        canvas.height = buf.height = H;
+        bc.clearRect(0, 0, W, H);
+    }
 
-<a class="entry"
-               href="songs/brian-eno-music-for-airports-11-1978.html"
-               data-audio="Musique/08 - Brian Eno - 1:1  Music for Airports (Remastered 2004).mp3">
-                <span>1978</span><span>—</span><span class="t">Music</span><span class="t">For</span><span class="t">Airports</span><span class="t">1/1</span><span>—</span><span>Brian</span><span>Eno</span>
-            </a>
+    shapeImg.addEventListener('load', () => { imgReady = true; syncSize(); });
+    if (shapeImg.complete) { imgReady = true; syncSize(); }
+    window.addEventListener('resize', syncSize);
 
-            <a class="entry"
-               href="songs/laurie-spiegel-patchwork-1980.html"
-               data-audio="Musique/Patchwork.mp3">
-                <span>1980</span><span>—</span><span class="t">Patchwork</span><span>—</span><span>Laurie</span><span>Spiegel</span>
-            </a>
+    // ── Audio ─────────────────────────────────────────────────────────────────
+    const audio = document.getElementById('preview-audio');
+    audio.volume = 0;
 
-            <a class="entry"
-               href="songs/charanjit-singh-bhairav-1983.html"
-               data-audio="Musique/Charanjit Singh - Raga Bhairav (1982).mp3">
-                <span>1983</span><span>—</span><span class="t">Bhairav</span><span>—</span><span>Charanjit</span><span>Singh</span>
-            </a>
+    // Unlock audio on first any interaction so hover-play works immediately
+    let audioUnlocked = false;
+    function unlockAudio() {
+        if (audioUnlocked) return;
+        audioUnlocked = true;
+        audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+        audio.play().then(() => audio.pause()).catch(() => {});
+        document.removeEventListener('mousemove', unlockAudio);
+        document.removeEventListener('click', unlockAudio);
+    }
+    document.addEventListener('mousemove', unlockAudio, { once: true });
+    document.addEventListener('click', unlockAudio, { once: true });
 
-            <a class="entry"
-               href="songs/mr-fingers-larry-heard-can-you-feel-it-1986.html"
-               data-audio="Musique/09 - Mr Fingers - Can You Feel It.mp3">
-                <span>1986</span><span>—</span><span class="t">Can</span><span class="t">You</span><span class="t">Feel</span><span class="t">It</span><span>—</span><span>Mr.</span><span>Fingers</span><span>(Larry</span><span>Heard)</span>
-            </a>
+    let fadeTimer = null;
 
-            <a class="entry"
-               href="songs/autechre-dael-1995.html"
-               data-audio="Musique/11 - Dael · Autechre.mp3">
-                <span>1995</span><span>—</span><span class="t">Tri</span><span class="t">Repetae</span><span>—</span><span>Autechre</span>
-            </a>
+    function fadeAudio(targetVol, duration, onDone) {
+        clearInterval(fadeTimer);
+        const startVol = audio.volume;
+        const diff = targetVol - startVol;
+        const steps = 20;
+        const stepMs = duration / steps;
+        let step = 0;
+        fadeTimer = setInterval(() => {
+            step++;
+            audio.volume = Math.max(0, Math.min(1, startVol + diff * (step / steps)));
+            if (step >= steps) { clearInterval(fadeTimer); if (onDone) onDone(); }
+        }, stepMs);
+    }
 
-            <a class="entry"
-               href="songs/boards-of-canada-roygbiv-1998.html"
-               data-audio="Musique/12 - Boards of Canada — Roygbiv (1998).mp3">
-                <span>1998</span><span>—</span><span class="t">Roygbiv</span><span>—</span><span>Boards</span><span>Of</span><span>Canada</span>
-            </a>
+    function playAudio(src) {
+        if (!src) return;
+        const currentFile = decodeURIComponent(audio.src).split('/').pop();
+        const newFile = src.split('/').pop();
+        if (currentFile !== newFile) { audio.src = src; audio.load(); }
+        audio.volume = 0;
+        audio.play().catch(() => {});
+        fadeAudio(0.75, 400);
+    }
 
-            <a class="entry"
-               href="songs/ryoji-ikeda-datamatrix-2005.html"
-               data-audio="Musique/13 - Ryoji Ikeda - data.matrix.mp3">
-                <span>2005</span><span>—</span><span class="t">Data</span><span class="t">Matrix</span><span>—</span><span>Ryoji</span><span>Ikeda</span>
-            </a>
+    function stopAudio() {
+        fadeAudio(0, 350, () => { audio.pause(); });
+    }
 
-            <a class="entry"
-               href="songs/rashad-becker-busy-ready-what-corroborators-2025.html"
-               data-audio="Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3">
-                <span>2025</span><span>—</span><span class="t">Busy</span><span class="t">Ready</span><span class="t">What,</span><span class="t">Corroborators</span><span>—</span><span>Rashad</span><span>Becker</span>
-            </a>
-
-        </div>
-    </div>
-
-    <script>
-        const entries = document.querySelectorAll('.entry');
-        const audioCache = {};
-        let currentAudio = null;
-        let loadedCount = 0;
-        const totalAudio = entries.length;
-        let timelineShown = false;
-        let audioUnlocked = false;
-
-        const loadingScreen = document.getElementById('loading-screen');
-        const loadingProgress = document.getElementById('loading-progress');
-        const timelineContainer = document.getElementById('timeline-container');
-
-        // Alternating loading icon animation
-        const icons = document.querySelectorAll('.loading-icon');
-        let currentIconIndex = 0;
-        icons[0].classList.add('active');
-        setInterval(() => {
-            icons[currentIconIndex].classList.remove('active');
-            currentIconIndex = (currentIconIndex + 1) % icons.length;
-            icons[currentIconIndex].classList.add('active');
-        }, 500);
-
-        function updateLoadingProgress() {
-            loadingProgress.textContent = `${loadedCount} / ${totalAudio}`;
-        }
-
-        function showTimeline() {
-            if (timelineShown) return;
-            timelineShown = true;
-            loadingScreen.classList.add('hidden');
-            setTimeout(() => timelineContainer.classList.add('visible'), 400);
-        }
-
-        function unlockAudio() {
-            if (audioUnlocked) return;
-            const s = new Audio();
-            s.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
-            s.play()
-                .then(() => { s.pause(); audioUnlocked = true; showTimeline(); })
-                .catch(() => { audioUnlocked = true; showTimeline(); });
-        }
-
-        // Timeout fallback — show timeline after 30s even if audio stalls
-        setTimeout(() => { if (!timelineShown) { audioUnlocked = true; showTimeline(); } }, 30000);
-
-        // Preload all audio
-        entries.forEach(entry => {
-            const path = entry.getAttribute('data-audio');
-            if (!path) return;
-            const audio = new Audio();
-            audio.preload = 'auto';
-            audio.src = path;
-            audioCache[path] = audio;
-            audio.addEventListener('canplay', () => {
-                loadedCount++;
-                updateLoadingProgress();
-                if (loadedCount === totalAudio) unlockAudio();
-            }, { once: true });
-            audio.addEventListener('error', () => {
-                loadedCount++;
-                updateLoadingProgress();
-                if (loadedCount === totalAudio) unlockAudio();
-            });
-            audio.load();
+    // ── Hover wiring ──────────────────────────────────────────────────────────
+    document.querySelectorAll('.song-row').forEach(row => {
+        row.addEventListener('mouseenter', () => {
+            currentMode = parseInt(row.dataset.mode, 10);
+            shapeImg.classList.add('hidden');
+            playAudio(row.dataset.audio);
         });
+        row.addEventListener('mouseleave', () => {
+            currentMode = -1;
+            shapeImg.classList.remove('hidden');
+            stopAudio();
+        });
+    });
 
-        // Hover to play / stop
-        entries.forEach(entry => {
-            entry.addEventListener('mouseenter', function() {
-                const path = this.getAttribute('data-audio');
-                if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
-                if (path && audioCache[path]) {
-                    currentAudio = audioCache[path];
-                    currentAudio.currentTime = 0;
-                    currentAudio.play().catch(() => {});
+    // ── Simulation helpers ────────────────────────────────────────────────────
+    const vol  = () => 0.28 + 0.22 * Math.sin(t * 0.025);
+    const beat = () => t % 70  === 0;
+    const sBeat= () => t % 210 === 0;
+    const r    = (a, b) => a + Math.random() * (b - a);
+    const ri   = (a, b) => Math.floor(r(a, b));
+
+    // ── Main loop ─────────────────────────────────────────────────────────────
+    function loop() {
+        t++;
+        if (currentMode !== prevMode) { bc.clearRect(0, 0, W, H); prevMode = currentMode; }
+        ctx.clearRect(0, 0, W, H);
+
+        if (currentMode !== -1 && imgReady && W > 0) {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, W, H);
+            draw(currentMode);
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.drawImage(shapeImg, 0, 0, W, H);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    function draw(m) {
+        const v = vol(), b = beat(), sb = sBeat();
+        switch (m) {
+            case 0:  mSchaeffer(v); break;
+            case 1:  mStockhausen(v, b, sb); break;
+            case 2:  mOram(v); break;
+            case 3:  mDerbyshire(v); break;
+            case 4:  mEno(v, b); break;
+            case 5:  mSpiegel(v, b); break;
+            case 6:  mSingh(v, b); break;
+            case 7:  mMrFingers(v, b, sb); break;
+            case 8:  mAutechre(v, b, sb); break;
+            case 9:  mBOC(v, b); break;
+            case 10: mIkeda(v, b, sb); break;
+            case 11: mBecker(v, b); break;
+        }
+    }
+
+    // ── 0 · Pierre Schaeffer ─────────────────────────────────────────────────
+    function mSchaeffer(v) {
+        const g = Math.round(50 + 160 * (0.35 + 0.65 * v));
+        ctx.fillStyle = `rgb(${g},${g},${g})`;
+        const rw = W * 0.62, rh = H * 0.62;
+        ctx.fillRect((W - rw) / 2, (H - rh) / 2, rw, rh);
+    }
+
+    // ── 1 · Stockhausen ──────────────────────────────────────────────────────
+    function mStockhausen(v, b, sb) {
+        bc.fillStyle = 'rgba(0,0,0,0.012)';
+        bc.fillRect(0, 0, W, H);
+        if (b) {
+            const n = sb ? ri(4, 8) : ri(1, 3);
+            for (let i = 0; i < n; i++) {
+                const sz = sb ? r(18, 45) : r(3, 14);
+                bc.fillStyle = `rgba(255,255,255,${r(0.5, 0.95)})`;
+                bc.fillRect(r(0, W - sz), r(0, H - sz), sz, sz);
+            }
+        }
+        if (t % 3 === 0) {
+            const sz = r(0.5, 2);
+            bc.fillStyle = `rgba(255,255,255,${r(0.3, 0.7)})`;
+            bc.fillRect(r(0, W), r(0, H), sz, sz);
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── 2 · Daphne Oram ──────────────────────────────────────────────────────
+    function mOram(v) {
+        const STEPS = 700, step = t % (STEPS + 80);
+        if (step === 0) bc.clearRect(0, 0, W, H);
+        if (step >= STEPS) { ctx.drawImage(buf, 0, 0); return; }
+        const cx = W / 2, cy = H / 2;
+        const maxR = Math.min(W, H) * 0.42;
+        const angle = (step / STEPS) * Math.PI * 2 * 7;
+        const radius = (step / STEPS) * maxR;
+        const thick = Math.max(2, Math.min(W, H) * 0.013 * (0.5 + 0.8 * v));
+        const alpha = 0.45 + 0.45 * v;
+        const noise = 0.5 + 0.5 * Math.sin(angle * 4.5 + t * 0.01);
+        const bump  = noise > 0.30 ? Math.pow(noise, 0.75) * thick * 2.6 : 0;
+        bc.beginPath();
+        bc.arc(cx + Math.cos(angle) * (radius + bump), cy + Math.sin(angle) * (radius + bump), thick, 0, Math.PI * 2);
+        bc.fillStyle = `rgba(255,255,255,${alpha})`;
+        bc.fill();
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── 3 · Delia Derbyshire ─────────────────────────────────────────────────
+    function mDerbyshire(v) {
+        const cy = H / 2;
+        ctx.lineWidth = 1.5;
+        for (let layer = 0; layer < 4; layer++) {
+            const amp   = H * (0.12 + layer * 0.05) * (0.5 + v);
+            const freq  = 0.025 + layer * 0.012;
+            const phase = t * (0.02 + layer * 0.005) + layer * 1.3;
+            const alpha = Math.max(0.05, 0.9 - layer * 0.2);
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+            for (let x = 0; x <= W; x += 2) {
+                const y = cy + Math.sin(x * freq + phase) * amp * (0.6 + 0.4 * Math.sin(x * 0.01 + t * 0.003));
+                x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+    }
+
+    // ── 4 · Brian Eno ─────────────────────────────────────────────────────────
+    function mEno(v, b) {
+        bc.fillStyle = 'rgba(0,0,0,0.004)';
+        bc.fillRect(0, 0, W, H);
+        if (b) {
+            const y = r(0, H), len = r(W * 0.25, W * 0.85), x0 = r(0, W - len);
+            bc.strokeStyle = `rgba(255,255,255,${r(0.06, 0.28) * (0.5 + v)})`;
+            bc.lineWidth = r(0.5, 1.5);
+            bc.beginPath(); bc.moveTo(x0, y); bc.lineTo(x0 + len, y); bc.stroke();
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── 5 · Laurie Spiegel ───────────────────────────────────────────────────
+    function mSpiegel(v, b) {
+        bc.fillStyle = 'rgba(0,0,0,0.006)';
+        bc.fillRect(0, 0, W, H);
+        if (b) {
+            const yBase = r(H * 0.1, H * 0.9), amp = r(6, 22) * (0.4 + v);
+            const freq = r(0.018, 0.055), alpha = r(0.3, 0.7);
+            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+            bc.lineWidth = r(0.5, 1.5);
+            bc.beginPath();
+            for (let x = 0; x <= W; x += 2) {
+                const y = yBase + Math.sin(x * freq + t * 0.012) * amp;
+                x === 0 ? bc.moveTo(x, y) : bc.lineTo(x, y);
+            }
+            bc.stroke();
+            if (Math.random() < 0.35) {
+                const gs = r(4, 14);
+                bc.strokeStyle = `rgba(255,255,255,${alpha * 0.45})`;
+                bc.lineWidth = 0.5;
+                bc.strokeRect(r(0, W - gs), r(0, H - gs), gs, gs);
+            }
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── 6 · Charanjit Singh ──────────────────────────────────────────────────
+    function mSingh(v, b) {
+        bc.fillStyle = 'rgba(0,0,0,0.005)';
+        bc.fillRect(0, 0, W, H);
+        if (b) {
+            const cx = W / 2, cy = H / 2;
+            const rad = r(W * 0.04, W * 0.46), start = r(0, Math.PI * 2);
+            const arc = r(0.25, Math.PI * 0.8), alpha = r(0.3, 0.8);
+            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+            bc.lineWidth = r(0.5, 2);
+            bc.beginPath(); bc.arc(cx, cy, rad, start, start + arc); bc.stroke();
+            if (Math.random() < 0.5) {
+                bc.beginPath(); bc.arc(cx, cy, rad * r(0.5, 0.85), start + 0.2, start + arc * 0.9); bc.stroke();
+            }
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── 7 · Mr. Fingers ──────────────────────────────────────────────────────
+    function mMrFingers(v, b, sb) {
+        bc.fillStyle = 'rgba(0,0,0,0.005)';
+        bc.fillRect(0, 0, W, H);
+        if (b) {
+            const cx = r(W * 0.08, W * 0.92), cy = r(H * 0.08, H * 0.92);
+            const rad = r(4, sb ? 70 : 32) * (0.5 + v * 0.7), alpha = r(0.15, 0.6);
+            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+            bc.fillStyle   = `rgba(255,255,255,${alpha * 0.25})`;
+            bc.lineWidth = r(0.5, 2.5);
+            bc.beginPath(); bc.arc(cx, cy, rad, 0, Math.PI * 2);
+            Math.random() < 0.3 ? bc.fill() : bc.stroke();
+            if (Math.random() < 0.4) {
+                bc.beginPath(); bc.arc(cx + r(-rad, rad) * 0.5, cy + r(-rad, rad) * 0.5, rad * r(0.2, 0.5), 0, Math.PI * 2); bc.stroke();
+            }
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── 8 · Autechre ─────────────────────────────────────────────────────────
+    function mAutechre(v, b, sb) {
+        bc.fillStyle = 'rgba(0,0,0,0.009)';
+        bc.fillRect(0, 0, W, H);
+        if (b) {
+            const n = sb ? ri(3, 6) : 1;
+            for (let i = 0; i < n; i++) {
+                const x = r(0, W), y = r(0, H), alpha = r(0.3, 0.85), type = ri(0, 3);
+                bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+                bc.lineWidth = r(0.5, 1.5);
+                if (type === 0) {
+                    const s = r(2, sb ? 18 : 10);
+                    bc.beginPath(); bc.moveTo(x-s,y); bc.lineTo(x+s,y); bc.moveTo(x,y-s); bc.lineTo(x,y+s); bc.stroke();
+                } else if (type === 1) {
+                    bc.strokeRect(x, y, r(4, sb ? 50 : 24), r(1, 4));
+                } else {
+                    const len = r(6, sb ? 55 : 28), ang = r(-0.8, 0.8);
+                    bc.beginPath(); bc.moveTo(x, y); bc.lineTo(x + Math.cos(ang)*len, y + Math.sin(ang)*len); bc.stroke();
                 }
-            });
-            entry.addEventListener('mouseleave', function() {
-                if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
-            });
-        });
-    </script>
+            }
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
 
+    // ── 9 · Boards of Canada ─────────────────────────────────────────────────
+    function mBOC(v, b) {
+        bc.fillStyle = 'rgba(0,0,0,0.005)';
+        bc.fillRect(0, 0, W, H);
+        if (b) {
+            const gx = r(0, W*0.8), gy = r(0, H*0.8);
+            const cols = ri(3,9), rows = ri(2,5), spacing = r(4,11), alpha = r(0.2,0.65);
+            bc.fillStyle = `rgba(255,255,255,${alpha})`;
+            for (let c = 0; c < cols; c++)
+                for (let row = 0; row < rows; row++)
+                    if (Math.random() < 0.72) bc.fillRect(gx+c*spacing, gy+row*spacing, r(1,3), r(1,3));
+            if (Math.random() < 0.45) {
+                bc.strokeStyle = `rgba(255,255,255,${alpha*0.5})`; bc.lineWidth = 0.5;
+                bc.strokeRect(r(0,W-18), r(0,H-12), r(9,18), r(6,12));
+            }
+            if (Math.random() < 0.25) {
+                const wy = r(0,H), wamp = r(3,10), wf = r(0.03,0.07);
+                bc.strokeStyle = `rgba(255,255,255,${alpha*0.6})`; bc.lineWidth = 0.8;
+                bc.beginPath();
+                for (let x = 0; x < W*0.4; x+=2) {
+                    const y = wy + Math.sin(x*wf+t*0.01)*wamp;
+                    x===0 ? bc.moveTo(x+gx,y) : bc.lineTo(x+gx,y);
+                }
+                bc.stroke();
+            }
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── 10 · Ryoji Ikeda ─────────────────────────────────────────────────────
+    function mIkeda(v, b, sb) {
+        bc.fillStyle = 'rgba(0,0,0,0.007)';
+        bc.fillRect(0, 0, W, H);
+        if (b) {
+            const alpha = r(0.35, 0.9);
+            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+            if (sb || Math.random() < 0.35) {
+                const bx = r(0, W*0.75), y1 = r(0, H*0.3), y2 = y1 + r(H*0.2, H*0.65);
+                let x = bx;
+                for (let i = 0; i < ri(4,14); i++) {
+                    bc.lineWidth = r(0.5, 2); bc.beginPath(); bc.moveTo(x,y1); bc.lineTo(x,y2); bc.stroke();
+                    x += r(1.5, 5); if (x > W) break;
+                }
+            } else if (Math.random() < 0.5) {
+                const cx = r(4,W-4), cy = r(4,H-4), s = r(2,9);
+                bc.lineWidth = r(0.5,1.5); bc.beginPath();
+                bc.moveTo(cx-s,cy-s); bc.lineTo(cx+s,cy+s);
+                bc.moveTo(cx+s,cy-s); bc.lineTo(cx-s,cy+s); bc.stroke();
+            } else {
+                const fy = r(0,H-15); bc.lineWidth = 0.5;
+                for (let i = 0; i < ri(4,10); i++) {
+                    const lx = r(0,W*0.6), ll = r(10,W*0.4);
+                    bc.beginPath(); bc.moveTo(lx,fy+i*r(1,3)); bc.lineTo(lx+ll,fy+i*r(1,3)); bc.stroke();
+                }
+            }
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── 11 · Rashad Becker ───────────────────────────────────────────────────
+    function mBecker(v, b) {
+        bc.fillStyle = 'rgba(0,0,0,0.018)';
+        bc.fillRect(0, 0, W, H);
+        if (b && Math.random() < 0.65) {
+            const y = r(0,H), segs = ri(2,6), alpha = r(0.2,0.55);
+            bc.strokeStyle = `rgba(255,255,255,${alpha})`; bc.lineWidth = r(0.5,1);
+            let x = r(0, W*0.35);
+            for (let s = 0; s < segs; s++) {
+                const len = r(4, 45);
+                bc.beginPath(); bc.moveTo(x+r(-0.8,0.8),y); bc.lineTo(x+len+r(-0.8,0.8),y); bc.stroke();
+                x += len + r(2,18); if (x > W) break;
+            }
+            if (Math.random() < 0.25) {
+                const sx = r(0,W), sh = r(3,12);
+                bc.beginPath(); bc.moveTo(sx,y); bc.lineTo(sx,y+sh); bc.stroke();
+            }
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    requestAnimationFrame(loop);
+})();
+</script>
 </body>
 </html>
