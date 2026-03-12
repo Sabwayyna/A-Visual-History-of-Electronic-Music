@@ -529,13 +529,42 @@
             if (tower.yPos > towerHeight) towerHeight = tower.yPos;
         }
 
+        let audioEl; // keep reference for deferred play
+
+        async function initAudio() {
+            if (audioStarted) return;
+            audioStarted = true;
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            analyser.smoothingTimeConstant = 0.6;
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+            audioEl = new Audio('../Musique/Patchwork.mp3');
+            audioEl.crossOrigin = 'anonymous';
+            const source = audioCtx.createMediaElementSource(audioEl);
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
+            try {
+                await audioEl.play();
+            } catch (e) {
+                // Browser blocked autoplay — start silently on first interaction
+                const resume = () => { audioCtx.resume(); audioEl.play(); };
+                document.addEventListener('click',    resume, { once: true });
+                document.addEventListener('keydown',  resume, { once: true });
+                document.addEventListener('pointerdown', resume, { once: true });
+            }
+        }
+
         function initScene() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x000000);
             scene.fog = new THREE.FogExp2(0x000000, 0.0015);
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
-            // Start directly overhead — tiny z offset avoids OrbitControls gimbal lock at exactly 90°
+            // Directly overhead — tiny z offset prevents OrbitControls gimbal lock at exactly 90°
             camera.position.set(0, 120, 0.01);
             camera.lookAt(0, 0, 0);
 
@@ -556,25 +585,6 @@
             animate();
         }
 
-        function initAudio() {
-            if (audioStarted) return;
-            audioStarted = true;
-            audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
-            analyser  = audioCtx.createAnalyser();
-            analyser.fftSize = 2048;
-            analyser.smoothingTimeConstant = 0.6;
-            dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-            const audioEl = new Audio('../Musique/Patchwork.mp3');
-            audioEl.crossOrigin = 'anonymous';
-            const source = audioCtx.createMediaElementSource(audioEl);
-            source.connect(analyser);
-            analyser.connect(audioCtx.destination);
-            audioEl.play();
-        }
-
-        document.addEventListener('click', initAudio, { once: true });
-
         function animate() {
             requestAnimationFrame(animate);
 
@@ -591,9 +601,15 @@
                 });
             }
 
-            // Keep orbit target centred on mid-height of towers as they grow
+            // Keep camera directly overhead, rising with the tower top.
+            // Move BOTH target and camera.position.y by the same delta so
+            // OrbitControls sees an unchanged offset and stays top-down.
             if (towerHeight > 0) {
-                controls.target.y += (towerHeight * 0.5 - controls.target.y) * 0.02;
+                const prevY  = controls.target.y;
+                const nextY  = prevY + (towerHeight - prevY) * 0.06;
+                const deltaY = nextY - prevY;
+                controls.target.y    = nextY;
+                camera.position.y   += deltaY;
             }
 
             controls.update();
@@ -608,6 +624,7 @@
         });
 
         initScene();
+        initAudio();
     </script>
 
     <script>
