@@ -294,9 +294,9 @@
     });
 
     // ── Simulation helpers ────────────────────────────────────────────────────
-    const vol  = () => 0.28 + 0.22 * Math.sin(t * 0.025);
-    const beat = () => t % 70  === 0;
-    const sBeat= () => t % 210 === 0;
+    const vol  = () => 0.45 + 0.35 * Math.sin(t * 0.03);
+    const beat = () => t % 22  === 0;
+    const sBeat= () => t % 66  === 0;
     const r    = (a, b) => a + Math.random() * (b - a);
     const ri   = (a, b) => Math.floor(r(a, b));
 
@@ -336,165 +336,196 @@
         }
     }
 
-    // ── 0 · Pierre Schaeffer ─────────────────────────────────────────────────
+    // ── 0 · Pierre Schaeffer — rapid tape-cut rectangles ─────────────────────
     function mSchaeffer(v) {
-        const g = Math.round(50 + 160 * (0.35 + 0.65 * v));
-        ctx.fillStyle = `rgb(${g},${g},${g})`;
-        const rw = W * 0.62, rh = H * 0.62;
-        ctx.fillRect((W - rw) / 2, (H - rh) / 2, rw, rh);
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.fillRect(0, 0, W, H);
+        const n = ri(3, 9);
+        for (let i = 0; i < n; i++) {
+            const rw = r(W * 0.04, W * 0.65), rh = r(H * 0.015, H * 0.38);
+            ctx.fillStyle = `rgba(255,255,255,${r(0.45, 1.0) * Math.min(1, v * 1.4)})`;
+            ctx.fillRect(r(0, W - rw), r(0, H - rh), rw, rh);
+        }
     }
 
-    // ── 1 · Stockhausen ──────────────────────────────────────────────────────
+    // ── 1 · Stockhausen — dense scattered bright squares ─────────────────────
     function mStockhausen(v, b, sb) {
-        bc.fillStyle = 'rgba(0,0,0,0.012)';
+        bc.fillStyle = 'rgba(0,0,0,0.03)';
         bc.fillRect(0, 0, W, H);
-        if (b) {
-            const n = sb ? ri(4, 8) : ri(1, 3);
+        if (t % 2 === 0) {
+            const n = sb ? ri(8, 16) : (b ? ri(4, 9) : ri(1, 4));
             for (let i = 0; i < n; i++) {
-                const sz = sb ? r(18, 45) : r(3, 14);
-                bc.fillStyle = `rgba(255,255,255,${r(0.5, 0.95)})`;
+                const sz = sb ? r(10, 42) : r(1.5, 13);
+                bc.fillStyle = `rgba(255,255,255,${r(0.7, 1.0)})`;
                 bc.fillRect(r(0, W - sz), r(0, H - sz), sz, sz);
             }
         }
-        if (t % 3 === 0) {
-            const sz = r(0.5, 2);
-            bc.fillStyle = `rgba(255,255,255,${r(0.3, 0.7)})`;
-            bc.fillRect(r(0, W), r(0, H), sz, sz);
+        if (t % 2 === 1) {
+            bc.fillStyle = `rgba(255,255,255,${r(0.45, 0.85)})`;
+            bc.fillRect(r(0, W), r(0, H), r(0.5, 2.5), r(0.5, 2.5));
         }
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 2 · Daphne Oram ──────────────────────────────────────────────────────
+    // ── 2 · Daphne Oram — fast Oramics spiral ────────────────────────────────
     function mOram(v) {
-        const STEPS = 700, step = t % (STEPS + 80);
-        if (step === 0) bc.clearRect(0, 0, W, H);
-        if (step >= STEPS) { ctx.drawImage(buf, 0, 0); return; }
-        const cx = W / 2, cy = H / 2;
-        const maxR = Math.min(W, H) * 0.42;
-        const angle = (step / STEPS) * Math.PI * 2 * 7;
-        const radius = (step / STEPS) * maxR;
-        const thick = Math.max(2, Math.min(W, H) * 0.013 * (0.5 + 0.8 * v));
-        const alpha = 0.45 + 0.45 * v;
-        const noise = 0.5 + 0.5 * Math.sin(angle * 4.5 + t * 0.01);
-        const bump  = noise > 0.30 ? Math.pow(noise, 0.75) * thick * 2.6 : 0;
-        bc.beginPath();
-        bc.arc(cx + Math.cos(angle) * (radius + bump), cy + Math.sin(angle) * (radius + bump), thick, 0, Math.PI * 2);
-        bc.fillStyle = `rgba(255,255,255,${alpha})`;
-        bc.fill();
+        const TOTAL = 900, PER = 6, PAUSE = 15;
+        const frames = Math.ceil(TOTAL / PER);
+        const cycle  = t % (frames + PAUSE);
+        if (cycle === 0) bc.clearRect(0, 0, W, H);
+        if (cycle >= frames) { ctx.drawImage(buf, 0, 0); return; }
+        const cx = W / 2, cy = H / 2, maxR = Math.min(W, H) * 0.44;
+        for (let j = 0; j < PER; j++) {
+            const step = cycle * PER + j;
+            if (step >= TOTAL) break;
+            const prog  = step / TOTAL;
+            const angle = prog * Math.PI * 2 * 8;
+            const radius = prog * maxR;
+            const thick = Math.max(1.8, Math.min(W, H) * 0.015 * (0.6 + 0.7 * v));
+            const noise = 0.5 + 0.5 * Math.sin(angle * 4.5);
+            const bump  = noise > 0.3 ? Math.pow(noise, 0.75) * thick * 3 : 0;
+            bc.beginPath();
+            bc.arc(cx + Math.cos(angle) * (radius + bump), cy + Math.sin(angle) * (radius + bump), thick, 0, Math.PI * 2);
+            bc.fillStyle = `rgba(255,255,255,${0.75 + 0.25 * v})`;
+            bc.fill();
+        }
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 3 · Delia Derbyshire ─────────────────────────────────────────────────
+    // ── 3 · Delia Derbyshire — bright layered sine waves ─────────────────────
     function mDerbyshire(v) {
         const cy = H / 2;
-        ctx.lineWidth = 1.5;
-        for (let layer = 0; layer < 4; layer++) {
-            const amp   = H * (0.12 + layer * 0.05) * (0.5 + v);
-            const freq  = 0.025 + layer * 0.012;
-            const phase = t * (0.02 + layer * 0.005) + layer * 1.3;
-            const alpha = Math.max(0.05, 0.9 - layer * 0.2);
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.fillRect(0, 0, W, H);
+        for (let layer = 0; layer < 7; layer++) {
+            const amp   = H * (0.055 + layer * 0.055) * (0.5 + v);
+            const freq  = 0.02  + layer * 0.013;
+            const phase = t * (0.026 + layer * 0.006) + layer * 1.3;
+            const alpha = Math.max(0.12, 1.0 - layer * 0.11);
             ctx.beginPath();
             ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+            ctx.lineWidth   = Math.max(0.5, 2.2 - layer * 0.22);
             for (let x = 0; x <= W; x += 2) {
-                const y = cy + Math.sin(x * freq + phase) * amp * (0.6 + 0.4 * Math.sin(x * 0.01 + t * 0.003));
+                const y = cy + Math.sin(x * freq + phase) * amp * (0.6 + 0.4 * Math.sin(x * 0.01 + t * 0.004));
                 x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
             }
             ctx.stroke();
         }
     }
 
-    // ── 4 · Brian Eno ─────────────────────────────────────────────────────────
+    // ── 4 · Brian Eno — slow accumulating horizon lines ──────────────────────
     function mEno(v, b) {
-        bc.fillStyle = 'rgba(0,0,0,0.004)';
+        bc.fillStyle = 'rgba(0,0,0,0.007)';
         bc.fillRect(0, 0, W, H);
         if (b) {
-            const y = r(0, H), len = r(W * 0.25, W * 0.85), x0 = r(0, W - len);
-            bc.strokeStyle = `rgba(255,255,255,${r(0.06, 0.28) * (0.5 + v)})`;
-            bc.lineWidth = r(0.5, 1.5);
-            bc.beginPath(); bc.moveTo(x0, y); bc.lineTo(x0 + len, y); bc.stroke();
+            const n = ri(2, 5);
+            for (let i = 0; i < n; i++) {
+                const y = r(0, H), len = r(W * 0.3, W), x0 = r(0, W - len);
+                bc.strokeStyle = `rgba(255,255,255,${r(0.2, 0.6) * (0.5 + v)})`;
+                bc.lineWidth = r(0.5, 2.5);
+                bc.beginPath(); bc.moveTo(x0, y); bc.lineTo(x0 + len, y); bc.stroke();
+            }
+        }
+        if (t % 7 === 0) {
+            bc.strokeStyle = `rgba(255,255,255,${r(0.08, 0.25)})`;
+            bc.lineWidth = 0.5;
+            const y = r(0, H);
+            bc.beginPath(); bc.moveTo(0, y); bc.lineTo(r(W * 0.4, W), y); bc.stroke();
         }
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 5 · Laurie Spiegel ───────────────────────────────────────────────────
+    // ── 5 · Laurie Spiegel — overlapping algorithmic waves ───────────────────
     function mSpiegel(v, b) {
-        bc.fillStyle = 'rgba(0,0,0,0.006)';
+        bc.fillStyle = 'rgba(0,0,0,0.01)';
         bc.fillRect(0, 0, W, H);
         if (b) {
-            const yBase = r(H * 0.1, H * 0.9), amp = r(6, 22) * (0.4 + v);
-            const freq = r(0.018, 0.055), alpha = r(0.3, 0.7);
-            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
-            bc.lineWidth = r(0.5, 1.5);
-            bc.beginPath();
-            for (let x = 0; x <= W; x += 2) {
-                const y = yBase + Math.sin(x * freq + t * 0.012) * amp;
-                x === 0 ? bc.moveTo(x, y) : bc.lineTo(x, y);
+            const n = ri(2, 6);
+            for (let i = 0; i < n; i++) {
+                const yBase = r(H * 0.05, H * 0.95), amp = r(5, 30) * (0.4 + v);
+                const freq = r(0.014, 0.06), alpha = r(0.5, 0.95);
+                bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+                bc.lineWidth = r(0.5, 2);
+                bc.beginPath();
+                for (let x = 0; x <= W; x += 2) {
+                    const y = yBase + Math.sin(x * freq + t * 0.013) * amp;
+                    x === 0 ? bc.moveTo(x, y) : bc.lineTo(x, y);
+                }
+                bc.stroke();
             }
-            bc.stroke();
-            if (Math.random() < 0.35) {
-                const gs = r(4, 14);
-                bc.strokeStyle = `rgba(255,255,255,${alpha * 0.45})`;
-                bc.lineWidth = 0.5;
+            if (Math.random() < 0.55) {
+                const gs = r(4, 20);
+                bc.strokeStyle = `rgba(255,255,255,${r(0.35, 0.75)})`;
+                bc.lineWidth = 0.8;
                 bc.strokeRect(r(0, W - gs), r(0, H - gs), gs, gs);
             }
         }
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 6 · Charanjit Singh ──────────────────────────────────────────────────
+    // ── 6 · Charanjit Singh — concentric arcs building up ────────────────────
     function mSingh(v, b) {
-        bc.fillStyle = 'rgba(0,0,0,0.005)';
+        bc.fillStyle = 'rgba(0,0,0,0.008)';
         bc.fillRect(0, 0, W, H);
         if (b) {
             const cx = W / 2, cy = H / 2;
-            const rad = r(W * 0.04, W * 0.46), start = r(0, Math.PI * 2);
-            const arc = r(0.25, Math.PI * 0.8), alpha = r(0.3, 0.8);
-            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
-            bc.lineWidth = r(0.5, 2);
-            bc.beginPath(); bc.arc(cx, cy, rad, start, start + arc); bc.stroke();
-            if (Math.random() < 0.5) {
-                bc.beginPath(); bc.arc(cx, cy, rad * r(0.5, 0.85), start + 0.2, start + arc * 0.9); bc.stroke();
-            }
-        }
-        ctx.drawImage(buf, 0, 0);
-    }
-
-    // ── 7 · Mr. Fingers ──────────────────────────────────────────────────────
-    function mMrFingers(v, b, sb) {
-        bc.fillStyle = 'rgba(0,0,0,0.005)';
-        bc.fillRect(0, 0, W, H);
-        if (b) {
-            const cx = r(W * 0.08, W * 0.92), cy = r(H * 0.08, H * 0.92);
-            const rad = r(4, sb ? 70 : 32) * (0.5 + v * 0.7), alpha = r(0.15, 0.6);
-            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
-            bc.fillStyle   = `rgba(255,255,255,${alpha * 0.25})`;
-            bc.lineWidth = r(0.5, 2.5);
-            bc.beginPath(); bc.arc(cx, cy, rad, 0, Math.PI * 2);
-            Math.random() < 0.3 ? bc.fill() : bc.stroke();
-            if (Math.random() < 0.4) {
-                bc.beginPath(); bc.arc(cx + r(-rad, rad) * 0.5, cy + r(-rad, rad) * 0.5, rad * r(0.2, 0.5), 0, Math.PI * 2); bc.stroke();
-            }
-        }
-        ctx.drawImage(buf, 0, 0);
-    }
-
-    // ── 8 · Autechre ─────────────────────────────────────────────────────────
-    function mAutechre(v, b, sb) {
-        bc.fillStyle = 'rgba(0,0,0,0.009)';
-        bc.fillRect(0, 0, W, H);
-        if (b) {
-            const n = sb ? ri(3, 6) : 1;
+            const n = ri(3, 6);
             for (let i = 0; i < n; i++) {
-                const x = r(0, W), y = r(0, H), alpha = r(0.3, 0.85), type = ri(0, 3);
+                const rad = r(W * 0.04, W * 0.48), start = r(0, Math.PI * 2);
+                const arc = r(0.4, Math.PI * 1.4), alpha = r(0.5, 1.0);
                 bc.strokeStyle = `rgba(255,255,255,${alpha})`;
-                bc.lineWidth = r(0.5, 1.5);
+                bc.lineWidth = r(0.8, 2.5);
+                bc.beginPath(); bc.arc(cx, cy, rad, start, start + arc); bc.stroke();
+                if (Math.random() < 0.65) {
+                    bc.beginPath(); bc.arc(cx, cy, rad * r(0.4, 0.8), start + 0.15, start + arc * 0.85); bc.stroke();
+                }
+            }
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── 7 · Mr. Fingers — pulsing nested circles ─────────────────────────────
+    function mMrFingers(v, b, sb) {
+        bc.fillStyle = 'rgba(0,0,0,0.008)';
+        bc.fillRect(0, 0, W, H);
+        if (b) {
+            const n = sb ? ri(4, 8) : ri(2, 5);
+            for (let i = 0; i < n; i++) {
+                const cx = r(W * 0.05, W * 0.95), cy = r(H * 0.05, H * 0.95);
+                const rad = r(5, sb ? 85 : 42) * (0.5 + v * 0.7), alpha = r(0.3, 0.85);
+                bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+                bc.fillStyle   = `rgba(255,255,255,${alpha * 0.18})`;
+                bc.lineWidth   = r(0.8, 3);
+                bc.beginPath(); bc.arc(cx, cy, rad, 0, Math.PI * 2);
+                Math.random() < 0.28 ? bc.fill() : bc.stroke();
+                if (Math.random() < 0.6) {
+                    bc.beginPath(); bc.arc(cx + r(-rad, rad) * 0.35, cy + r(-rad, rad) * 0.35, rad * r(0.2, 0.55), 0, Math.PI * 2); bc.stroke();
+                }
+                if (Math.random() < 0.35) {
+                    bc.beginPath(); bc.arc(cx, cy, rad * r(0.6, 0.9), 0, Math.PI * 2); bc.stroke();
+                }
+            }
+        }
+        ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── 8 · Autechre — glitch geometry firing constantly ─────────────────────
+    function mAutechre(v, b, sb) {
+        bc.fillStyle = 'rgba(0,0,0,0.012)';
+        bc.fillRect(0, 0, W, H);
+        if (t % 3 === 0) {
+            const n = sb ? ri(5, 10) : (b ? ri(3, 6) : ri(1, 2));
+            for (let i = 0; i < n; i++) {
+                const x = r(0, W), y = r(0, H), alpha = r(0.55, 1.0), type = ri(0, 3);
+                bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+                bc.lineWidth = r(0.5, 2);
                 if (type === 0) {
-                    const s = r(2, sb ? 18 : 10);
+                    const s = r(2, sb ? 24 : 13);
                     bc.beginPath(); bc.moveTo(x-s,y); bc.lineTo(x+s,y); bc.moveTo(x,y-s); bc.lineTo(x,y+s); bc.stroke();
                 } else if (type === 1) {
-                    bc.strokeRect(x, y, r(4, sb ? 50 : 24), r(1, 4));
+                    bc.strokeRect(x, y, r(4, sb ? 58 : 30), r(1, 6));
                 } else {
-                    const len = r(6, sb ? 55 : 28), ang = r(-0.8, 0.8);
+                    const len = r(8, sb ? 65 : 35), ang = r(-0.9, 0.9);
                     bc.beginPath(); bc.moveTo(x, y); bc.lineTo(x + Math.cos(ang)*len, y + Math.sin(ang)*len); bc.stroke();
                 }
             }
@@ -502,26 +533,30 @@
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 9 · Boards of Canada ─────────────────────────────────────────────────
+    // ── 9 · Boards of Canada — dense nostalgic dot grids ─────────────────────
     function mBOC(v, b) {
-        bc.fillStyle = 'rgba(0,0,0,0.005)';
+        bc.fillStyle = 'rgba(0,0,0,0.008)';
         bc.fillRect(0, 0, W, H);
         if (b) {
-            const gx = r(0, W*0.8), gy = r(0, H*0.8);
-            const cols = ri(3,9), rows = ri(2,5), spacing = r(4,11), alpha = r(0.2,0.65);
-            bc.fillStyle = `rgba(255,255,255,${alpha})`;
-            for (let c = 0; c < cols; c++)
-                for (let row = 0; row < rows; row++)
-                    if (Math.random() < 0.72) bc.fillRect(gx+c*spacing, gy+row*spacing, r(1,3), r(1,3));
-            if (Math.random() < 0.45) {
-                bc.strokeStyle = `rgba(255,255,255,${alpha*0.5})`; bc.lineWidth = 0.5;
-                bc.strokeRect(r(0,W-18), r(0,H-12), r(9,18), r(6,12));
+            const n = ri(2, 5);
+            for (let i = 0; i < n; i++) {
+                const gx = r(0, W*0.75), gy = r(0, H*0.75);
+                const cols = ri(4,14), rows = ri(3,8), spacing = r(3,12), alpha = r(0.4, 0.92);
+                bc.fillStyle = `rgba(255,255,255,${alpha})`;
+                for (let c = 0; c < cols; c++)
+                    for (let rw = 0; rw < rows; rw++)
+                        if (Math.random() < 0.72) bc.fillRect(gx+c*spacing, gy+rw*spacing, r(1,3.5), r(1,3.5));
             }
-            if (Math.random() < 0.25) {
-                const wy = r(0,H), wamp = r(3,10), wf = r(0.03,0.07);
-                bc.strokeStyle = `rgba(255,255,255,${alpha*0.6})`; bc.lineWidth = 0.8;
+            if (Math.random() < 0.6) {
+                bc.strokeStyle = `rgba(255,255,255,${r(0.25, 0.65)})`; bc.lineWidth = 0.5;
+                bc.strokeRect(r(0,W-22), r(0,H-15), r(11,22), r(7,15));
+            }
+            if (Math.random() < 0.35) {
+                const wy = r(0,H), wamp = r(4,12), wf = r(0.03,0.07), alpha = r(0.3,0.7);
+                bc.strokeStyle = `rgba(255,255,255,${alpha})`; bc.lineWidth = 0.8;
                 bc.beginPath();
-                for (let x = 0; x < W*0.4; x+=2) {
+                const gx = r(0, W*0.5);
+                for (let x = 0; x < W*0.55; x+=2) {
                     const y = wy + Math.sin(x*wf+t*0.01)*wamp;
                     x===0 ? bc.moveTo(x+gx,y) : bc.lineTo(x+gx,y);
                 }
@@ -531,29 +566,31 @@
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 10 · Ryoji Ikeda ─────────────────────────────────────────────────────
+    // ── 10 · Ryoji Ikeda — data-stream vertical bars, always firing ───────────
     function mIkeda(v, b, sb) {
-        bc.fillStyle = 'rgba(0,0,0,0.007)';
+        bc.fillStyle = 'rgba(0,0,0,0.01)';
         bc.fillRect(0, 0, W, H);
-        if (b) {
-            const alpha = r(0.35, 0.9);
+        if (t % 2 === 0) {
+            const alpha = r(0.6, 1.0);
             bc.strokeStyle = `rgba(255,255,255,${alpha})`;
-            if (sb || Math.random() < 0.35) {
-                const bx = r(0, W*0.75), y1 = r(0, H*0.3), y2 = y1 + r(H*0.2, H*0.65);
+            if (sb || Math.random() < 0.5) {
+                const bx = r(0, W*0.8), y1 = r(0, H*0.2), y2 = y1 + r(H*0.3, H*0.75);
                 let x = bx;
-                for (let i = 0; i < ri(4,14); i++) {
-                    bc.lineWidth = r(0.5, 2); bc.beginPath(); bc.moveTo(x,y1); bc.lineTo(x,y2); bc.stroke();
+                for (let i = 0; i < ri(6, 20); i++) {
+                    bc.lineWidth = r(0.5, 2.5); bc.beginPath(); bc.moveTo(x,y1); bc.lineTo(x,y2); bc.stroke();
                     x += r(1.5, 5); if (x > W) break;
                 }
-            } else if (Math.random() < 0.5) {
-                const cx = r(4,W-4), cy = r(4,H-4), s = r(2,9);
-                bc.lineWidth = r(0.5,1.5); bc.beginPath();
+            }
+            if (Math.random() < 0.45) {
+                const cx = r(4,W-4), cy = r(4,H-4), s = r(2,11);
+                bc.lineWidth = r(0.5,2); bc.beginPath();
                 bc.moveTo(cx-s,cy-s); bc.lineTo(cx+s,cy+s);
                 bc.moveTo(cx+s,cy-s); bc.lineTo(cx-s,cy+s); bc.stroke();
-            } else {
-                const fy = r(0,H-15); bc.lineWidth = 0.5;
-                for (let i = 0; i < ri(4,10); i++) {
-                    const lx = r(0,W*0.6), ll = r(10,W*0.4);
+            }
+            if (Math.random() < 0.4) {
+                const fy = r(0,H-20); bc.lineWidth = 0.5;
+                for (let i = 0; i < ri(5,16); i++) {
+                    const lx = r(0,W*0.65), ll = r(8,W*0.45);
                     bc.beginPath(); bc.moveTo(lx,fy+i*r(1,3)); bc.lineTo(lx+ll,fy+i*r(1,3)); bc.stroke();
                 }
             }
@@ -561,22 +598,26 @@
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 11 · Rashad Becker ───────────────────────────────────────────────────
+    // ── 11 · Rashad Becker — layered spectral dashes ─────────────────────────
     function mBecker(v, b) {
-        bc.fillStyle = 'rgba(0,0,0,0.018)';
+        bc.fillStyle = 'rgba(0,0,0,0.022)';
         bc.fillRect(0, 0, W, H);
-        if (b && Math.random() < 0.65) {
-            const y = r(0,H), segs = ri(2,6), alpha = r(0.2,0.55);
-            bc.strokeStyle = `rgba(255,255,255,${alpha})`; bc.lineWidth = r(0.5,1);
-            let x = r(0, W*0.35);
-            for (let s = 0; s < segs; s++) {
-                const len = r(4, 45);
-                bc.beginPath(); bc.moveTo(x+r(-0.8,0.8),y); bc.lineTo(x+len+r(-0.8,0.8),y); bc.stroke();
-                x += len + r(2,18); if (x > W) break;
+        if (t % 3 === 0) {
+            const n = b ? ri(3, 8) : ri(1, 3);
+            for (let k = 0; k < n; k++) {
+                const y = r(0,H), segs = ri(2,9), alpha = r(0.35, 0.9);
+                bc.strokeStyle = `rgba(255,255,255,${alpha})`; bc.lineWidth = r(0.5,1.8);
+                let x = r(0, W*0.45);
+                for (let s = 0; s < segs; s++) {
+                    const len = r(3, 55);
+                    bc.beginPath(); bc.moveTo(x+r(-0.8,0.8),y); bc.lineTo(x+len+r(-0.8,0.8),y); bc.stroke();
+                    x += len + r(1,14); if (x > W) break;
+                }
             }
-            if (Math.random() < 0.25) {
-                const sx = r(0,W), sh = r(3,12);
-                bc.beginPath(); bc.moveTo(sx,y); bc.lineTo(sx,y+sh); bc.stroke();
+            if (Math.random() < 0.35) {
+                const sx = r(0,W), sy = r(0,H), sh = r(4,20);
+                bc.strokeStyle = `rgba(255,255,255,${r(0.4,0.85)})`; bc.lineWidth = r(0.5,1.5);
+                bc.beginPath(); bc.moveTo(sx,sy); bc.lineTo(sx,sy+sh); bc.stroke();
             }
         }
         ctx.drawImage(buf, 0, 0);
