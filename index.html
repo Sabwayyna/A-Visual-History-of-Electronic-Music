@@ -89,10 +89,14 @@
             text-decoration: none;
             color: #fff;
             line-height: 1.15;
-            transition: opacity 0.12s;
+            transition: opacity 0.35s, letter-spacing 0.35s;
         }
 
-        .song-row:hover { opacity: 0.4; }
+        .list-section:hover .song-row { opacity: 0.15; }
+        .list-section:hover .song-row:hover {
+            opacity: 1;
+            letter-spacing: 0.12em;
+        }
 
         .song-year,
         .song-artist,
@@ -103,8 +107,8 @@
             color: #fff;
         }
 
-        .song-artist { text-transform: uppercase; }
-        .song-title  { text-transform: uppercase; }
+        .song-artist { text-transform: uppercase; padding-left: 1.5em; }
+        .song-title  { text-transform: uppercase; text-align: right; }
 
         /* Footer — same grid, three labels at year / artist / title positions */
         #site-footer {
@@ -190,14 +194,14 @@
         <a class="song-row" href="songs/rashad-becker-busy-ready-what-corroborators-2025.html" data-audio="Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3" data-mode="11">
             <span class="song-year">2025</span>
             <span class="song-artist">RASHAD BECKER</span>
-            <span class="song-title">BUSY READY WHAT, CORROBORATORS</span>
+            <span class="song-title">BUSY READY WHAT</span>
         </a>
     </section>
 
     <footer id="site-footer">
-        <span>A History of Electronic Music</span>
-        <a href="info.html">Info</a>
-        <a href="timeline-horizontal.html">Learn More</a>
+        <span></span>
+        <span></span>
+        <a href="timeline-horizontal.html" style="text-align:right;">Learn More</a>
     </footer>
 
 <script>
