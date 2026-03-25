@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nil Admirari - Oneohtrix Point Never (2010)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("../fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000000;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        #controlsBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: transparent;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #controlsBtn img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #controlsBtn .soft-shape {
+            transition: opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        #controlsBtn .spiky-shape {
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        #controlsBtn:hover .soft-shape { opacity: 0; }
+        #controlsBtn:hover .spiky-shape { opacity: 1; }
+
+        #controlsPanel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 24px;
+            color: #000000;
+            font-size: 14px;
+            z-index: 99;
+            min-width: 180px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            line-height: 2;
+        }
+
+        #controlsBtn:hover + #controlsPanel,
+        #controlsPanel:hover {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #controlsPanel .title {
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        #controlsPanel .control-item {
+            margin: 4px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #controlsPanel .key {
+            font-weight: 600;
+            padding: 2px 6px;
+            margin-right: 12px;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        #modeIndicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            border: 3px solid #000000;
+            padding: 20px 40px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 6px 6px 0px #000000;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            letter-spacing: 2px;
+        }
+
+        #modeIndicator.show { opacity: 1; }
+
+        #saveConfirmation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            border: 3px solid #000000;
+            padding: 20px 40px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 6px 6px 0px #000000;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        #saveConfirmation.show { opacity: 1; }
+
+        #speedIndicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            border: 3px solid #000000;
+            padding: 20px 40px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 6px 6px 0px #000000;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            letter-spacing: 2px;
+        }
+
+        #speedIndicator.show { opacity: 1; }
+
+        #backLink {
+            position: fixed;
+            top: 20px;
+            left: 24px;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #backLink:hover {
+            color: rgba(255, 255, 255, 1);
+            letter-spacing: 3px;
+            transform: translateX(-2px);
+        }
+
+        #backLink::before {
+            content: "←";
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+
+        #backLink:hover::before { transform: translateX(-4px); }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            display: flex;
+            gap: 16px;
+            z-index: 100;
+        }
+
+        .nav-link {
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+
+        .nav-link svg { width: 100%; height: 100%; }
+
+        .nav-tooltip {
+            position: fixed;
+            bottom: 76px;
+            background: rgba(255, 255, 255, 0.9);
+            color: black;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover .nav-tooltip { opacity: 1; }
+
+        #modeToggleBtn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        #modeToggleBtn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
+
+        #modeToggleBtn svg { width: 60%; height: 60%; }
+
+        #song-header {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            white-space: nowrap;
+            z-index: 9999;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: color 0.15s ease;
+        }
+
+        #song-header:hover { color: rgba(255, 255, 255, 1.0); }
+        #song-header:active { color: rgba(255, 255, 255, 0.25); }
+        #song-header.open { color: rgba(255, 255, 255, 1.0); }
+
+        #info-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.76);
+            z-index: 9998;
+            transform: translateY(-100%);
+            transition: transform 0.38s cubic-bezier(0.77, 0, 0.175, 1);
+            overflow-y: auto;
+        }
+
+        #info-panel.open { transform: translateY(0); }
+
+        #info-panel-inner { padding: 2vh 7vw 12vh; }
+
+        .ip-close-btn {
+            position: sticky;
+            top: 0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 2.5vh 0 2vh;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 0.85vw;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.28);
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: color 0.2s;
+            user-select: none;
+        }
+
+        .ip-close-btn:hover { color: rgba(255, 255, 255, 0.72); }
+
+        .ip-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: 2.5vw;
+            row-gap: 1vh;
+            margin-bottom: 4vh;
+        }
+
+        .ip-year {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 3.8vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.0;
+            color: rgba(255, 255, 255, 0.72);
+            text-transform: uppercase;
+            order: 2;
+        }
+
+        .ip-title {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 8vw;
+            font-weight: 400;
+            letter-spacing: -0.03em;
+            line-height: 0.88;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.88);
+            text-transform: uppercase;
+            width: 100%;
+            order: 1;
+            margin-bottom: 2vh;
+        }
+
+        .ip-artist {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 3.8vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.0;
+            color: rgba(255, 255, 255, 0.72);
+            text-transform: uppercase;
+            order: 3;
+        }
+
+        .ip-images {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1vw;
+            margin-bottom: 4vh;
+        }
+
+        .ip-img-slot {
+            aspect-ratio: 4 / 3;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .ip-text { border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 3.5vh; }
+
+        .ip-text p {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 2.4vw;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.15;
+            color: rgba(255, 255, 255, 0.78);
+            margin-bottom: 2.5vh;
+        }
+
+        .ip-text p:last-child { margin-bottom: 0; }
+
+        #nav-prev, #nav-next {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.55);
+            text-decoration: none;
+            z-index: 100;
+        }
+
+        #nav-prev { left: 24px; }
+        #nav-next { right: 24px; }
+    </style>
+</head>
+<body>
+    <div id="song-header">2010 &nbsp;&#8212;&nbsp; Nil Admirari &nbsp;&#8212;&nbsp; Oneohtrix Point Never</div>
+    <div id="info-panel">
+        <div id="info-panel-inner">
+            <div class="ip-close-btn">CLOSE &#215;</div>
+            <div class="ip-meta">
+                <div class="ip-year">2010</div>
+                <div class="ip-title">Nil Admirari</div>
+                <div class="ip-artist">Oneohtrix Point Never</div>
+            </div>
+            <div class="ip-text">
+                <p>&#8220;Nil Admirari&#8221; &#8212; to admire nothing, to be astonished by nothing &#8212; is a phrase from Horace, a Stoic posture of equanimity. Daniel Lopatin deploys it as the opening track of <em>Returnal</em> (2010), the album that established Oneohtrix Point Never as a singular voice in experimental electronics.</p>
+                <p>Built on modular synthesizer, the piece unfolds in slow, layered waves. Drone textures accumulate and dissolve, each frequency layer pressing against the next until the accumulated mass becomes its own kind of weather. The title&#8217;s detachment feels ironic &#8212; the music is almost impossibly attentive.</p>
+                <p>Lopatin works with the synthesizer as an instrument of memory and erasure simultaneously. Notes sustain beyond their natural decay, held until they collapse under their own resonance. Duration is the primary material. To listen is to be held inside an extended present.</p>
+                <p>Each tone generates overtones generates interference patterns generates new tones. The feedback loop is the composition. The piece is not constructed so much as cultivated &#8212; seeded and observed as it grows beyond intention.</p>
+                <p>A document of a particular technology at a particular historical moment &#8212; the modular synthesizer repatriated into bedroom studios, freed from institutional contexts. Private, granular, relentless.</p>
+            </div>
+            <div class="ip-images">
+                <div class="ip-img-slot"></div>
+                <div class="ip-img-slot"></div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="audio/*" />
+
+    <a href="../index.html" id="backLink">
+        <span>Timeline</span>
+    </a>
+    <a href="ryoji-ikeda-datamatrix-2005.html" id="nav-prev">&#8592;</a>
+    <a href="rashad-becker-busy-ready-what-corroborators-2025.html" id="nav-next">&#8594;</a>
+
+    <div id="controlsBtn">
+        <img src="../bouda.png" class="soft-shape" alt="Controls">
+        <img src="../kiki.png" class="spiky-shape" alt="Controls">
+    </div>
+    <div id="controlsPanel">
+        <div class="title">Controls</div>
+        <div class="control-item"><span class="key">SPACE</span><span>Play / Pause</span></div>
+        <div class="control-item"><span class="key">&#8592; &#8594;</span><span>Speed</span></div>
+        <div class="control-item"><span class="key">M</span><span>Toggle Mode</span></div>
+        <div class="control-item"><span class="key">S</span><span>Save Frame</span></div>
+        <div class="control-item"><span class="key">C</span><span>Clear Canvas</span></div>
+        <div class="control-item"><span class="key">H</span><span>Hide UI</span></div>
+    </div>
+
+    <div id="modeIndicator">RADIAL MODE</div>
+    <div id="saveConfirmation">&#10003; FRAME SAVED</div>
+    <div id="speedIndicator">1.0x</div>
+
+    <div id="modeToggleBtn" onclick="toggleVisualizationMode()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <g stroke="white" stroke-width="2" fill="none">
+                <line x1="4" y1="12" x2="10" y2="12" />
+                <line x1="14" y1="12" x2="20" y2="12" />
+                <circle cx="12" cy="12" r="2" fill="white"/>
+            </g>
+        </svg>
+        <div class="nav-tooltip" style="bottom: 76px; right: 24px; left: auto;">Toggle Mode (M)</div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="../visualizer.html" class="nav-link">
+            <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="white" stroke-width="1.5" fill="none">
+                    <path d="M8 21 L14 12 L20 28 L26 15 L32 24 L38 21" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="14" cy="12" r="2" fill="white"/>
+                    <circle cx="26" cy="15" r="2" fill="white"/>
+                </g>
+            </svg>
+            <div class="nav-tooltip">Visualizer</div>
+        </a>
+        <a href="../alphabet-chart.html" class="nav-link">
+            <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="white" stroke-width="1.5" fill="none">
+                    <line x1="14" y1="8" x2="14" y2="34" />
+                    <line x1="28" y1="8" x2="28" y2="34" />
+                    <line x1="8" y1="14" x2="34" y2="14" />
+                    <line x1="8" y1="28" x2="34" y2="28" />
+                    <circle cx="14" cy="14" r="2" fill="white" />
+                    <circle cx="28" cy="28" r="2" fill="white" />
+                    <line x1="19" y1="19" x2="23" y2="23" />
+                    <line x1="23" y1="19" x2="19" y2="23" />
+                </g>
+            </svg>
+            <div class="nav-tooltip">Alphabet</div>
+        </a>
+    </div>
+
+    <script>
+
+const AUTO_LOAD_AUDIO = '../Musique/14 - Oneohtrix Point Never — Returnal (2010) .mp3';
+
+let song, fft, amp;
+let started = false;
+let shapes = [];
+let waveform;
+let time = 0;
+let frameCounter = 0;
+let currentX = 0;
+let lastVol = 0;
+let volHistory = [];
+let lastX = 0;
+let quietStreak = 0;
+let currentLine = 0;
+let lineHeight = 0;
+
+let visualMode = 'radial';
+let currentAngle = 0;
+let currentRadius = 0;
+let centerX = 0;
+let centerY = 0;
+
+let showUI = true;
+let playbackSpeed = 1.0;
+
+function preload() {
+  if (typeof AUTO_LOAD_AUDIO !== 'undefined' && AUTO_LOAD_AUDIO) {
+    song = loadSound(AUTO_LOAD_AUDIO,
+      () => { console.log("Song loaded successfully"); },
+      (error) => { console.error("Error loading song:", error); }
+    );
+  }
+}
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  angleMode(DEGREES);
+  fft = new p5.FFT(0.85, 1024);
+  amp = new p5.Amplitude(0.85);
+  let fileInput = select('#fileInput');
+  if (fileInput) fileInput.changed(handleFile);
+  background(0);
+  lineHeight = height / 2;
+  centerX = width / 2;
+  centerY = height / 2;
+}
+
+function handleFile() {
+  let fileInput = select('#fileInput');
+  if (!fileInput) return;
+  let file = fileInput.elt.files[0];
+  if (file) {
+    if (song && song.isPlaying()) song.stop();
+    started = false;
+    shapes = [];
+    currentX = 0;
+    lastX = 0;
+    volHistory = [];
+    lastVol = 0;
+    quietStreak = 0;
+    background(0);
+    let reader = new FileReader();
+    reader.onload = function(e) {
+      song = loadSound(e.target.result, () => {
+        userStartAudio();
+        song.play();
+        song.rate(playbackSpeed);
+        started = true;
+        currentX = 0;
+        lastX = 0;
+        frameCounter = 0;
+        background(0);
+      }, (error) => { console.error("Error loading file:", error); });
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+
+function draw() {
+  if (frameCount === 1 || !started) background(0);
+  if (!started) return;
+  if (!song || !song.isPlaying()) return;
+
+  frameCounter++;
+
+  let totalProgress = 0;
+  if (song.duration() > 0) {
+    totalProgress = song.currentTime() / song.duration();
+  } else {
+    totalProgress = frameCounter / 6000;
+    if (totalProgress > 1) totalProgress = 1;
+  }
+
+  if (visualMode === 'horizontal') {
+    if (totalProgress <= 0.5) {
+      currentLine = 0;
+      currentX = map(totalProgress, 0, 0.5, 0, width);
+    } else {
+      currentLine = 1;
+      currentX = map(totalProgress, 0.5, 1.0, 0, width);
+    }
+  } else if (visualMode === 'radial') {
+    let rotations = 9;
+    currentAngle = totalProgress * 360 * rotations;
+    let maxRadius = min(width, height) * 0.70;
+    currentRadius = pow(totalProgress, 0.62) * maxRadius;
+    currentX = centerX + cos(currentAngle) * currentRadius;
+    currentLine = 0;
+  }
+
+  let sizeMultiplier = 1.0;
+  if (visualMode === 'radial') {
+    let exponentialProgress = pow(totalProgress, 0.7);
+    sizeMultiplier = map(exponentialProgress, 0, 1, 0.1, 2.5);
+  }
+
+  let spectrum = fft.analyze();
+  let vol = amp.getLevel();
+  waveform = fft.waveform();
+
+  let specLen = spectrum.length;
+  let subBass = 0, bass = 0, lowMid = 0, mid = 0, highMid = 0, treble = 0;
+
+  let ranges = [
+    [0, 0.05, 'subBass'], [0.05, 0.15, 'bass'], [0.15, 0.3, 'lowMid'],
+    [0.3, 0.5, 'mid'], [0.5, 0.75, 'highMid'], [0.75, 1.0, 'treble']
+  ];
+  let vals = {};
+  ranges.forEach(([s, e, name]) => {
+    let start = floor(specLen * s), end = floor(specLen * e);
+    let sum = 0;
+    for (let i = start; i < end; i++) sum += spectrum[i];
+    vals[name] = (end - start) > 0 ? sum / (end - start) : 0;
+  });
+  subBass = vals.subBass; bass = vals.bass; lowMid = vals.lowMid;
+  mid = vals.mid; highMid = vals.highMid; treble = vals.treble;
+
+  volHistory.push(vol);
+  if (volHistory.length > 20) volHistory.shift();
+
+  let volChange = vol - lastVol;
+  let avgVol = volHistory.length > 0 ? volHistory.reduce((a, b) => a + b, 0) / volHistory.length : vol;
+
+  let isBeat = (volChange > 0.04 && vol > avgVol * 1.1) ||
+               (vol > 0.35 && volChange > 0.02) ||
+               (vol > 0.15 && volChange > 0.06);
+  let isLoud = vol > 0.12;
+  let isVeryLoud = vol > 0.3;
+  let isQuiet = vol < 0.05;
+
+  if (isQuiet) quietStreak++; else quietStreak = 0;
+
+  let subBassNorm = map(subBass, 0, 255, 0, 1);
+  let bassNorm = map(bass, 0, 255, 0, 1);
+  let lowMidNorm = map(lowMid, 0, 255, 0, 1);
+  let midNorm = map(mid, 0, 255, 0, 1);
+  let highMidNorm = map(highMid, 0, 255, 0, 1);
+  let trebleNorm = map(treble, 0, 255, 0, 1);
+
+  let shouldGenerate = false;
+  if (isBeat && vol > 0.05) shouldGenerate = true;
+  else if (frameCounter % 2 === 0 && vol > 0.02) shouldGenerate = true;
+  else if (vol > 0.15) shouldGenerate = true;
+  else if (random() < 0.25) shouldGenerate = true;
+
+  if (shouldGenerate && vol > 0.003) {
+    generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange, sizeMultiplier);
+    lastX = currentX;
+  } else if (isQuiet && quietStreak > 30) {
+    if (random() < 0.08) generateQuietMark(vol);
+  }
+
+  drawShapes();
+  lastVol = vol;
+  time += 0.1;
+}
+
+// ── OPN Returnal visual system ───────────────────────────────────────────────
+// Aesthetic: slow drone accumulation, granular particles, sine wave arcs,
+// occasional bloom rings. Spacious, hypnagogic, sustained.
+
+function getGrayscaleColor(vol, frequencyType, isVeryLoud, isLoud, isQuiet) {
+  let baseGray;
+  if (isVeryLoud)    baseGray = map(vol, 0.5, 1, 200, 255);
+  else if (isLoud)   baseGray = map(vol, 0.3, 0.5, 155, 200);
+  else if (isQuiet)  baseGray = map(vol, 0, 0.1, 30, 90);
+  else               baseGray = map(vol, 0.1, 0.3, 90, 155);
+  if (frequencyType === 'bass') baseGray -= 15;
+  else if (frequencyType === 'treble') baseGray += 15;
+  return constrain(baseGray, 20, 255);
+}
+
+function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat, isLoud, isVeryLoud, isQuiet, volChange, sizeMultiplier) {
+  let angleRad = radians(currentAngle);
+  let cx, cy;
+  if (visualMode === 'radial') {
+    cx = centerX + cos(angleRad) * currentRadius;
+    cy = centerY + sin(angleRad) * currentRadius;
+  } else {
+    cx = currentX;
+    cy = lineHeight * currentLine + lineHeight / 2;
+  }
+
+  let baseColor = getGrayscaleColor(vol, 'mid', isVeryLoud, isLoud, isQuiet);
+
+  // ── Drone arc traces: long arcs that follow the spiral path ───────────────
+  if (vol > 0.03 && frameCounter % 3 === 0) {
+    let numArcs = isBeat ? floor(random(3, 7)) : floor(random(1, 3));
+    for (let i = 0; i < numArcs; i++) {
+      let arcLen = map(vol, 0, 1, 20, 80) * sizeMultiplier;
+      let offset = random(-30, 30);
+      let a = radians(currentAngle + offset);
+      let r = currentRadius + random(-15, 15);
+      let x1 = centerX + cos(a) * r;
+      let y1 = centerY + sin(a) * r;
+      let a2 = radians(currentAngle + offset + arcLen * 0.8);
+      let x2 = centerX + cos(a2) * (r + random(-8, 8));
+      let y2 = centerY + sin(a2) * (r + random(-8, 8));
+      shapes.push({
+        type: 'customLine',
+        x1: visualMode === 'radial' ? x1 : cx + random(-arcLen, arcLen),
+        y1: visualMode === 'radial' ? y1 : cy + random(-20, 20),
+        x2: visualMode === 'radial' ? x2 : cx + random(-arcLen, arcLen),
+        y2: visualMode === 'radial' ? y2 : cy + random(-20, 20),
+        weight: random(0.2, 0.8),
+        color: map(vol, 0, 1, 80, baseColor)
+      });
+    }
+  }
+
+  // ── Granular particle cloud: scattered tiny dots ──────────────────────────
+  if (vol > 0.04) {
+    let numParticles = floor(map(vol, 0, 1, 2, isVeryLoud ? 20 : 10));
+    let spread = map(vol, 0, 1, 15, 60) * sizeMultiplier;
+    for (let i = 0; i < numParticles; i++) {
+      let px = cx + random(-spread, spread);
+      let py = cy + random(-spread * 1.5, spread * 1.5);
+      shapes.push({
+        type: 'circle',
+        x: px,
+        y: py,
+        size: random(0.5, 3) * sizeMultiplier,
+        filled: true,
+        weight: 0.3,
+        color: map(random(), 0, 1, baseColor * 0.5, baseColor)
+      });
+    }
+  }
+
+  // ── Bloom rings: large translucent circles on loud moments ────────────────
+  if (isVeryLoud && random() < 0.35) {
+    let ringSize = map(vol, 0.3, 1, height * 0.1, height * 0.55) * sizeMultiplier;
+    shapes.push({
+      type: 'largeCircle',
+      x: cx + random(-40, 40),
+      y: cy + random(-40, 40),
+      size: ringSize,
+      weight: random(0.3, 1.0),
+      color: map(vol, 0, 1, 100, 220),
+      blendMode: random() < 0.4 ? 'difference' : undefined
+    });
+  }
+
+  // Smaller rings on moderate loud
+  if (isLoud && random() < 0.25) {
+    let ringSize = map(vol, 0.12, 0.3, height * 0.05, height * 0.20) * sizeMultiplier;
+    shapes.push({
+      type: 'largeCircle',
+      x: cx + random(-20, 20),
+      y: cy + random(-20, 20),
+      size: ringSize,
+      weight: random(0.2, 0.6),
+      color: getGrayscaleColor(vol, 'treble', isVeryLoud, isLoud, isQuiet)
+    });
+  }
+
+  // ── Bass rumble: short thick marks at sub-bass ────────────────────────────
+  if (subBass > 0.15 && random() < 0.5) {
+    let bLen = map(subBass, 0, 1, 5, 35) * sizeMultiplier;
+    shapes.push({
+      type: random() < 0.5 ? 'horizontalLine' : 'verticalLine',
+      x: cx + random(-20, 20),
+      y: cy + random(-20, 20),
+      length: bLen,
+      weight: map(subBass, 0, 1, 0.5, 2.0),
+      color: getGrayscaleColor(vol, 'bass', isVeryLoud, isLoud, isQuiet)
+    });
+  }
+
+  // ── Sine trace fragments: oscillation recorded as line segments ───────────
+  if (treble > 0.08 && random() < 0.45) {
+    let traceLen = map(treble, 0, 1, 20, 70) * sizeMultiplier;
+    let traceAmp = map(treble, 0, 1, 3, 18) * sizeMultiplier;
+    let numSegs = floor(traceLen / 4);
+    let startX = cx + random(-30, 30);
+    let startY = cy + random(-30, 30);
+    let traceColor = getGrayscaleColor(vol, 'treble', isVeryLoud, isLoud, isQuiet);
+    for (let i = 0; i < numSegs - 1; i++) {
+      let tx1 = startX + (i / numSegs) * traceLen - traceLen / 2;
+      let tx2 = startX + ((i + 1) / numSegs) * traceLen - traceLen / 2;
+      let ty1 = startY + sin(i * 25 + time) * traceAmp;
+      let ty2 = startY + sin((i + 1) * 25 + time) * traceAmp;
+      shapes.push({
+        type: 'customLine',
+        x1: tx1, y1: ty1, x2: tx2, y2: ty2,
+        weight: random(0.2, 0.6),
+        color: traceColor
+      });
+    }
+  }
+
+  // ── Mid haze: loose scattered rectangles ─────────────────────────────────
+  if (midNorm > 0.12 && random() < 0.35) {
+    shapes.push({
+      type: 'rectangle',
+      x: cx + random(-25, 25),
+      y: cy + random(-25, 25),
+      w: map(midNorm, 0, 1, 4, 22) * sizeMultiplier,
+      h: map(midNorm, 0, 1, 4, 18) * sizeMultiplier,
+      weight: random(0.2, 0.7),
+      color: getGrayscaleColor(vol, 'mid', isVeryLoud, isLoud, isQuiet)
+    });
+  }
+
+  // ── Beat eruption: burst of crosses ──────────────────────────────────────
+  if (isBeat && vol > 0.1 && random() < 0.65) {
+    let numCrosses = floor(random(2, isVeryLoud ? 8 : 4));
+    for (let i = 0; i < numCrosses; i++) {
+      shapes.push({
+        type: 'cross',
+        x: cx + random(-50, 50),
+        y: cy + random(-50, 50),
+        size: random(4, 18) * sizeMultiplier,
+        weight: random(0.4, 1.2),
+        color: map(vol, 0, 1, 120, 255)
+      });
+    }
+    // Occasional diamond on very loud beat
+    if (isVeryLoud && random() < 0.3) {
+      shapes.push({
+        type: 'diamond',
+        x: cx + random(-30, 30),
+        y: cy + random(-30, 30),
+        size: random(25, 80) * sizeMultiplier,
+        weight: random(0.5, 1.5),
+        color: map(vol, 0, 1, 160, 255),
+        blendMode: 'difference'
+      });
+    }
+  }
+
+  // ── Glide lines: long sweeping horizontals ────────────────────────────────
+  if (lowMidNorm > 0.1 && random() < 0.3) {
+    shapes.push({
+      type: 'horizontalLine',
+      x: cx + random(-width * 0.2, 0),
+      y: cy + random(-15, 15),
+      length: map(lowMidNorm, 0, 1, 20, 120) * sizeMultiplier,
+      weight: random(0.2, 0.5),
+      color: getGrayscaleColor(vol, 'mid', isVeryLoud, isLoud, isQuiet)
+    });
+  }
+
+  // ── Sparse vertical marks ─────────────────────────────────────────────────
+  if (vol > 0.06 && random() < 0.25) {
+    shapes.push({
+      type: 'verticalLine',
+      x: cx + random(-15, 15),
+      y: cy + random(-40, 10),
+      length: map(vol, 0, 1, 8, 45) * sizeMultiplier,
+      weight: random(0.2, 0.6),
+      color: baseColor
+    });
+  }
+}
+
+function generateQuietMark(vol) {
+  let quietColor = map(vol, 0, 0.05, 20, 55);
+  let cx = visualMode === 'radial' ?
+    centerX + cos(radians(currentAngle)) * currentRadius :
+    currentX;
+  let cy = visualMode === 'radial' ?
+    centerY + sin(radians(currentAngle)) * currentRadius :
+    lineHeight * currentLine + lineHeight / 2;
+  if (random() < 0.5) {
+    shapes.push({
+      type: 'circle',
+      x: cx + random(-30, 30),
+      y: cy + random(-40, 40),
+      size: random(0.5, 2.5),
+      filled: true,
+      weight: 0.2,
+      color: quietColor
+    });
+  } else {
+    shapes.push({
+      type: 'horizontalLine',
+      x: cx + random(-20, 20),
+      y: cy + random(-30, 30),
+      length: random(3, 10),
+      weight: 0.2,
+      color: quietColor
+    });
+  }
+}
+
+function drawShapes() {
+  for (let shape of shapes) {
+    if (!shape) continue;
+    drawSingleShape(shape, false);
+    drawSingleShape(shape, true);
+  }
+  blendMode(BLEND);
+}
+
+function getMirroredX(x) {
+  return width - x;
+}
+
+function drawSingleShape(shape, mirrored) {
+  if (shape.blendMode) {
+    if (shape.blendMode === 'difference') blendMode(DIFFERENCE);
+    else if (shape.blendMode === 'exclusion') blendMode(EXCLUSION);
+    else blendMode(BLEND);
+  } else {
+    blendMode(BLEND);
+  }
+
+  if (shape.color !== undefined) {
+    stroke(shape.color);
+    fill(shape.color);
+  } else {
+    stroke(255); fill(255);
+  }
+  strokeWeight(shape.weight || 0.5);
+
+  let x = mirrored && shape.x !== undefined ? getMirroredX(shape.x) : shape.x;
+  let x1 = mirrored && shape.x1 !== undefined ? getMirroredX(shape.x1) : shape.x1;
+  let x2 = mirrored && shape.x2 !== undefined ? getMirroredX(shape.x2) : shape.x2;
+
+  switch (shape.type) {
+    case 'rectangle':
+      noFill();
+      if (shape.x !== undefined && shape.w && shape.h)
+        rect(x - shape.w/2, shape.y - shape.h/2, shape.w, shape.h);
+      break;
+
+    case 'circle':
+      if (shape.filled) {
+        if (shape.x !== undefined && shape.size) ellipse(x, shape.y, shape.size, shape.size);
+      } else {
+        noFill();
+        if (shape.x !== undefined && shape.size) ellipse(x, shape.y, shape.size, shape.size);
+      }
+      break;
+
+    case 'largeCircle':
+      noFill();
+      if (shape.x !== undefined && shape.size) ellipse(x, shape.y, shape.size, shape.size);
+      break;
+
+    case 'cross':
+      noFill();
+      if (shape.x !== undefined && shape.size) {
+        let hs = shape.size / 2;
+        line(x - hs, shape.y, x + hs, shape.y);
+        line(x, shape.y - hs, x, shape.y + hs);
+      }
+      break;
+
+    case 'diamond':
+      noFill();
+      if (shape.x !== undefined && shape.size) {
+        let hs = shape.size / 2;
+        line(x, shape.y - hs, x + hs, shape.y);
+        line(x + hs, shape.y, x, shape.y + hs);
+        line(x, shape.y + hs, x - hs, shape.y);
+        line(x - hs, shape.y, x, shape.y - hs);
+      }
+      break;
+
+    case 'horizontalLine':
+      noFill();
+      if (shape.x !== undefined && shape.length) {
+        if (mirrored) line(x, shape.y, x - shape.length, shape.y);
+        else line(x, shape.y, x + shape.length, shape.y);
+      }
+      break;
+
+    case 'verticalLine':
+      noFill();
+      if (shape.x !== undefined && shape.length)
+        line(x, shape.y, x, shape.y + shape.length);
+      break;
+
+    case 'customLine':
+      noFill();
+      if (shape.x1 !== undefined && shape.x2 !== undefined)
+        line(x1, shape.y1, x2, shape.y2);
+      break;
+  }
+}
+
+function mousePressed() {
+  if (!started && song && song.isLoaded()) {
+    userStartAudio();
+    try {
+      song.play();
+      started = true;
+      currentX = 0;
+      lastX = 0;
+      frameCounter = 0;
+      background(0);
+    } catch (e) {
+      console.error('Error playing song:', e);
+    }
+  }
+}
+
+function toggleVisualizationMode() {
+  visualMode = visualMode === 'horizontal' ? 'radial' : 'horizontal';
+  let modeIndicator = document.getElementById('modeIndicator');
+  if (modeIndicator) {
+    modeIndicator.textContent = visualMode === 'horizontal' ? 'HORIZONTAL MODE' : 'RADIAL MODE';
+    modeIndicator.classList.add('show');
+    setTimeout(() => modeIndicator.classList.remove('show'), 1500);
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.toggleVisualizationMode = toggleVisualizationMode;
+}
+
+function showSaveConfirmation() {
+  let el = document.getElementById('saveConfirmation');
+  if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1500); }
+}
+
+function showSpeedIndicator() {
+  let el = document.getElementById('speedIndicator');
+  if (el) {
+    el.textContent = playbackSpeed.toFixed(1) + 'x';
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 1200);
+  }
+}
+
+function keyPressed() {
+  if (key === 'h' || key === 'H') {
+    showUI = !showUI;
+    let controlsBtn = document.getElementById('controlsBtn');
+    if (controlsBtn) controlsBtn.style.display = showUI ? 'flex' : 'none';
+  }
+
+  if (key === 's' || key === 'S') {
+    let timestamp = year() + '' + nf(month(),2) + nf(day(),2) + '_' + nf(hour(),2) + nf(minute(),2) + nf(second(),2);
+    saveCanvas('opn-returnal_' + timestamp, 'png');
+    showSaveConfirmation();
+  }
+
+  if (key === 'c' || key === 'C') {
+    shapes = [];
+    currentX = 0;
+    lastX = 0;
+    frameCounter = 0;
+    background(0);
+  }
+
+  if (key === ' ') {
+    if (song && song.isLoaded()) {
+      if (song.isPlaying()) song.pause();
+      else song.play();
+    }
+  }
+
+  if (key === 'm' || key === 'M') toggleVisualizationMode();
+
+  if (keyCode === RIGHT_ARROW) {
+    playbackSpeed = Math.min(playbackSpeed + 1.0, 10.0);
+    if (song && song.isLoaded()) song.rate(playbackSpeed);
+    showSpeedIndicator();
+  }
+
+  if (keyCode === LEFT_ARROW) {
+    playbackSpeed = Math.max(playbackSpeed - 1.0, 0.25);
+    if (song && song.isLoaded()) song.rate(playbackSpeed);
+    showSpeedIndicator();
+  }
+}
+
+// ── Info panel toggle ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const header = document.getElementById('song-header');
+  const panel  = document.getElementById('info-panel');
+  const closeBtn = document.querySelector('.ip-close-btn');
+
+  if (header && panel) {
+    header.addEventListener('click', () => {
+      const isOpen = panel.classList.toggle('open');
+      header.classList.toggle('open', isOpen);
+    });
+  }
+
+  if (closeBtn && panel) {
+    closeBtn.addEventListener('click', () => {
+      panel.classList.remove('open');
+      document.getElementById('song-header').classList.remove('open');
+    });
+  }
+});
+
+    </script>
+</body>
+</html>

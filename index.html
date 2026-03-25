@@ -182,15 +182,15 @@
             <span class="song-artist">AUTECHRE</span>
             <span class="song-title">DAEL</span>
         </a>
-        <a class="song-row" href="songs/boards-of-canada-roygbiv-1998.html" data-audio="Musique/12 - Boards of Canada — Roygbiv (1998).mp3" data-mode="9">
-            <span class="song-year">1998</span>
-            <span class="song-artist">BOARDS OF CANADA</span>
-            <span class="song-title">ROYGBIV</span>
-        </a>
         <a class="song-row" href="songs/ryoji-ikeda-datamatrix-2005.html" data-audio="Musique/13 - Ryoji Ikeda - data.matrix.mp3" data-mode="10">
             <span class="song-year">2005</span>
             <span class="song-artist">RYOJI IKEDA</span>
             <span class="song-title">DATA MATRIX</span>
+        </a>
+        <a class="song-row" href="songs/oneohtrix-point-never-returnal-2010.html" data-audio="Musique/14 - Oneohtrix Point Never — Returnal (2010) .mp3" data-mode="9">
+            <span class="song-year">2010</span>
+            <span class="song-artist">ONEOHTRIX POINT NEVER</span>
+            <span class="song-title">NIL ADMIRARI</span>
         </a>
         <a class="song-row" href="songs/rashad-becker-busy-ready-what-corroborators-2025.html" data-audio="Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3" data-mode="11">
             <span class="song-year">2025</span>
@@ -346,7 +346,7 @@
             case 6:  mSingh(v, b); break;
             case 7:  mMrFingers(v, b, sb); break;
             case 8:  mAutechre(v, b, sb); break;
-            case 9:  mBOC(v, b); break;
+            case 9:  mOPN(v, b, sb); break;
             case 10: mIkeda(v, b, sb); break;
             case 11: mBecker(v, b); break;
         }
@@ -549,35 +549,43 @@
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 9 · Boards of Canada — dense nostalgic dot grids ─────────────────────
-    function mBOC(v, b) {
-        bc.fillStyle = 'rgba(0,0,0,0.008)';
+    // ── 9 · Oneohtrix Point Never — slow drone sine clouds ───────────────────
+    function mOPN(v, b, sb) {
+        bc.fillStyle = 'rgba(0,0,0,0.005)';
         bc.fillRect(0, 0, W, H);
-        if (b) {
-            const n = ri(2, 5);
-            for (let i = 0; i < n; i++) {
-                const gx = r(0, W*0.75), gy = r(0, H*0.75);
-                const cols = ri(4,14), rows = ri(3,8), spacing = r(3,12), alpha = r(0.4, 0.92);
-                bc.fillStyle = `rgba(255,255,255,${alpha})`;
-                for (let c = 0; c < cols; c++)
-                    for (let rw = 0; rw < rows; rw++)
-                        if (Math.random() < 0.72) bc.fillRect(gx+c*spacing, gy+rw*spacing, r(1,3.5), r(1,3.5));
-            }
-            if (Math.random() < 0.6) {
-                bc.strokeStyle = `rgba(255,255,255,${r(0.25, 0.65)})`; bc.lineWidth = 0.5;
-                bc.strokeRect(r(0,W-22), r(0,H-15), r(11,22), r(7,15));
-            }
-            if (Math.random() < 0.35) {
-                const wy = r(0,H), wamp = r(4,12), wf = r(0.03,0.07), alpha = r(0.3,0.7);
-                bc.strokeStyle = `rgba(255,255,255,${alpha})`; bc.lineWidth = 0.8;
+        // slow drifting sine layers
+        if (t % 3 === 0) {
+            const layers = sb ? 5 : (b ? 3 : 2);
+            for (let l = 0; l < layers; l++) {
+                const yBase = H * (0.2 + l * 0.15 + 0.05 * Math.sin(t * 0.002 + l));
+                const amp   = H * (0.04 + 0.06 * v) * (0.5 + 0.5 * Math.sin(t * 0.0015 + l * 1.7));
+                const freq  = 0.006 + l * 0.003;
+                const phase = t * (0.004 + l * 0.0008);
+                const alpha = r(0.15, 0.55) * (0.6 + 0.4 * v);
+                bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+                bc.lineWidth   = r(0.3, 1.2);
                 bc.beginPath();
-                const gx = r(0, W*0.5);
-                for (let x = 0; x < W*0.55; x+=2) {
-                    const y = wy + Math.sin(x*wf+t*0.01)*wamp;
-                    x===0 ? bc.moveTo(x+gx,y) : bc.lineTo(x+gx,y);
+                for (let x = 0; x <= W; x += 3) {
+                    const y = yBase + Math.sin(x * freq + phase) * amp + Math.sin(x * freq * 2.3 + phase * 1.5) * amp * 0.3;
+                    x === 0 ? bc.moveTo(x, y) : bc.lineTo(x, y);
                 }
                 bc.stroke();
             }
+        }
+        // sparse noise particles
+        if (t % 2 === 0 && Math.random() < 0.6) {
+            const n = ri(1, sb ? 6 : 3);
+            for (let i = 0; i < n; i++) {
+                const px = r(0, W), py = r(0, H), ps = r(0.5, 2.5);
+                bc.fillStyle = `rgba(255,255,255,${r(0.3, 0.85)})`;
+                bc.fillRect(px, py, ps, ps);
+            }
+        }
+        // occasional sweep line on beats
+        if (b && Math.random() < 0.5) {
+            const sy = r(H * 0.1, H * 0.9);
+            bc.strokeStyle = `rgba(255,255,255,${r(0.1, 0.4)})`; bc.lineWidth = 0.5;
+            bc.beginPath(); bc.moveTo(0, sy); bc.lineTo(r(W * 0.3, W), sy); bc.stroke();
         }
         ctx.drawImage(buf, 0, 0);
     }

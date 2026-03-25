@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Matrix - Ryoji Ikeda (2005)</title>
 
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3"></script>
+
     <style>
         @font-face {
             font-family: "LinotypeUnivers";
@@ -25,6 +27,36 @@
 
         /* Three.js canvas sits in normal flow, behind all fixed UI */
         canvas { display: block; }
+
+        /* ── Blink shutter effect ── */
+        #blink-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 99999;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.05s ease-out;
+        }
+
+        /* ── Webcam preview (bottom right) ── */
+        #webcam-wrapper {
+            position: fixed; bottom: 24px; right: 24px;
+            width: 160px; height: 120px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 1000; overflow: hidden; background: #000;
+            filter: grayscale(1) contrast(1.4) brightness(0.8);
+        }
+
+        #webcam-video {
+            width: 100%; height: 100%;
+            object-fit: cover; transform: scaleX(-1);
+        }
+
+        .video-grain {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOTknIG51bU9jdGF2ZXM9JzUnIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbm9pc2VGaWx0ZXIpJy8+PC9zdmc+');
+            opacity: 0.4; mix-blend-mode: overlay;
+        }
 
         /* ── Film grain overlay ── */
         #grain-overlay {
@@ -247,7 +279,16 @@
 </head>
 <body>
 
+    <!-- Blink shutter -->
+    <div id="blink-overlay"></div>
+
     <div id="grain-overlay"></div>
+
+    <!-- Webcam preview for head / blink tracking -->
+    <div id="webcam-wrapper">
+        <video id="webcam-video" autoplay playsinline></video>
+        <div class="video-grain"></div>
+    </div>
 
     <!-- Song title header -->
     <div id="song-header">2005 &nbsp;—&nbsp; Data Matrix &nbsp;—&nbsp; Ryoji Ikeda</div>
@@ -280,8 +321,8 @@
     <a href="../index.html" id="backLink"><span>Timeline</span></a>
 
     <!-- Prev / Next -->
-    <a href="boards-of-canada-roygbiv-1998.html" id="nav-prev">&#8592;</a>
-    <a href="rashad-becker-busy-ready-what-corroborators-2025.html" id="nav-next">&#8594;</a>
+    <a href="autechre-dael-1995.html" id="nav-prev">&#8592;</a>
+    <a href="oneohtrix-point-never-returnal-2010.html" id="nav-next">&#8594;</a>
 
     <!-- Controls button (top right) -->
     <div id="controlsBtn">
@@ -290,7 +331,9 @@
     </div>
     <div id="controlsPanel">
         <div class="title">Controls</div>
-        <div class="control-item"><span class="key">Mouse</span><span>Rotate camera</span></div>
+        <div class="control-item"><span class="key">Head</span><span>Rotate camera</span></div>
+        <div class="control-item"><span class="key">Blink</span><span>Shutter flash</span></div>
+        <div class="control-item"><span class="key">Mouse</span><span>Fallback rotate</span></div>
         <div class="control-item"><span class="key">Scroll</span><span>Zoom (FOV)</span></div>
         <div class="control-item"><span class="key">H</span><span>Hide UI</span></div>
     </div>
@@ -331,6 +374,7 @@
 
     <script type="module">
         import * as THREE from 'three';
+        import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
 
         const AUDIO_PATH = '../Musique/13 - Ryoji Ikeda - data.matrix.mp3';
 
@@ -342,16 +386,93 @@
         let mouseX = 0, mouseY = 0;
         let targetFOV = 60, curFOV = 60;
 
+        // ── MediaPipe face tracking ────────────────────────────────────────────
+        let faceLandmarker = null;
+        let webcamVideo = null;
+        let faceActive = false; // true once a face is detected at least once
+        const blinkDiv = document.getElementById('blink-overlay');
+
+        async function initMediaPipe() {
+            try {
+                const filesetResolver = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+                );
+                faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+                    baseOptions: {
+                        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                        delegate: 'GPU'
+                    },
+                    outputFaceBlendshapes: true,
+                    runningMode: 'VIDEO',
+                    numFaces: 1
+                });
+                startWebcam();
+            } catch (err) {
+                console.warn('MediaPipe unavailable — mouse fallback active:', err);
+            }
+        }
+
+        async function startWebcam() {
+            try {
+                webcamVideo = document.getElementById('webcam-video');
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                webcamVideo.srcObject = stream;
+            } catch (err) {
+                console.warn('Webcam unavailable:', err);
+            }
+        }
+
+        function detectFace() {
+            if (!faceLandmarker || !webcamVideo || webcamVideo.readyState !== 4) return;
+            const results = faceLandmarker.detectForVideo(webcamVideo, performance.now());
+
+            if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+                faceActive = true;
+
+                // ── Head pan/tilt → camera direction (nose tip = landmark 1) ──
+                const nose = results.faceLandmarks[0][1];
+                mouseX = (0.5 - nose.x) * 2.5;
+                mouseY = (nose.y - 0.5) * 2.5;
+
+                // ── Head depth → FOV zoom ─────────────────────────────────────
+                // Interpupillary distance in normalised coords:
+                // larger when close to camera, smaller when far away.
+                // Landmark 33 = left eye outer, 263 = right eye outer
+                const le = results.faceLandmarks[0][33];
+                const re = results.faceLandmarks[0][263];
+                const eyeDist = Math.sqrt(
+                    Math.pow(le.x - re.x, 2) + Math.pow(le.y - re.y, 2)
+                );
+                // Typical range: ~0.07 (arm's length) → ~0.22 (very close)
+                // Map to FOV: far = wide (95°), close = narrow (30°)
+                const clampedDist = Math.max(0.07, Math.min(0.22, eyeDist));
+                const fovTarget = 95 - ((clampedDist - 0.07) / 0.15) * 65;
+                // Smooth interpolation so it doesn't snap
+                targetFOV += (fovTarget - targetFOV) * 0.08;
+
+                // ── Blink → shutter flash ─────────────────────────────────────
+                if (results.faceBlendshapes && results.faceBlendshapes.length > 0) {
+                    const cats = results.faceBlendshapes[0].categories;
+                    const blinkL = cats.find(s => s.categoryName === 'eyeBlinkLeft')?.score  ?? 0;
+                    const blinkR = cats.find(s => s.categoryName === 'eyeBlinkRight')?.score ?? 0;
+                    blinkDiv.style.opacity = (blinkL + blinkR) / 2 > 0.45 ? '1' : '0';
+                }
+            }
+        }
+
         const elements = [];
 
-        // ── Start 3D immediately, audio starts on first user interaction ───────
-        window.addEventListener('DOMContentLoaded', () => init3D());
+        // ── Start 3D + MediaPipe immediately ─────────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => { init3D(); initMediaPipe(); });
 
         async function startAudio() {
             if (audioStarted) return;
             audioStarted = true;
 
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            // Resume in case the context was created in a suspended state
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.75;
@@ -367,13 +488,14 @@
                 analyser.connect(audioCtx.destination);
                 source.loop = true;
                 source.start(0);
+                console.log('Audio playing');
             } catch (err) {
                 console.error('Audio load failed:', err);
             }
         }
 
-        // Trigger audio on any first interaction
-        ['click','mousemove','keydown','touchstart','scroll'].forEach(evt =>
+        // Click or keydown only — these are guaranteed user-gesture activators for AudioContext
+        ['click', 'keydown', 'touchstart'].forEach(evt =>
             window.addEventListener(evt, startAudio, { once: true })
         );
 
@@ -538,6 +660,9 @@
             requestAnimationFrame(animate);
             frame++;
 
+            // Face tracking — overrides mouse when a face is present
+            detectFace();
+
             // Pull frequency data if audio is running
             if (analyser && dataArray) analyser.getByteFrequencyData(dataArray);
 
@@ -607,7 +732,7 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'h' || e.key === 'H') {
                 uiVisible = !uiVisible;
-                const els = ['song-header','backLink','nav-prev','nav-next','controlsBtn'];
+                const els = ['song-header','backLink','nav-prev','nav-next','controlsBtn','webcam-wrapper'];
                 els.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.style.opacity = uiVisible ? '' : '0';
