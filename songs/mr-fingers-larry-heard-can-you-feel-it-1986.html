@@ -922,18 +922,13 @@ function draw() {
   }
 
   if (shouldGenerate && vol > 0.003) {
-    // Generate shapes based on audio with 6 frequency bands
-    generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
+    generateText(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
     lastX = currentX;
   } else if (isQuiet && quietStreak > 30) {
-    // Sparse marks during extended quiet sections
-    if (random() < 0.1) { // Balanced - some marks in quiet areas
-      generateQuietMark(vol);
+    if (random() < 0.1) {
+      generateQuietText(vol);
     }
   }
-  
-  // Always draw all accumulated shapes
-  drawShapes();
 
   lastVol = vol;
   time += 0.1;
@@ -3246,6 +3241,153 @@ function drawSingleShape(shape, mirrored) {
         break;
     }
 }
+
+// ─── TEXT VISUALIZER ───────────────────────────────────────────────────────
+//
+//  Two phrases, white only. Typography is the instrument:
+//    WEIGHT      ← bass energy          (100–900)
+//    SIZE        ← overall volume       (tiny → screen-filling)
+//    LETTER-SPACing ← treble/highMid   (compressed → exploded)
+//    OPACITY     ← volume              (ghost → pure white)
+//  Phrase choice: beats fire "CAN YOU FEEL IT"; sustain breathes "I HAVE A DREAM"
+// ───────────────────────────────────────────────────────────────────────────
+
+function generateText(vol, subBass, bass, lowMid, mid, highMid, treble,
+                      isBeat, isLoud, isVeryLoud, isQuiet, volChange) {
+
+  // ── position ──
+  let posX = currentX;
+  let posY;
+  if (visualMode === 'horizontal') {
+    posY = currentLine * lineHeight + random(lineHeight * 0.05, lineHeight * 0.95);
+  } else {
+    posY = centerY + sin(radians(currentAngle)) * currentRadius;
+  }
+
+  // ── weight: bass drives boldness ──
+  let w = constrain(floor(map(bass, 0, 1, 1, 10)) * 100, 100, 900);
+  if (isBeat) w = constrain(w + 200, 100, 900);
+
+  // ── size: volume → scale; beats leap ──
+  let sz = map(vol, 0, 1, 8, 180);
+  if (isBeat && isVeryLoud) sz *= random(2.0, 4.0);
+  else if (isBeat && isLoud) sz *= random(1.3, 2.2);
+  sz = constrain(sz, 6, 800);
+
+  // ── letter-spacing: treble opens; bass compresses ──
+  let ls = map(treble, 0, 1, -3, 72) - map(bass, 0, 1, 0, 20);
+  ls = constrain(ls, -5, 110);
+
+  // ── opacity ──
+  let al = isVeryLoud ? 255 : map(vol, 0, 1, 12, 240);
+
+  // ── phrase selection ──
+  let phrase = (isBeat || (isVeryLoud && volChange > 0))
+    ? 'CAN YOU FEEL IT'
+    : (bass > 0.45 && random() < 0.35 ? 'CAN YOU FEEL IT' : 'I HAVE A DREAM');
+
+  // primary stamp
+  stampText(phrase, posX, posY, w, sz, ls, al);
+
+  // ── BEAT BURST: scatter multiple instances ──
+  if (isBeat && isLoud) {
+    let n = isVeryLoud ? floor(random(3, 8)) : floor(random(1, 4));
+    for (let i = 0; i < n; i++) {
+      let bx, by;
+      if (visualMode === 'horizontal') {
+        bx = random(width * -0.05, width * 1.05);
+        by = random(height);
+      } else {
+        let a2 = radians(currentAngle + random(-90, 90));
+        let r2 = currentRadius * random(0.2, 1.4);
+        bx = centerX + cos(a2) * r2;
+        by = centerY + sin(a2) * r2;
+      }
+      let bSz  = constrain(map(vol, 0, 1, 12, 320) * random(0.3, 2.2), 6, 800);
+      let bW   = random([100, 200, 300, 400, 700, 900]);
+      let bLS  = random(-5, 65);
+      let bAl  = random(35, 255);
+      let bPhr = random() < 0.55 ? 'CAN YOU FEEL IT' : 'I HAVE A DREAM';
+      stampText(bPhr, bx, by, bW, bSz, bLS, bAl);
+    }
+  }
+
+  // ── GIANT BLEED: enormous text that crops at canvas edges ──
+  if (isVeryLoud && random() < 0.20) {
+    let gSz = random(height * 0.28, height * 1.2);
+    let gX  = random(-width * 0.2, width * 0.25);
+    let gY  = random(height * 0.15, height * 0.88);
+    stampText('CAN YOU FEEL IT', gX, gY,
+              random([700, 800, 900]), gSz, -4, random(12, 72));
+  }
+
+  // ── BASS PULSE: I HAVE A DREAM, wide and warm ──
+  if (bass > 0.45 && random() < 0.38) {
+    let pSz = map(bass, 0, 1, 14, 110);
+    let pX, pY;
+    if (visualMode === 'horizontal') {
+      pX = random(width);
+      pY = random(height);
+    } else {
+      let pa = radians(currentAngle + random(-50, 50));
+      let pr = currentRadius * random(0.4, 1.3);
+      pX = centerX + cos(pa) * pr;
+      pY = centerY + sin(pa) * pr;
+    }
+    let pW  = constrain(floor(map(bass, 0, 1, 2, 9)) * 100, 100, 900);
+    let pLS = map(bass, 0, 1, 6, 50);
+    stampText('I HAVE A DREAM', pX, pY, pW, pSz, pLS, map(bass, 0, 1, 15, 170));
+  }
+
+  // ── TREBLE SCATTER: tiny, airy, high-frequency whispers ──
+  if (treble > 0.30 && random() < 0.42) {
+    let tSz = map(treble, 0, 1, 6, 38);
+    let tX  = posX + random(-140, 140);
+    let tY  = random(height);
+    let tLS = map(treble, 0, 1, 12, 90);
+    stampText('CAN YOU FEEL IT', tX, tY, 100, tSz, tLS,
+              map(treble, 0, 1, 8, 100));
+  }
+
+  // ── MID STUTTER: medium weight fragments ──
+  if (mid > 0.35 && random() < 0.25) {
+    let mSz = map(mid, 0, 1, 10, 70);
+    let mX  = posX + random(-60, 60);
+    let mY  = random(height);
+    let mW  = constrain(floor(map(mid, 0, 1, 3, 7)) * 100, 100, 900);
+    stampText(random() < 0.5 ? 'I HAVE A DREAM' : 'CAN YOU FEEL IT',
+              mX, mY, mW, mSz, map(mid, 0, 1, -2, 30), map(mid, 0, 1, 20, 180));
+  }
+}
+
+function generateQuietText(vol) {
+  let al   = map(vol, 0, 0.05, 5, 28);
+  let sz   = map(vol, 0, 0.05, 7, 20);
+  let posX, posY;
+  if (visualMode === 'horizontal') {
+    posX = currentX;
+    posY = random(height);
+  } else {
+    posX = centerX + cos(radians(currentAngle)) * currentRadius;
+    posY = centerY + sin(radians(currentAngle)) * currentRadius;
+  }
+  stampText('I HAVE A DREAM', posX, posY, 100, sz, 20, al);
+}
+
+// Stamp one text phrase directly onto the canvas via drawingContext
+function stampText(phrase, x, y, weight, sz, lsPx, alpha) {
+  push();
+  drawingContext.save();
+  drawingContext.font          = weight + ' ' + sz.toFixed(1) + 'px "LinotypeUnivers", sans-serif';
+  drawingContext.letterSpacing = lsPx.toFixed(1) + 'px';
+  drawingContext.fillStyle     = 'rgba(255,255,255,' + constrain(alpha / 255, 0, 1).toFixed(3) + ')';
+  drawingContext.textBaseline  = 'middle';
+  drawingContext.fillText(phrase, x, y);
+  drawingContext.restore();
+  pop();
+}
+
+// ─── END TEXT VISUALIZER ────────────────────────────────────────────────────
 
 function mousePressed() {
   if (!started && song && song.isLoaded()) {

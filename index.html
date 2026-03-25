@@ -37,14 +37,14 @@
             align-items: center;
         }
 
-        /* Shape image — shows in idle state */
+        /* Ohm symbol canvas — shows in idle state, also serves as viz mask */
         #shape-img {
             position: fixed;
             left: 50%;
-            top: 50%;
+            top: 54%;
             transform: translate(-50%, -50%);
-            height: 80vh;
-            width: auto;
+            height: 92vh;
+            width: 92vh;
             pointer-events: none;
             z-index: 5;
             opacity: 0.45;
@@ -130,12 +130,14 @@
 
         #site-footer .footer-title { padding-left: calc(1.5 * clamp(16px, 3.5vw, 64px)); }
 
+        #site-footer .footer-credit { text-align: left; padding-left: 4em; }
+
         #site-footer a:hover { color: #fff; }
     </style>
 </head>
 <body>
 
-    <img id="shape-img" src="BouKi-Center-Combined.png" alt="">
+    <canvas id="shape-img"></canvas>
     <canvas id="viz-canvas"></canvas>
     <audio id="preview-audio" preload="none"></audio>
 
@@ -200,7 +202,7 @@
     <footer id="site-footer">
         <a href="timeline-horizontal.html">Learn More</a>
         <span class="footer-title">A Visual History of Electronic Music</span>
-        <span></span>
+        <span class="footer-credit">Sabrina Wu &middot; Parsons CD &rsquo;26</span>
     </footer>
 
 <script>
@@ -218,17 +220,32 @@
     let prevMode    = -99;
     let imgReady    = false;
 
+    // Flat filled Ω — no outline, used for both idle display and viz mask
+    function drawOhm() {
+        const sc = shapeImg.getContext('2d');
+        sc.clearRect(0, 0, W, H);
+        const fs = H * 0.88;
+        sc.font         = '400 ' + fs + 'px "LinotypeUnivers", sans-serif';
+        sc.textAlign    = 'center';
+        sc.textBaseline = 'middle';
+        sc.fillStyle    = '#fff';
+        sc.fillText('\u03A9', W / 2, H / 2);
+    }
+
     function syncSize() {
         const r = shapeImg.getBoundingClientRect();
         W = Math.round(r.width);
         H = Math.round(r.height);
         canvas.width  = buf.width  = W;
         canvas.height = buf.height = H;
+        shapeImg.width  = W;
+        shapeImg.height = H;
         bc.clearRect(0, 0, W, H);
+        drawOhm();
     }
 
-    shapeImg.addEventListener('load', () => { imgReady = true; syncSize(); });
-    if (shapeImg.complete) { imgReady = true; syncSize(); }
+    imgReady = true;
+    syncSize();
     window.addEventListener('resize', syncSize);
 
     // ── Audio ─────────────────────────────────────────────────────────────────
