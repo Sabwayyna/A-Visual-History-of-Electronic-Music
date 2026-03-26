@@ -448,6 +448,33 @@
             margin-bottom: 0;
         }
 
+        .ip-images-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5vw;
+            margin-bottom: 4vh;
+        }
+        .ip-images-grid.cols-1 {
+            grid-template-columns: 1fr;
+            max-width: 48vw;
+        }
+        .ip-images-grid.cols-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        .ip-images-grid img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            display: block;
+            filter: grayscale(100%);
+            opacity: 0.72;
+        }
+        .ip-images-grid.cols-1 img {
+            aspect-ratio: auto;
+            max-height: 45vh;
+            object-fit: contain;
+        }
+
         #nav-prev, #nav-next {
             position: fixed;
             top: 50%;
@@ -474,6 +501,9 @@
                 <div class="ip-year">1995</div>
                 <div class="ip-title">Dael</div>
                 <div class="ip-artist">Autechre</div>
+            </div>
+            <div class="ip-images-grid cols-1">
+                <img src="../images/info/autechre-1.jpg" alt="">
             </div>
             <div class="ip-text">
                 <p>The album title names repetition three times over, yet the music fractures every expected grid. Autechre began programming their own drum machines and sequencers, resisting the quantized pulse. Dael is precise and broken at the same time.</p>

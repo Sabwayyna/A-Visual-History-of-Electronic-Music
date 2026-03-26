@@ -390,6 +390,33 @@
             margin-bottom: 0;
         }
 
+        .ip-images-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5vw;
+            margin-bottom: 4vh;
+        }
+        .ip-images-grid.cols-1 {
+            grid-template-columns: 1fr;
+            max-width: 48vw;
+        }
+        .ip-images-grid.cols-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        .ip-images-grid img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            display: block;
+            filter: grayscale(100%);
+            opacity: 0.72;
+        }
+        .ip-images-grid.cols-1 img {
+            aspect-ratio: auto;
+            max-height: 45vh;
+            object-fit: contain;
+        }
+
         #nav-prev, #nav-next {
             position: fixed;
             top: 50%;
@@ -416,6 +443,12 @@
                 <div class="ip-year">1960</div>
                 <div class="ip-title">Four Aspects</div>
                 <div class="ip-artist">Daphne Oram</div>
+            </div>
+            <div class="ip-images-grid">
+                <img src="../images/info/daphne-oram-1.jpg" alt="">
+                <img src="../images/info/daphne-oram-2.jpg" alt="">
+                <img src="../images/info/daphne-oram-3.jpg" alt="">
+                <img src="../images/info/daphne-oram-4.jpg" alt="">
             </div>
             <div class="ip-text">
                 <p>Oram built the Oramics machine in her own studio: shapes drawn by hand on 35mm film strips would scan and control pitch, duration, and timbre. Sound as drawn notation. Four Aspects was among the first pieces realised through this method.</p>

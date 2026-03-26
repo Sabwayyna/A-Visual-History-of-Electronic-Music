@@ -446,6 +446,33 @@
             margin-bottom: 0;
         }
 
+        .ip-images-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5vw;
+            margin-bottom: 4vh;
+        }
+        .ip-images-grid.cols-1 {
+            grid-template-columns: 1fr;
+            max-width: 48vw;
+        }
+        .ip-images-grid.cols-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        .ip-images-grid img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            display: block;
+            filter: grayscale(100%);
+            opacity: 0.72;
+        }
+        .ip-images-grid.cols-1 img {
+            aspect-ratio: auto;
+            max-height: 45vh;
+            object-fit: contain;
+        }
+
         #nav-prev, #nav-next {
             position: fixed;
             top: 50%;
@@ -472,6 +499,10 @@
                 <div class="ip-year">1978</div>
                 <div class="ip-title">Music For Airports 1/1</div>
                 <div class="ip-artist">Brian Eno</div>
+            </div>
+            <div class="ip-images-grid">
+                <img src="../images/info/brian-eno-1.jpg" alt="">
+                <img src="../images/info/brian-eno-3.jpg" alt="">
             </div>
             <div class="ip-text">
                 <p>Eno defined ambient music as sound that could be either actively listened to or completely ignored. Loops of different lengths overlap, combine, and separate, never quite repeating. He designed the piece for the diffuse acoustic atmosphere of airports.</p>

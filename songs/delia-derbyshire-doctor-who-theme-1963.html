@@ -302,6 +302,33 @@
             margin-bottom: 0;
         }
 
+        .ip-images-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5vw;
+            margin-bottom: 4vh;
+        }
+        .ip-images-grid.cols-1 {
+            grid-template-columns: 1fr;
+            max-width: 48vw;
+        }
+        .ip-images-grid.cols-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        .ip-images-grid img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            display: block;
+            filter: grayscale(100%);
+            opacity: 0.72;
+        }
+        .ip-images-grid.cols-1 img {
+            aspect-ratio: auto;
+            max-height: 45vh;
+            object-fit: contain;
+        }
+
         #nav-prev, #nav-next {
             position: fixed;
             top: 50%;
@@ -328,6 +355,10 @@
                 <div class="ip-year">1963</div>
                 <div class="ip-title">Doctor Who Theme</div>
                 <div class="ip-artist">Delia Derbyshire</div>
+            </div>
+            <div class="ip-images-grid">
+                <img src="../images/info/delia-derbyshire-1.jpg" alt="">
+                <img src="../images/info/delia-derbyshire-2.jpg" alt="">
             </div>
             <div class="ip-text">
                 <p>Derbyshire realised Ron Grainer's theme by cutting hundreds of pieces of magnetic tape by hand at the BBC Radiophonic Workshop. Each note was a physical splice. The alien quality comes from this material precision, sound built object by object.</p>

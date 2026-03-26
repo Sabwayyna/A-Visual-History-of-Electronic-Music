@@ -367,6 +367,33 @@
             margin-bottom: 0;
         }
 
+        .ip-images-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5vw;
+            margin-bottom: 4vh;
+        }
+        .ip-images-grid.cols-1 {
+            grid-template-columns: 1fr;
+            max-width: 48vw;
+        }
+        .ip-images-grid.cols-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        .ip-images-grid img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            display: block;
+            filter: grayscale(100%);
+            opacity: 0.72;
+        }
+        .ip-images-grid.cols-1 img {
+            aspect-ratio: auto;
+            max-height: 45vh;
+            object-fit: contain;
+        }
+
         #nav-prev, #nav-next {
             position: fixed;
             top: 50%;
@@ -396,6 +423,9 @@
                 <div class="ip-year">1980</div>
                 <div class="ip-title">Patchwork</div>
                 <div class="ip-artist">Laurie Spiegel</div>
+            </div>
+            <div class="ip-images-grid cols-1">
+                <img src="../images/info/laurie-spiegel-1.jpg" alt="">
             </div>
             <div class="ip-text">
                 <p>Spiegel wrote her own software to compose. Working at Bell Labs on the GROOVE system with Max Mathews and colleagues, she composed algorithmically, with computer processes generating musical decisions. She believed technology could free music from the constraints of human performance.</p>

@@ -390,6 +390,33 @@
             margin-bottom: 0;
         }
 
+        .ip-images-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5vw;
+            margin-bottom: 4vh;
+        }
+        .ip-images-grid.cols-1 {
+            grid-template-columns: 1fr;
+            max-width: 48vw;
+        }
+        .ip-images-grid.cols-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        .ip-images-grid img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            display: block;
+            filter: grayscale(100%);
+            opacity: 0.72;
+        }
+        .ip-images-grid.cols-1 img {
+            aspect-ratio: auto;
+            max-height: 45vh;
+            object-fit: contain;
+        }
+
         #nav-prev, #nav-next {
             position: fixed;
             top: 50%;
@@ -416,6 +443,9 @@
                 <div class="ip-year">1948</div>
                 <div class="ip-title">Cinq Etudes De Bruits</div>
                 <div class="ip-artist">Pierre Schaeffer</div>
+            </div>
+            <div class="ip-images-grid cols-1">
+                <img src="../images/info/pierre-schaeffer-1.jpg" alt="">
             </div>
             <div class="ip-text">
                 <p>The first music made entirely from recorded sound. Schaeffer captured trains, spinning tops, canal boats, and iron lids, then cut and manipulated them in the studio at Radiodiffusion Fran&#231;aise. He called it musique concr&#232;te, where the sound itself was the raw material, not a notation of it.</p>
