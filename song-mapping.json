@@ -1,5 +1,16 @@
 [
   {
+    "index": 0,
+    "year": "1932",
+    "artist": "Nikolai Voinov",
+    "track": "Rachmaninoff Prelude",
+    "era": "PRE-ELECTRONIC EXPERIMENTS",
+    "description": "Drawn optical sound — geometry as vibration.",
+    "audio": "Musique/Rachmaninoff Prelude (1932) \u2013 Nikolai Voinov.mp3",
+    "filename": "nikolai-voinov-rachmaninoff-prelude-1932.html",
+    "path": "songs/nikolai-voinov-rachmaninoff-prelude-1932.html"
+  },
+  {
     "index": 1,
     "year": "1948",
     "artist": "Pierre Schaeffer",
@@ -75,17 +86,6 @@
     "audio": "Musique/Patchwork.mp3",
     "filename": "laurie-spiegel-patchwork-1980.html",
     "path": "songs/laurie-spiegel-patchwork-1980.html"
-  },
-  {
-    "index": 9,
-    "year": "1986",
-    "artist": "Mr. Fingers (Larry Heard)",
-    "track": "Can You Feel It",
-    "era": "CHICAGO HOUSE & DETROIT TECHNO",
-    "description": "A cornerstone of Chicago deep house.",
-    "audio": "Musique/09 - Mr Fingers - Can You Feel It.mp3",
-    "filename": "mr-fingers-larry-heard-can-you-feel-it-1986.html",
-    "path": "songs/mr-fingers-larry-heard-can-you-feel-it-1986.html"
   },
   {
     "index": 10,
