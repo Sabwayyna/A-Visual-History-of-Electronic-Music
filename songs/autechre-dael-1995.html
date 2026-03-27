@@ -659,9 +659,9 @@ function draw() {
     return;
   }
 
-  // ── Minimal fade: marks persist a long time, barely dissolve ──
+  // ── Fade toward soft gray floor — marks settle as faint traces, not pure black ──
   noStroke();
-  fill(0, 0, 0, 2);
+  fill(32, 32, 32, 1);
   rect(0, 0, width, height);
 
   frameCounter++;

@@ -339,6 +339,12 @@
         let audioStarted = false;
         let frame = 0;
 
+        // ── Audio reactivity ───────────────────────────────────────────────────
+        let smBass = 0, smEnergy = 0;
+        let rawBass = 0, prevRawBass = 0, beatPulse = 0;
+        let baseSpeed = 0.8;   // camera forward speed — varies with music
+        let gradientTex = null;
+
         let curX = 0, curY = 75, curZ = 200, targetZ = 200;
         let mouseX = 0, mouseY = 0;
         let targetFOV = 60, curFOV = 60;
@@ -388,24 +394,8 @@
 
                 // ── Head pan/tilt → camera direction (nose tip = landmark 1) ──
                 const nose = results.faceLandmarks[0][1];
-                mouseX = (0.5 - nose.x) * 2.5;
-                mouseY = (nose.y - 0.5) * 2.5;
-
-                // ── Head depth → FOV zoom ─────────────────────────────────────
-                // Interpupillary distance in normalised coords:
-                // larger when close to camera, smaller when far away.
-                // Landmark 33 = left eye outer, 263 = right eye outer
-                const le = results.faceLandmarks[0][33];
-                const re = results.faceLandmarks[0][263];
-                const eyeDist = Math.sqrt(
-                    Math.pow(le.x - re.x, 2) + Math.pow(le.y - re.y, 2)
-                );
-                // Typical range: ~0.07 (arm's length) → ~0.22 (very close)
-                // Map to FOV: far = wide (95°), close = narrow (30°)
-                const clampedDist = Math.max(0.07, Math.min(0.22, eyeDist));
-                const fovTarget = 95 - ((clampedDist - 0.07) / 0.15) * 65;
-                // Smooth interpolation so it doesn't snap
-                targetFOV += (fovTarget - targetFOV) * 0.08;
+                mouseX = (0.5 - nose.x) * 1.4;
+                mouseY = (nose.y - 0.5) * 1.4;
 
                 // ── Blink → shutter flash ─────────────────────────────────────
                 if (results.faceBlendshapes && results.faceBlendshapes.length > 0) {
@@ -432,7 +422,7 @@
 
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 2048;
-            analyser.smoothingTimeConstant = 0.75;
+            analyser.smoothingTimeConstant = 0.5;
             dataArray = new Uint8Array(analyser.frequencyBinCount);
 
             try {
@@ -455,6 +445,23 @@
         ['click', 'keydown', 'touchstart'].forEach(evt =>
             window.addEventListener(evt, startAudio, { once: true })
         );
+
+        // ── Monochrome gradient texture ────────────────────────────────────────
+        function makeGradientTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 256, 0, 0); // bottom → top
+            grad.addColorStop(0,    '#0a0a0a'); // bottom: near black
+            grad.addColorStop(0.45, '#555555'); // mid: dark gray
+            grad.addColorStop(0.75, '#cccccc'); // upper: light gray
+            grad.addColorStop(1,    '#ffffff'); // top: pure white
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 2, 256);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+            return tex;
+        }
 
         // ── Noise texture ──────────────────────────────────────────────────────
         function generateNoiseTexture() {
@@ -484,7 +491,8 @@
             // Insert canvas before all fixed UI so fixed elements stay on top
             document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
-            noiseTex = generateNoiseTexture();
+            noiseTex    = generateNoiseTexture();
+            gradientTex = makeGradientTexture();
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.5));
             const dir = new THREE.DirectionalLight(0xffffff, 2);
@@ -532,83 +540,178 @@
         // ── Shape spawning ────────────────────────────────────────────────────
         function createStab() {
             const spawnZ = curZ - 600;
+            const pick   = arr => arr[Math.floor(Math.random() * arr.length)];
 
-            // Use averaged frequency bands — much more sensitive than single bins
-            const bass   = dataArray ? binAvg(dataArray, 1, 6)    : 0; // ~20–260 Hz
-            const mid    = dataArray ? binAvg(dataArray, 7, 40)   : 0; // ~300–1700 Hz
-            const treble = dataArray ? binAvg(dataArray, 41, 150) : 0; // ~1.8–6.5 kHz
+            const bass   = dataArray ? binAvg(dataArray, 1, 6)    : 0;
+            const mid    = dataArray ? binAvg(dataArray, 7, 40)   : 0;
+            const treble = dataArray ? binAvg(dataArray, 41, 150) : 0;
 
-            const isBass   = bass   > 18;
-            const isMid    = mid    > 14;
-            const isTreble = treble > 10;
+            const isBass   = bass   > 28;
+            const isMid    = mid    > 20;
+            const isTreble = treble > 15;
 
-            // Always spawn something on a time cadence so the scene is never empty
-            const timeBass   = frame % 55  === 0;
-            const timeMid    = frame % 35  === 0;
-            const timeTreble = frame % 20  === 0;
-
-            if (isBass || timeBass) {
-                spawnShape('slab', 300 + Math.random()*400, 15, (Math.random()-0.5)*1400, 2, spawnZ, 0xffffff, true);
+            // On beat: varied burst — slabs are now one option among many
+            if (beatPulse > 0.45) {
+                const burstCount = 1 + Math.floor(beatPulse * 3);
+                const beatPool = ['needle', 'box', 'ring', 'bar', 'dot', 'tri', 'slab'];
+                for (let k = 0; k < burstCount; k++) {
+                    const t = pick(beatPool);
+                    if (t === 'slab' || t === 'bar') {
+                        spawnShape(t,
+                            160 + Math.random()*500, t === 'bar' ? 2 : 12 + beatPulse*18,
+                            (Math.random()-0.5)*1800, 2, spawnZ - k*80, true);
+                    } else if (t === 'needle') {
+                        spawnShape('needle', 1.5 + beatPulse*2, 2800 + beatPulse*2200,
+                            (Math.random()-0.5)*900, 0, spawnZ - k*60, false);
+                    } else if (t === 'box') {
+                        spawnShape('box',
+                            28 + Math.random()*70, 28 + Math.random()*70,
+                            (Math.random()-0.5)*1400, 20 + Math.random()*120, spawnZ - k*90, false);
+                    } else if (t === 'ring') {
+                        spawnShape('ring',
+                            35 + Math.random()*90, 0,
+                            (Math.random()-0.5)*1200, 40 + Math.random()*140, spawnZ - k*80, false);
+                    } else if (t === 'dot') {
+                        spawnShape('dot',
+                            6 + Math.random()*14, 0,
+                            (Math.random()-0.5)*1400, 20 + Math.random()*180, spawnZ - k*60, false);
+                    } else if (t === 'tri') {
+                        spawnShape('tri',
+                            22 + Math.random()*50, 0,
+                            (Math.random()-0.5)*1200, 30 + Math.random()*150, spawnZ - k*75, false);
+                    }
+                }
             }
 
-            if (isTreble || timeTreble) {
-                spawnShape('needle', 1.5, 4000, (Math.random()-0.5)*1200, 0, spawnZ, 0xffffff, false);
-            }
-
-            if ((isMid || timeMid) && frame % 3 === 0) {
-                const type = Math.random();
-                if (type > 0.7) {
-                    spawnShape('frame', 80, 80, (Math.random()-0.5)*1000, 100 + Math.random()*150, spawnZ, 0xffffff, false);
-                } else if (type > 0.4) {
-                    spawnShape('cross', 120, 120, (Math.random()-0.5)*1000, 100, spawnZ, 0xffffff, false);
+            // Bass: flat ground shapes — slab now shares pool with bar + ring
+            if (isBass) {
+                const t = pick(['slab', 'bar', 'ring', 'box']);
+                if (t === 'slab') {
+                    spawnShape('slab', 220 + Math.random()*420, 12,
+                        (Math.random()-0.5)*1400, 2, spawnZ, true);
+                } else if (t === 'bar') {
+                    spawnShape('bar', 300 + Math.random()*500, 2,
+                        (Math.random()-0.5)*1400, 2, spawnZ, true);
+                } else if (t === 'ring') {
+                    spawnShape('ring', 45 + Math.random()*110, 0,
+                        (Math.random()-0.5)*1200, 35 + Math.random()*100, spawnZ, false);
                 } else {
-                    spawnShape('block', 60, 60, (Math.random()-0.5)*1000, 50 + Math.random()*100, spawnZ, 0xffffff, false);
+                    spawnShape('box', 35 + Math.random()*90, 35 + Math.random()*90,
+                        (Math.random()-0.5)*1200, 25 + Math.random()*110, spawnZ, false);
+                }
+            }
+
+            // Treble: thin bright shapes
+            if (isTreble) {
+                const t = pick(['needle', 'bar', 'tri', 'dot', 'ring']);
+                if (t === 'needle') {
+                    spawnShape('needle', 1.5, 3200 + treble*10,
+                        (Math.random()-0.5)*1200, 0, spawnZ, false);
+                } else if (t === 'bar') {
+                    spawnShape('bar', 250 + treble*3.5, 2,
+                        (Math.random()-0.5)*1200, Math.random()*180, spawnZ, false);
+                } else if (t === 'tri') {
+                    spawnShape('tri', 12 + treble*0.25, 0,
+                        (Math.random()-0.5)*1200, 25 + Math.random()*150, spawnZ, false);
+                } else if (t === 'dot') {
+                    spawnShape('dot', 4 + treble*0.12, 0,
+                        (Math.random()-0.5)*1200, 15 + Math.random()*190, spawnZ, false);
+                } else {
+                    spawnShape('ring', 25 + treble*0.5, 0,
+                        (Math.random()-0.5)*1200, 30 + Math.random()*160, spawnZ, false);
+                }
+            }
+
+            // Mid: varied geometric objects every other frame
+            if (isMid && frame % 2 === 0) {
+                const t = pick(['frame', 'block', 'ring', 'dot', 'tri', 'box']);
+                if (t === 'frame') {
+                    spawnShape('frame', 65 + mid*0.55, 65 + mid*0.55,
+                        (Math.random()-0.5)*1000, 90 + Math.random()*160, spawnZ, false);
+                } else if (t === 'block') {
+                    spawnShape('block', 45 + mid*0.38, 45 + mid*0.38,
+                        (Math.random()-0.5)*1000, 45 + Math.random()*110, spawnZ, false);
+                } else if (t === 'ring') {
+                    spawnShape('ring', 40 + mid*0.45, 0,
+                        (Math.random()-0.5)*1000, 65 + Math.random()*150, spawnZ, false);
+                } else if (t === 'dot') {
+                    for (let i = 0; i < 3; i++)
+                        spawnShape('dot', 3 + Math.random()*7, 0,
+                            (Math.random()-0.5)*1000, 45 + Math.random()*170, spawnZ - i*35, false);
+                } else if (t === 'tri') {
+                    spawnShape('tri', 28 + mid*0.45, 0,
+                        (Math.random()-0.5)*1000, 55 + Math.random()*140, spawnZ, false);
+                } else {
+                    spawnShape('box', 22 + mid*0.35, 22 + mid*0.35,
+                        (Math.random()-0.5)*1000, 50 + Math.random()*130, spawnZ, false);
                 }
             }
         }
 
-        function spawnShape(style, w, h, x, y, z, color, isFlat) {
-            let geo;
-            if (style === 'frame') {
-                geo = new THREE.RingGeometry(w/2 - 2, w/2, 4, 1);
-            } else if (style === 'cross') {
-                geo = new THREE.ShapeGeometry(
-                    new THREE.Shape()
-                        .moveTo(-w/2, -5).lineTo(w/2, -5)
-                        .lineTo(w/2, 5).lineTo(-w/2, 5).closePath()
-                );
-            } else {
-                geo = new THREE.PlaneGeometry(w, h);
-            }
-
-            const mat = new THREE.MeshStandardMaterial({
-                color, side: THREE.DoubleSide,
-                emissive: color, emissiveIntensity: 0.5,
-                map: noiseTex, roughness: 0.1
+        function spawnShape(style, w, h, x, y, z, isFlat) {
+            const stdMat = () => new THREE.MeshStandardMaterial({
+                map: gradientTex, side: THREE.DoubleSide,
+                emissive: new THREE.Color(1, 1, 1), emissiveMap: gradientTex,
+                emissiveIntensity: 0.18, roughness: 0.08, metalness: 0.25
             });
+            const edgeMat = () => new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
 
-            const mesh = new THREE.Mesh(geo, mat);
+            let mesh;
 
-            if (style === 'cross') {
-                mesh.add(new THREE.Mesh(new THREE.PlaneGeometry(10, h), mat));
+            if (style === 'box') {
+                // Wireframe box — clean data-matrix aesthetic
+                const geo   = new THREE.BoxGeometry(w, h || w, w * 0.35);
+                const edges  = new THREE.EdgesGeometry(geo);
+                mesh = new THREE.LineSegments(edges,
+                    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.70 }));
+                geo.dispose();
+
+            } else if (style === 'ring') {
+                // Smooth circle outline
+                const geo = new THREE.RingGeometry(w/2 - 1.5, w/2, 48);
+                mesh = new THREE.Mesh(geo, stdMat());
+
+            } else if (style === 'dot') {
+                // Small sphere bead
+                const geo = new THREE.SphereGeometry(Math.max(1, w/2), 8, 6);
+                mesh = new THREE.Mesh(geo, stdMat());
+
+            } else if (style === 'tri') {
+                // Flat equilateral triangle (cone 3 sides, zero top radius)
+                const geo = new THREE.CylinderGeometry(0, w/2, 1, 3, 1);
+                mesh = new THREE.Mesh(geo, stdMat());
+                mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat()));
+                mesh.rotation.x = -Math.PI / 2;  // lay flat facing camera
+
+            } else if (style === 'bar') {
+                // Ultra-thin horizontal stripe
+                const geo = new THREE.PlaneGeometry(w, Math.max(1.5, h));
+                mesh = new THREE.Mesh(geo, stdMat());
+
+            } else if (style === 'frame') {
+                // Square ring (4-sided)
+                const geo = new THREE.RingGeometry(w/2 - 2, w/2, 4, 1);
+                mesh = new THREE.Mesh(geo, stdMat());
+                mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat()));
+
+            } else {
+                // slab / needle / block — flat planes
+                const geo = new THREE.PlaneGeometry(w, h);
+                mesh = new THREE.Mesh(geo, stdMat());
+                mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat()));
             }
-
-            mesh.add(new THREE.LineSegments(
-                new THREE.EdgesGeometry(geo),
-                new THREE.LineBasicMaterial({ color: 0x000000 })
-            ));
 
             mesh.position.set(x, y, z);
-            if (isFlat) mesh.rotation.x = -Math.PI / 2;
+            if (isFlat && style !== 'tri') mesh.rotation.x = -Math.PI / 2;
             mesh.scale.set(0, 0, 0);
             scene.add(mesh);
             elements.push({ mesh, impact: 1.6 });
 
-            if (elements.length > 2000) {
+            if (elements.length > 1500) {
                 const old = elements.shift();
                 scene.remove(old.mesh);
-                old.mesh.geometry.dispose();
-                old.mesh.material.dispose();
+                if (old.mesh.geometry) old.mesh.geometry.dispose();
+                if (old.mesh.material) old.mesh.material.dispose();
             }
         }
 
@@ -617,18 +720,38 @@
             requestAnimationFrame(animate);
             frame++;
 
-            // Face tracking — overrides mouse when a face is present
+            // Face tracking
             detectFace();
 
-            // Pull frequency data if audio is running
+            // Frequency data
             if (analyser && dataArray) analyser.getByteFrequencyData(dataArray);
 
-            const bass = dataArray ? binAvg(dataArray, 1, 6) : 0;
-            const kickBack = (bass / 255) * 25;
+            const bass   = dataArray ? binAvg(dataArray, 1,   6)   : 0;
+            const mid    = dataArray ? binAvg(dataArray, 7,   40)  : 0;
+            const treble = dataArray ? binAvg(dataArray, 41, 150)  : 0;
+            const energy = (bass + mid + treble) / (255 * 3);
 
-            targetZ -= 0.5;
-            curX += (mouseX * 350 - curX) * 0.035;
-            curY += (85 + (-mouseY * 220) - curY) * 0.035;
+            // ── Beat detection ─────────────────────────────────────────────────
+            const rawNorm = bass / 255;
+            rawBass  += (rawNorm - rawBass) * 0.30;
+            smBass   += (rawNorm - smBass)  * 0.08;
+            smEnergy += (energy  - smEnergy) * 0.06;
+
+            const bassRise = rawBass - prevRawBass;
+            if (bassRise > 0.055 && rawBass > 0.10) {
+                beatPulse = Math.min(1.0, rawBass * 1.6);
+            }
+            beatPulse    *= 0.86;
+            prevRawBass   = rawBass;
+
+            // ── Variable camera speed — rushes on beat, drifts in silence ─────
+            const speedTarget = 0.6 + smEnergy * 5.0 + beatPulse * 9.0;
+            baseSpeed += (speedTarget - baseSpeed) * 0.04;
+
+            const kickBack = smBass * 18;
+            targetZ -= baseSpeed;
+            curX += (mouseX * 260 - curX) * 0.020;
+            curY += (85 + (-mouseY * 170) - curY) * 0.020;
             curZ += (targetZ + kickBack - curZ) * 0.08;
 
             curFOV += (targetFOV - curFOV) * 0.1;
@@ -636,25 +759,31 @@
             camera.updateProjectionMatrix();
 
             camera.position.set(curX, curY, curZ);
-            camera.rotation.y += (-mouseX * 0.7  - camera.rotation.y) * 0.04;
-            camera.rotation.x += ((-mouseY * 0.4 + 0.15) - camera.rotation.x) * 0.04;
-            camera.rotation.z += ((-mouseX * 0.4) - camera.rotation.z) * 0.04;
+            camera.rotation.y += (-mouseX * 0.50 - camera.rotation.y) * 0.022;
+            camera.rotation.x += ((-mouseY * 0.28 + 0.15) - camera.rotation.x) * 0.022;
+            camera.rotation.z += ((-mouseX * 0.28) - camera.rotation.z) * 0.022;
 
             createStab();
 
+            // ── Update elements: scale pop + emissive flash on beat ───────────
+            const targetEmissive = 0.12 + beatPulse * 1.2 + smBass * 0.4;
             for (const e of elements) {
                 if (e.impact > 1.0) {
-                    e.impact -= 0.1;
+                    e.impact -= 0.09;
                     e.mesh.scale.set(e.impact, e.impact, e.impact);
                 } else {
                     e.mesh.scale.set(1, 1, 1);
+                }
+                if (e.mesh.material && e.mesh.material.emissiveIntensity !== undefined) {
+                    e.mesh.material.emissiveIntensity +=
+                        (targetEmissive - e.mesh.material.emissiveIntensity) * 0.12;
                 }
             }
 
             const ground = scene.getObjectByName('ground');
             if (ground) {
-                ground.material.emissiveIntensity = (bass / 255) * 0.6;
-                scene.fog.color.setScalar(0.02 + (bass / 255) * 0.08);
+                ground.material.emissiveIntensity = smBass * 0.7 + beatPulse * 0.5;
+                scene.fog.color.setScalar(0.02 + smBass * 0.10 + beatPulse * 0.06);
             }
 
             renderer.render(scene, camera);
