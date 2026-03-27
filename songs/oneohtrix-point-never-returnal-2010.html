@@ -73,19 +73,20 @@
 
         #controlsPanel {
             position: fixed;
-            top: 80px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 20px 24px;
-            color: #000000;
-            font-size: 14px;
+            top: 74px;
+            right: 32px;
+            color: rgba(255, 255, 255, 0.4);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
             z-index: 99;
-            min-width: 180px;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s ease;
-            line-height: 2;
+            line-height: 1.5;
+            text-align: right;
         }
 
         #controlsBtn:hover + #controlsPanel,
@@ -95,26 +96,22 @@
         }
 
         #controlsPanel .title {
-            font-weight: 700;
-            margin-bottom: 16px;
-            font-size: 14px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
+            display: none;
         }
 
         #controlsPanel .control-item {
-            margin: 4px 0;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            justify-content: flex-end;
+            align-items: baseline;
+            gap: 12px;
+            margin: 0;
         }
 
         #controlsPanel .key {
-            font-weight: 600;
-            padding: 2px 6px;
-            margin-right: 12px;
-            font-size: 14px;
-            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 400;
+            font-size: 11px;
+            letter-spacing: 0.1em;
         }
 
         #modeIndicator {
@@ -178,35 +175,23 @@
 
         #backLink {
             position: fixed;
-            top: 20px;
-            left: 24px;
-            font-size: 11px;
-            font-weight: 400;
-            letter-spacing: 0.1em;
+            top: 28px;
+            left: 32px;
+            font-size: 26px;
+            font-family: "Helvetica Neue", Arial, sans-serif;
             color: rgba(255, 255, 255, 0.4);
             cursor: pointer;
             z-index: 100;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
             text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+            line-height: 1;
+            user-select: none;
         }
 
         #backLink:hover {
-            color: rgba(255, 255, 255, 1);
-            letter-spacing: 3px;
-            transform: translateX(-2px);
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
         }
-
-        #backLink::before {
-            content: "←";
-            font-size: 14px;
-            transition: transform 0.3s ease;
-        }
-
-        #backLink:hover::before { transform: translateX(-4px); }
 
         .bottom-nav {
             position: fixed;
@@ -399,18 +384,25 @@
             position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            font-family: "LinotypeUnivers", sans-serif;
-            font-size: 22px;
-            font-weight: 400;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.55);
+            font-size: 32px;
+            color: rgba(255, 255, 255, 0.3);
             text-decoration: none;
             z-index: 100;
+            cursor: pointer;
+            transition: color 0.25s ease, text-shadow 0.25s ease;
+            line-height: 1;
+            padding: 16px 0;
+            user-select: none;
         }
-
-        #nav-prev { left: 24px; }
-        #nav-next { right: 24px; }
+        #nav-prev { left: 32px; }
+        #nav-next { right: 32px; }
+        #nav-prev:hover, #nav-next:hover {
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        #nav-prev:active, #nav-next:active {
+            color: rgba(255, 255, 255, 1);
+        }
     </style>
 </head>
 <body>
@@ -467,34 +459,7 @@
         <div class="nav-tooltip" style="bottom: 76px; right: 24px; left: auto;">Toggle Mode (M)</div>
     </div>
 
-    <div class="bottom-nav">
-        <a href="../visualizer.html" class="nav-link">
-            <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
-                <g stroke="white" stroke-width="1.5" fill="none">
-                    <path d="M8 21 L14 12 L20 28 L26 15 L32 24 L38 21" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="14" cy="12" r="2" fill="white"/>
-                    <circle cx="26" cy="15" r="2" fill="white"/>
-                </g>
-            </svg>
-            <div class="nav-tooltip">Visualizer</div>
-        </a>
-        <a href="../alphabet-chart.html" class="nav-link">
-            <svg viewBox="0 0 42 42" xmlns="http://www.w3.org/2000/svg">
-                <g stroke="white" stroke-width="1.5" fill="none">
-                    <line x1="14" y1="8" x2="14" y2="34" />
-                    <line x1="28" y1="8" x2="28" y2="34" />
-                    <line x1="8" y1="14" x2="34" y2="14" />
-                    <line x1="8" y1="28" x2="34" y2="28" />
-                    <circle cx="14" cy="14" r="2" fill="white" />
-                    <circle cx="28" cy="28" r="2" fill="white" />
-                    <line x1="19" y1="19" x2="23" y2="23" />
-                    <line x1="23" y1="19" x2="19" y2="23" />
-                </g>
-            </svg>
-            <div class="nav-tooltip">Alphabet</div>
-        </a>
-    </div>
-
+    
     <script>
 
 const AUTO_LOAD_AUDIO = '../Musique/14 - Oneohtrix Point Never — Returnal (2010) .mp3';
