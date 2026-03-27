@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About — A Visual History of Electronic Music</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns%3D%22http%3A//www.w3.org/2000/svg%22 viewBox%3D%220 0 32 32%22%3E%3Crect width%3D%2232%22 height%3D%2232%22 fill%3D%22%23000%22/%3E%3Ctext x%3D%2216%22 y%3D%2227%22 font-size%3D%2224%22 text-anchor%3D%22middle%22 fill%3D%22white%22 font-family%3D%22serif%22%3E%CE%A9%3C/text%3E%3C/svg%3E">
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegularItalic.otf") format("opentype");
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        :root { --m: 4vw; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            background: #0d0d0d;
+            color: #fff;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-weight: 400;
+            overflow-x: hidden;
+        }
+
+        /* ── Back button ── */
+        #backLink {
+            position: fixed;
+            top: 28px;
+            left: 32px;
+            font-size: 26px;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: none;
+            z-index: 100;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+            line-height: 1;
+            user-select: none;
+        }
+        #backLink:hover {
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+        }
+
+        /* ── Page ── */
+        .page {
+            padding: var(--m);
+            padding-top: calc(var(--m) + 60px);
+        }
+
+        /* ── Shared type scale — same as homepage song rows ── */
+        .title,
+        .body-text p {
+            font-size: clamp(16px, 3.5vw, 64px);
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+        }
+
+        /* ── Title ── */
+        .title {
+            text-transform: uppercase;
+            color: #fff;
+            margin-bottom: 0.9em;
+        }
+
+        /* ── Body ── */
+        .body-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85em;
+            max-width: 70vw;
+        }
+
+        .body-text p {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ── Bottom rule + credit ── */
+        .footer {
+            margin-top: 3em;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .footer span,
+        .footer a {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.28);
+            text-decoration: none;
+        }
+
+        .footer a:hover { color: rgba(255, 255, 255, 0.7); }
+
+        /* ── Cursor ── */
+        * {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" id="backLink">&#937;</a>
+
+    <div class="page">
+
+        <h1 class="title">A Visual History<br>of Electronic Music</h1>
+
+        <div class="body-text">
+            <p>This project is a way of experiencing the history of electronic music, not just learning it.</p>
+            <p>To me, electronic music is not simply EDM. It marks a shift in how sound is made. At a certain point, music separated from the instrument &mdash; and sound could be recorded, cut, rearranged, and built in entirely new ways. That moment changed what music could be.</p>
+            <p>This website follows that transformation as a narrative. Eleven pieces, spanning 1932 to 2025. Each one represents a different idea about what sound could become once it was freed from a physical source.</p>
+            <p>The pieces were chosen because each one did something that had not quite been done before. Schaeffer used recorded noise as raw material. Oram invented a machine to draw sound directly onto film. Derbyshire built music by hand from test oscillators and tape. Eno used process and repetition to make music that listened back to its environment. Each artist was asking a different question.</p>
+            <p>Each visual is designed specifically around the structure, feeling, and musicality of that piece &mdash; not as decoration, not as a generic audio visualizer, but as an interpretation. The goal is for the image to feel like it could only belong to that one piece of music.</p>
+            <p>The visuals do not just react to sound. They interpret it, turning rhythm, texture, and frequency into image.</p>
+        </div>
+
+        <div class="footer">
+            <span>Sabrina Wu</span>
+            <span>Parsons School of Design &middot; Communication Design &rsquo;26</span>
+            <a href="index.html">Back to Timeline</a>
+        </div>
+
+    </div>
+
+    <script>
+        let autoScrolling = true;
+        const speed = 0.6; // px per frame
+
+        function step() {
+            if (autoScrolling) {
+                window.scrollBy(0, speed);
+                // stop at bottom
+                if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
+                    autoScrolling = false;
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        // pause auto-scroll on any manual interaction
+        ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
+            window.addEventListener(evt, () => { autoScrolling = false; }, { passive: true });
+        });
+
+        // short delay before starting
+        setTimeout(() => requestAnimationFrame(step), 800);
+    </script>
+
+</body>
+</html>
