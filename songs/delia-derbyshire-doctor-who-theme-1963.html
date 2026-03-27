@@ -32,20 +32,34 @@
 
         /* Video container */
         #video-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: #000;
+            overflow: hidden;
         }
 
         #video-container video {
-            max-width: 100%;
-            max-height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: cover;
+        }
+
+        /* Portrait: rotate landscape video 90° clockwise to fill screen */
+        @media (orientation: portrait) {
+            #video-container video {
+                top: 50%;
+                left: 50%;
+                width: 100vh;
+                height: 100vw;
+                object-fit: cover;
+                transform: translate(-50%, -50%) rotate(90deg);
+            }
         }
 
         /* Start overlay */
@@ -292,7 +306,73 @@
         #nav-prev:active, #nav-next:active {
             color: rgba(255, 255, 255, 1);
         }
-    
+
+        /* Info panel — responsive type sizes */
+        .ip-year, .ip-title, .ip-artist, .ip-text p {
+            font-size: clamp(14px, 2.4vw, 44px);
+        }
+        .ip-close-btn {
+            font-size: clamp(10px, 0.85vw, 14px);
+        }
+
+        /* Laptop (≤1280px) */
+        @media (max-width: 1280px) {
+            .ip-year, .ip-title, .ip-artist, .ip-text p {
+                font-size: clamp(14px, 2.8vw, 36px);
+            }
+            #info-panel-inner {
+                padding: 2vh 6vw 10vh;
+            }
+        }
+
+        /* Tablet (≤768px) */
+        @media (max-width: 768px) {
+            .ip-year, .ip-title, .ip-artist, .ip-text p {
+                font-size: clamp(15px, 4.5vw, 28px);
+            }
+            .ip-close-btn {
+                font-size: 12px;
+            }
+            .ip-images-grid {
+                grid-template-columns: 1fr;
+                gap: 1vw;
+            }
+            .ip-images-grid.cols-3 {
+                grid-template-columns: 1fr 1fr;
+            }
+            #info-panel-inner {
+                padding: 1.5vh 5vw 10vh;
+            }
+            #nav-prev, #nav-next {
+                font-size: 22px;
+                padding: 12px 0;
+            }
+            #nav-prev { left: 16px; }
+            #nav-next { right: 16px; }
+            #backLink {
+                font-size: 22px;
+            }
+        }
+
+        /* Phone (≤480px) */
+        @media (max-width: 480px) {
+            .ip-year, .ip-title, .ip-artist, .ip-text p {
+                font-size: clamp(14px, 5vw, 22px);
+            }
+            .ip-meta {
+                column-gap: 4vw;
+            }
+            .ip-images-grid {
+                grid-template-columns: 1fr;
+            }
+            .ip-images-grid.cols-3 {
+                grid-template-columns: 1fr;
+            }
+            #info-panel-inner {
+                padding: 1vh 5vw 8vh;
+            }
+        }
+
         * {
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
         }

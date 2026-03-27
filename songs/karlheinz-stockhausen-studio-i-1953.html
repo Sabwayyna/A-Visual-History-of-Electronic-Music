@@ -464,7 +464,8 @@ let lastVol = 0;
 let frameCounter = 0;
 let showUI = true;
 let playbackSpeed = 1.0;
-let scrollZoom = 1.0; // multiplier from scroll  -  only goes down, infinite zoom out
+let scrollZoom = 1.0;       // current (lerped) scroll zoom
+let scrollZoomTarget = 1.0; // target zoom — lerped toward each frame
 
 function preload() {
   song = loadSound(AUTO_LOAD_AUDIO,
@@ -526,6 +527,9 @@ function draw() {
   }
 
   // --- CAMERA: infinite zoom out ---
+  // Smoothly chase the target scroll zoom (eases trackpad sensitivity)
+  scrollZoom = lerp(scrollZoom, scrollZoomTarget, 0.08);
+
   // Auto-zoom: exponential, starts at 5x, shrinks to 0.05x over the song
   let autoZoom = 5.0 * pow(0.05 / 5.0, progress);
   // Combined with scroll zoom (infinite  -  no lower bound)
@@ -541,28 +545,28 @@ function draw() {
   let viewH = height / zoom;
 
   if (isBeat) {
-    let numStars = floor(random(3, 8));
+    let numStars = floor(random(4, 10));
     for (let i = 0; i < numStars; i++) {
-      let sz;
       let roll = random();
-
-      if (isStrongBeat && roll < 0.06) {
-        sz = random(30, 70);   // Large  -  only on genuinely loud moments, very rare
-      } else if (isBeat && roll < 0.12) {
-        sz = random(8, 18);    // Medium accent
-      } else {
-        sz = random(1, 3);     // Tiny star
-      }
-
-      let sx = random(-viewW / 2, viewW / 2);
-      let sy = random(-viewH / 2, viewH / 2);
-      stars.push({ x: sx, y: sy, size: sz });
+      let sz;
+      if (isStrongBeat && roll < 0.25) sz = random(60, 140);      // huge on strong beats
+      else if (isStrongBeat && roll < 0.50) sz = random(25, 60);  // large
+      else if (roll < 0.30) sz = random(15, 35);                  // medium-large on any beat
+      else if (roll < 0.55) sz = random(5, 14);                   // medium
+      else sz = random(0.8, 4);                                    // tiny
+      stars.push({
+        x: random(-viewW / 2, viewW / 2),
+        y: random(-viewH / 2, viewH / 2),
+        size: sz
+      });
     }
   } else if (vol > 0.02 && frameCounter % 3 === 0) {
     // Ambient: sparse tiny stars between beats
-    let sx = random(-viewW / 2, viewW / 2);
-    let sy = random(-viewH / 2, viewH / 2);
-    stars.push({ x: sx, y: sy, size: random(0.5, 2) });
+    stars.push({
+      x: random(-viewW / 2, viewW / 2),
+      y: random(-viewH / 2, viewH / 2),
+      size: random(0.5, 2)
+    });
   }
 
   // Cap stars
@@ -577,8 +581,8 @@ function draw() {
 
   noStroke();
   rectMode(CENTER);
-  fill(255);
 
+  fill(255);
   for (let i = 0; i < stars.length; i++) {
     let s = stars[i];
     rect(s.x, s.y, s.size, s.size);
@@ -599,12 +603,12 @@ function draw() {
 }
 
 function mouseWheel(event) {
-  // Scroll down = zoom out (infinite, no limit)
-  // Scroll up = zoom back in (capped at 1.0 = no extra zoom)
+  // Scale step by delta magnitude but cap it so trackpad micro-events stay gentle
+  let step = min(abs(event.delta) * 0.0003, 0.03);
   if (event.delta > 0) {
-    scrollZoom *= 0.92;
+    scrollZoomTarget *= (1.0 - step);
   } else {
-    scrollZoom = min(scrollZoom * 1.08, 1.0);
+    scrollZoomTarget = min(scrollZoomTarget * (1.0 + step), 1.0);
   }
   // Fade out the hint on first scroll
   var hint = document.getElementById('scrollHint');
