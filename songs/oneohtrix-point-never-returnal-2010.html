@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Where Does Time Go - OPN (2010)</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns%3D%22http%3A//www.w3.org/2000/svg%22 viewBox%3D%220 0 32 32%22%3E%3Crect width%3D%2232%22 height%3D%2232%22 fill%3D%22%23000%22/%3E%3Ctext x%3D%2216%22 y%3D%2227%22 font-size%3D%2224%22 text-anchor%3D%22middle%22 fill%3D%22white%22 font-family%3D%22serif%22%3E%CE%A9%3C/text%3E%3C/svg%3E">
+    <link rel="icon" href="../favicon/favicon.svg" type="image/svg+xml"><link rel="icon" href="../favicon/favicon.ico" sizes="any">
 
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -439,7 +439,7 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
             createBackgroundStars();
@@ -495,9 +495,9 @@
             document.addEventListener('keydown',  unblock, { once: true });
         }
 
-        // ── 1. Hyper-Dense Background Stars ──
+        // ── 1. Background Stars ──
         function createBackgroundStars() {
-            const starCount = 350000;
+            const starCount = 160000;
             const geometry  = new THREE.BufferGeometry();
             const positions = new Float32Array(starCount * 3);
             const sizes     = new Float32Array(starCount);
@@ -540,7 +540,7 @@
 
         // ── 2. Main Nebula ──
         function createMainNebula() {
-            const particleCount = 150000;
+            const particleCount = 70000;
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
             const sizes     = new Float32Array(particleCount);
@@ -710,15 +710,19 @@
             const x = Math.max(0, Math.min(1, (value-min)/(max-min))); return x*x*(3-2*x);
         }
 
-        // ── 5. Circle Eye ──
+        // ── 5. Circle Eye (ShaderMaterial — dilation on GPU, no CPU loop) ──
         function createCircleEye(zOffset) {
-            const eyeCount = 45000;
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(eyeCount*3), basePositions = new Float32Array(eyeCount*3), colors = new Float32Array(eyeCount*3);
+            const eyeCount   = 22000;
+            const geometry   = new THREE.BufferGeometry();
+            const positions  = new Float32Array(eyeCount * 3);
+            const brightness = new Float32Array(eyeCount);
+
             for (let i = 0; i < eyeCount; i++) {
-                let x, y, z=0, c=1.0; const type = Math.random();
+                let x, y, z=0, c=1.0;
+                const type = Math.random();
                 if (type < 0.15) {
-                    x=(Math.random()-0.5)*4500; const arcY=Math.sin(Math.acos(x/2250))*900;
+                    x=(Math.random()-0.5)*4500;
+                    const arcY=Math.sin(Math.acos(Math.max(-1,Math.min(1,x/2250))))*900;
                     y=Math.random()>0.5?arcY:-arcY; y+=(Math.random()-0.5)*60; z=(Math.random()-0.5)*100;
                 } else if (type < 0.85) {
                     const angle=Math.random()*Math.PI*2, radius=250+Math.random()*600;
@@ -729,21 +733,51 @@
                     x=Math.cos(angle)*radius; y=Math.sin(angle)*radius; z=-100+(Math.random()-0.5)*300; c=0.4;
                 }
                 positions[i*3]=x; positions[i*3+1]=y; positions[i*3+2]=z;
-                basePositions[i*3]=x; basePositions[i*3+1]=y; basePositions[i*3+2]=z;
-                colors[i*3]=c; colors[i*3+1]=c; colors[i*3+2]=c;
+                brightness[i]=c;
             }
-            geometry.setAttribute('position',     new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('basePosition', new THREE.BufferAttribute(basePositions, 3));
-            geometry.setAttribute('color',        new THREE.BufferAttribute(colors, 3));
-            const material = new THREE.PointsMaterial({ size:3.5, vertexColors:true, transparent:true, opacity:0.0, blending:THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true });
-            material.onBeforeCompile = shader => {
-                shader.uniforms.uBlowForce = {value:0};
-                shader.vertexShader = `uniform float uBlowForce;\n${shader.vertexShader}`.replace(
-                    `#include <project_vertex>`,
-                    `vec4 mvPosition=vec4(transformed,1.); #ifdef USE_INSTANCING mvPosition=instanceMatrix*mvPosition; #endif mvPosition=modelViewMatrix*mvPosition; ${blowShaderLogic} gl_Position=projectionMatrix*mvPosition;`
-                );
-                material.userData.shader = shader;
-            };
+
+            geometry.setAttribute('position',   new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('brightness', new THREE.BufferAttribute(brightness, 1));
+
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    uBlowForce: { value: 0 },
+                    uDilate:    { value: 1.0 },
+                    uBassZ:     { value: 0 },
+                    uReveal:    { value: 0 },
+                    uTreble:    { value: 0 }
+                },
+                vertexShader: `
+                    uniform float uBlowForce; uniform float uDilate; uniform float uBassZ;
+                    attribute float brightness; varying float vBright;
+                    void main() {
+                        vec3 pos = position * uDilate;
+                        pos.z += uBassZ;
+                        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                        float dist2D = length(mvPosition.xy);
+                        float depthStr = smoothstep(4000.0, 0.0, -mvPosition.z);
+                        if(depthStr > 0.0 && dist2D > 0.0) {
+                            vec2 pushDir = mvPosition.xy / dist2D;
+                            mvPosition.xy += pushDir * uBlowForce * 3500.0 * depthStr;
+                            mvPosition.z  -= uBlowForce * 6000.0 * depthStr;
+                        }
+                        gl_Position = projectionMatrix * mvPosition;
+                        gl_PointSize = 3.5 * (300.0 / -mvPosition.z);
+                        vBright = brightness;
+                    }
+                `,
+                fragmentShader: `
+                    uniform float uReveal; uniform float uTreble; varying float vBright;
+                    void main() {
+                        vec2 xy = gl_PointCoord.xy - vec2(0.5);
+                        if(length(xy) > 0.5) discard;
+                        float opacity = (0.85 + uTreble * 0.8) * uReveal;
+                        gl_FragColor = vec4(1.0, 1.0, 1.0, vBright * opacity);
+                    }
+                `,
+                transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+            });
+
             circleEyeSystem = new THREE.Points(geometry, material);
             circleEyeSystem.position.z = zOffset;
             scene.add(circleEyeSystem);
@@ -751,13 +785,13 @@
 
         // ── 6. Volumetric Eye ──
         function createVolumetricEye(zOffset) {
-            const particleCount = 180000;
+            const particleCount = 80000;
             const geometry = new THREE.BufferGeometry();
             const positions   = new Float32Array(particleCount*3);
             const angles      = new Float32Array(particleCount);
             const radii       = new Float32Array(particleCount);
             const thicknesses = new Float32Array(particleCount);
-            const numStrands = 1800, pps = Math.floor(particleCount/numStrands); let i = 0;
+            const numStrands = 800, pps = Math.floor(particleCount/numStrands); let i = 0;
             for (let s = 0; s < numStrands; s++) {
                 let ba = (s/numStrands)*Math.PI*2 + (Math.random()-0.5)*0.03;
                 for (let p = 0; p < pps; p++) {
@@ -922,16 +956,12 @@
             if (circleEyeSystem) {
                 if (camera.position.z < circleEyeSystem.position.z-5000) circleEyeSystem.position.z-=LOOP_LENGTH;
                 else if (camera.position.z > circleEyeSystem.position.z+LOOP_LENGTH-5000) circleEyeSystem.position.z+=LOOP_LENGTH;
-                if (circleEyeSystem.material.userData.shader) circleEyeSystem.material.userData.shader.uniforms.uBlowForce.value=smBlowForce;
-                const pos=circleEyeSystem.geometry.attributes.position.array;
-                const bas=circleEyeSystem.geometry.attributes.basePosition.array;
                 circleEyeSystem.rotation.z = time*0.05;
-                for (let i=0;i<bas.length;i+=3) {
-                    const dilate=1.0+(smBass*0.4);
-                    pos[i]=bas[i]*dilate; pos[i+1]=bas[i+1]*dilate; pos[i+2]=bas[i+2]+(smBass*250.);
-                }
-                circleEyeSystem.geometry.attributes.position.needsUpdate=true;
-                circleEyeSystem.material.opacity=(0.85+(smTreble*0.8))*revealProgress;
+                circleEyeSystem.material.uniforms.uBlowForce.value = smBlowForce;
+                circleEyeSystem.material.uniforms.uDilate.value    = 1.0 + smBass * 0.4;
+                circleEyeSystem.material.uniforms.uBassZ.value     = smBass * 250.0;
+                circleEyeSystem.material.uniforms.uReveal.value    = revealProgress;
+                circleEyeSystem.material.uniforms.uTreble.value    = smTreble;
             }
             if (volumetricEyeSystem) {
                 if (camera.position.z < volumetricEyeSystem.position.z-5000) volumetricEyeSystem.position.z-=LOOP_LENGTH;
