@@ -46,7 +46,7 @@
             width: 36px; height: 36px;
             background: transparent;
             cursor: pointer;
-            z-index: 100;
+            z-index: 1100;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -77,7 +77,7 @@
             font-weight: 400;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            z-index: 99;
+            z-index: 1099;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s ease;
@@ -118,7 +118,7 @@
             font-family: "Helvetica Neue", Arial, sans-serif;
             color: rgba(255,255,255,0.4);
             cursor: pointer;
-            z-index: 100;
+            z-index: 1100;
             text-decoration: none;
             transition: color 0.3s ease, text-shadow 0.3s ease;
             line-height: 1;
@@ -309,6 +309,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding-top: 10vh;
             transition: opacity 1.5s ease;
         }
 
@@ -377,16 +378,18 @@
 
         .p1-btn {
             background: transparent;
-            color: rgba(255,255,255,0.6);
             border: none;
-            padding: 0;
-            font-family: "LinotypeUnivers", sans-serif;
-            font-size: 0.7rem;
-            letter-spacing: 3px;
+            padding: 6px;
             cursor: pointer;
-            opacity: 0.5;
+            opacity: 0.45;
             transition: opacity 0.3s ease;
-            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .p1-btn svg {
+            display: block;
         }
 
         .p1-btn:hover { opacity: 1; }
@@ -394,10 +397,7 @@
 
         #btn-proceed {
             display: none;
-            color: #fff;
             opacity: 0.8;
-            border-bottom: 1px solid #fff;
-            padding-bottom: 2px;
         }
 
         #btn-proceed:hover { opacity: 1; }
@@ -449,14 +449,33 @@
             <div id="scanner-line"></div>
         </div>
         <div class="p1-controls">
-            <button id="btn-reset" class="p1-btn">NEW PAPER</button>
-            <button id="btn-feed"  class="p1-btn">FEED AUDIO</button>
-            <button id="btn-proceed" class="p1-btn">PROCEED</button>
+            <!-- New Paper: small rectangle -->
+            <button id="btn-reset" class="p1-btn" title="New Paper">
+                <svg width="22" height="28" viewBox="0 0 22 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="20" height="26" rx="1.5" stroke="white" stroke-width="1.5"/>
+                </svg>
+            </button>
+            <!-- Feed Audio: 5-bar waveform -->
+            <button id="btn-feed" class="p1-btn" title="Feed Audio">
+                <svg width="28" height="24" viewBox="0 0 28 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1"  y="9"  width="4" height="10" rx="2" fill="white"/>
+                    <rect x="7"  y="4"  width="4" height="16" rx="2" fill="white"/>
+                    <rect x="13" y="0"  width="4" height="24" rx="2" fill="white"/>
+                    <rect x="19" y="6"  width="4" height="14" rx="2" fill="white"/>
+                    <rect x="25" y="11" width="4" height="8"  rx="2" fill="white"/>
+                </svg>
+            </button>
+            <!-- Proceed: right-pointing chevron -->
+            <button id="btn-proceed" class="p1-btn" title="Proceed">
+                <svg width="18" height="28" viewBox="0 0 18 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <polyline points="2,2 16,14 2,26" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+            </button>
         </div>
     </div>
 
     <!-- Song header (always on top) -->
-    <div id="song-header">1932  -  Rachmaninoff Prelude  -  Nikolai Voinov</div>
+    <div id="song-header">1932 &nbsp;&#8212;&nbsp; Rachmaninoff Prelude &nbsp;&#8212;&nbsp; Nikolai Voinov</div>
 
     <!-- Info panel -->
     <div id="info-panel">
@@ -487,7 +506,6 @@
     <a href="../index.html" id="backLink">&#937;</a>
 
     <!-- Next page arrow -->
-    <a href="rashad-becker-busy-ready-what-corroborators-2025.html" id="nav-prev">&#9664;</a>
     <a href="pierre-schaeffer-cinq-&#233;tudes-de-bruits-1948.html" id="nav-next">&#9654;</a>
 
     <!-- Controls button -->
@@ -789,9 +807,9 @@
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 256;
-            // smoothingTimeConstant = 0: FFT is instantaneous — reacts to note attacks,
-            // not sustained energy, so inversions are brief flashes on each piano strike.
-            analyser.smoothingTimeConstant = 0;
+            // Heavy smoothing so only strong sustained beats register,
+            // not every individual piano note attack.
+            analyser.smoothingTimeConstant = 0.82;
 
             const source = audioCtx.createMediaElementSource(audioEl);
             source.connect(analyser);
@@ -801,9 +819,6 @@
 
             if (imageSrc) {
                 cutImage.onload = function() {
-                    // Draw paper image once onto the paper canvas — content never changes,
-                    // only the CSS filter on the element changes on beat.
-                    // Background #050505 ensures inversion gives a visible near-white rect.
                     paperVisCtx.fillStyle = '#050505';
                     paperVisCtx.fillRect(0, 0, paperVisCanvas.width, paperVisCanvas.height);
                     paperVisCtx.drawImage(cutImage, 0, 0);
@@ -822,24 +837,40 @@
             }
         });
 
+        // Cooldown between inversions — prevents rapid flickering,
+        // keeps flashes feeling intentional and tied to strong beats only.
+        const INVERT_COOLDOWN_MS = 420;
+        const INVERT_HOLD_MS     = 110;
+        let lastInversionTime    = 0;
+        let invertResetTimer     = null;
+
         function drawLoop() {
             requestAnimationFrame(drawLoop);
 
-            // Frequency analysis — same as original file
             const bufLen = analyser.frequencyBinCount;
             const data   = new Uint8Array(bufLen);
             analyser.getByteFrequencyData(data);
-            let sum = 0;
-            for (let i = 0; i < 8; i++) sum += data[i];
-            const intensity = (sum / 8) / 255;
 
-            // Apply inversion ONLY to the paper canvas element.
-            // vis-canvas (black background) is a separate element and never touched.
-            // Result: paper throbs white↔black, outer background stays black always.
-            const shouldInvert = intensity > 0.65;
-            if (shouldInvert !== isInverted) {
-                isInverted = shouldInvert;
-                paperVisCanvas.style.filter = isInverted ? 'invert(1)' : 'invert(0)';
+            // Average low-mid bins — piano fundamentals sit here
+            let sum = 0;
+            for (let i = 0; i < 12; i++) sum += data[i];
+            const intensity = (sum / 12) / 255;
+
+            const now = performance.now();
+
+            // Only trigger an inversion on a strong beat AND after the cooldown has elapsed.
+            // The inversion auto-resets after INVERT_HOLD_MS so it's always a brief flash,
+            // never a sustained stuck state.
+            if (!isInverted && intensity > 0.72 && (now - lastInversionTime) > INVERT_COOLDOWN_MS) {
+                isInverted = true;
+                lastInversionTime = now;
+                paperVisCanvas.style.filter = 'invert(1)';
+
+                clearTimeout(invertResetTimer);
+                invertResetTimer = setTimeout(() => {
+                    isInverted = false;
+                    paperVisCanvas.style.filter = 'invert(0)';
+                }, INVERT_HOLD_MS);
             }
         }
     })();
