@@ -339,12 +339,18 @@
 
         #canvas-wrapper {
             position: relative;
-            width: 90vw;
+            width: 72vw;
             max-width: 1000px;
             aspect-ratio: 1000 / 350;
             margin: 0 auto;
             transition: transform 1.5s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.8s ease;
             touch-action: none;
+        }
+
+        @media (min-width: 768px) {
+            #canvas-wrapper {
+                width: 85vw;
+            }
         }
 
         canvas.interaction-layer {

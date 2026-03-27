@@ -110,28 +110,6 @@
         }
 
         /* Mode indicator overlay */
-        #modeIndicator {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #ffffff;
-            border: 3px solid #000000;
-            padding: 20px 40px;
-            font-size: 14px;
-            font-weight: 700;
-            box-shadow: 6px 6px 0px #000000;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-            letter-spacing: 2px;
-        }
-
-        #modeIndicator.show {
-            opacity: 1;
-        }
-
         /* Save confirmation overlay */
         #saveConfirmation {
             position: fixed;
@@ -200,34 +178,6 @@
 
         /* Bottom-left navigation */
 
-
-        /* Mode toggle button - bottom right */
-        #modeToggleBtn {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            cursor: pointer;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        #modeToggleBtn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.6);
-            transform: scale(1.05);
-        }
-
-        #modeToggleBtn svg {
-            width: 60%;
-            height: 60%;
-        }
 
 
         #song-header {
@@ -487,10 +437,6 @@
             <span>Speed</span>
         </div>
         <div class="control-item">
-            <span class="key">M</span>
-            <span>Toggle Mode</span>
-        </div>
-        <div class="control-item">
             <span class="key">S</span>
             <span>Save Frame</span>
         </div>
@@ -504,27 +450,12 @@
         </div>
     </div>
 
-    <!-- Mode indicator -->
-    <div id="modeIndicator">RADIAL MODE</div>
-
     <!-- Save confirmation -->
     <div id="saveConfirmation">✓ FRAME SAVED</div>
 
     <!-- Speed indicator -->
     <div id="speedIndicator">1.0x</div>
 
-    <!-- Mode toggle button (bottom right) -->
-    <div id="modeToggleBtn" onclick="toggleVisualizationMode()">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <g stroke="white" stroke-width="2" fill="none">
-                <!-- Arrows showing transformation -->
-                <line x1="4" y1="12" x2="10" y2="12" />
-                <line x1="14" y1="12" x2="20" y2="12" />
-                <circle cx="12" cy="12" r="2" fill="white"/>
-            </g>
-        </svg>
-        <div class="nav-tooltip" style="bottom: 76px; right: 24px; left: auto;">Toggle Mode (M)</div>
-    </div>
 
 
     <script>
@@ -3379,66 +3310,6 @@ function mousePressed() {
 
 // Simplified keyboard controls
 
-// Mode toggle functions
-function toggleVisualizationMode() {
-  if (visualMode === 'horizontal') {
-    visualMode = 'radial';
-    console.log('Switched to RADIAL mode (center-outward)');
-  } else {
-    visualMode = 'horizontal';
-    console.log('Switched to HORIZONTAL mode (left-to-right)');
-  }
-  // Show brief notification
-  showModeNotification();
-}
-
-// Expose to window for button access
-if (typeof window !== 'undefined') {
-  window.toggleVisualizationMode = toggleVisualizationMode;
-}
-
-// Expose to window for button access
-if (typeof window !== 'undefined') {
-  window.toggleVisualizationMode = toggleVisualizationMode;
-}
-
-// Expose to window for button access
-if (typeof window !== 'undefined') {
-  window.toggleVisualizationMode = toggleVisualizationMode;
-}
-
-// Expose to window for button access
-if (typeof window !== 'undefined') {
-  window.toggleVisualizationMode = toggleVisualizationMode;
-}
-
-// Expose to window for button access
-if (typeof window !== 'undefined') {
-  window.toggleVisualizationMode = toggleVisualizationMode;
-}
-
-// Expose to window for button access
-if (typeof window !== 'undefined') {
-  window.toggleVisualizationMode = toggleVisualizationMode;
-}
-
-function showModeNotification() {
-  // This will be handled by HTML overlay
-  let modeIndicator = document.getElementById('modeIndicator');
-  if (modeIndicator) {
-    modeIndicator.textContent = visualMode === 'horizontal' ? 'HORIZONTAL MODE' : 'RADIAL MODE';
-    modeIndicator.classList.add('show');
-    setTimeout(() => {
-      modeIndicator.classList.remove('show');
-    }, 1500);
-  }
-}
-
-// Expose to window for button access
-if (typeof window !== 'undefined') {
-  window.toggleVisualizationMode = toggleVisualizationMode;
-  window.showModeNotification = showModeNotification;
-}
 
 function keyPressed() {
   // Toggle UI with 'h' key (hide/show)
