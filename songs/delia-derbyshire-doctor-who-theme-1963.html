@@ -62,6 +62,17 @@
             }
         }
 
+        /* Distortion canvas — sits above video, below UI */
+        #distortion-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
         /* Start overlay */
         #startOverlay {
             position: fixed;
@@ -75,7 +86,7 @@
             justify-content: center;
             z-index: 200;
             cursor: pointer;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.6s ease;
         }
 
         #startOverlay.hidden {
@@ -399,17 +410,19 @@
         </div>
     </div>    <!-- Start overlay -->
     <div id="startOverlay">
-        <span>Click to play</span>
+        <span>Tap to play</span>
     </div>
+
+    <canvas id="distortion-canvas"></canvas>
 
     <!-- Back to timeline -->
     <a href="../index.html" id="backLink">&#937;</a>
     <a href="daphne-oram-four-aspects-1960.html" id="nav-prev">&#9664;</a>
     <a href="brian-eno-music-for-airports-11-1978.html" id="nav-next">&#9654;</a>
 
-    <!-- Video -->
+    <!-- Video: playsinline prevents iOS fullscreen takeover; muted allows autoplay -->
     <div id="video-container">
-        <video id="video" preload="auto">
+        <video id="video" preload="auto" playsinline webkit-playsinline muted autoplay loop>
             <source src="../Videos/DoctorWho Video.mp4" type="video/mp4">
         </video>
     </div>
@@ -418,17 +431,114 @@
 
 
     <script>
-        const video = document.getElementById('video');
+        const video   = document.getElementById('video');
         const overlay = document.getElementById('startOverlay');
+        const distCanvas = document.getElementById('distortion-canvas');
+        const distCtx    = distCanvas.getContext('2d');
 
+        // ── Canvas sizing ────────────────────────────────────────────────────
+        function resizeDist() {
+            distCanvas.width  = window.innerWidth;
+            distCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeDist);
+        resizeDist();
+
+        // ── Overlay tap: unmute + ensure playback + unlock distortion ────────
         overlay.addEventListener('click', () => {
             overlay.classList.add('hidden');
-            video.play().catch(() => {});
+            video.muted = false;
+            video.play().catch(() => { video.muted = true; video.play(); });
+            distCanvas.style.pointerEvents = 'auto';
         });
 
-        video.addEventListener('ended', () => {
-            video.currentTime = 0;
+        // ── Distortion particles ─────────────────────────────────────────────
+        let particles = [];
+
+        function addTap(x, y) {
+            particles.push({ type: 'tap', x, y, life: 55, maxLife: 55 });
+        }
+
+        function addDrag(x, y) {
+            particles.push({ type: 'drag', x, y, life: 28, maxLife: 28 });
+        }
+
+        // Touch: tap = scan-line burst, drag = glitch bands
+        distCanvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            for (let t of e.touches) addTap(t.clientX, t.clientY);
+        }, { passive: false });
+
+        distCanvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            for (let t of e.touches) {
+                if (Math.random() < 0.5) addDrag(t.clientX, t.clientY);
+            }
+        }, { passive: false });
+
+        // Mouse fallback for desktop
+        distCanvas.addEventListener('mousedown', e => addTap(e.clientX, e.clientY));
+        distCanvas.addEventListener('mousemove', e => {
+            if (e.buttons && Math.random() < 0.3) addDrag(e.clientX, e.clientY);
         });
+
+        // ── Render loop ──────────────────────────────────────────────────────
+        function renderDist() {
+            requestAnimationFrame(renderDist);
+            distCtx.clearRect(0, 0, distCanvas.width, distCanvas.height);
+            const W = distCanvas.width, H = distCanvas.height;
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                const t = p.life / p.maxLife; // 1 → 0
+
+                if (p.type === 'tap') {
+                    // Scan-line burst: horizontal lines spread up & down from tap Y
+                    const spread = (1 - t) * H * 0.55;
+                    const numLines = 10;
+                    for (let j = 0; j < numLines; j++) {
+                        const frac   = j / numLines;
+                        const offset = frac * spread;
+                        const alpha  = t * (1 - frac) * 0.65;
+                        const lw     = j === 0 ? 2 : 1;
+                        distCtx.lineWidth   = lw;
+                        distCtx.strokeStyle = `rgba(255,255,255,${alpha})`;
+
+                        // line below tap
+                        distCtx.beginPath();
+                        distCtx.moveTo(0, p.y + offset);
+                        distCtx.lineTo(W, p.y + offset);
+                        distCtx.stroke();
+
+                        // line above tap (skip duplicate at offset=0)
+                        if (j > 0) {
+                            distCtx.beginPath();
+                            distCtx.moveTo(0, p.y - offset);
+                            distCtx.lineTo(W, p.y - offset);
+                            distCtx.stroke();
+                        }
+                    }
+                    // Brief bright centre bar at impact
+                    if (t > 0.7) {
+                        distCtx.fillStyle = `rgba(255,255,255,${(t - 0.7) / 0.3 * 0.45})`;
+                        distCtx.fillRect(0, p.y - 1, W, 3);
+                    }
+
+                } else if (p.type === 'drag') {
+                    // Glitch band: partial-width white bar at drag Y
+                    const alpha = t * 0.30;
+                    distCtx.fillStyle = `rgba(255,255,255,${alpha})`;
+                    const bx = Math.random() * W * 0.25;
+                    const bw = W * (0.45 + Math.random() * 0.45);
+                    const bh = 1 + Math.floor(Math.random() * 2);
+                    distCtx.fillRect(bx, p.y, bw, bh);
+                }
+
+                p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+        renderDist();
     </script>
 
 
