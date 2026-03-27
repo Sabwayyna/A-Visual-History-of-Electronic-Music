@@ -19,8 +19,6 @@
             font-style: italic;
         }
 
-        :root { --m: 4vw; }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
@@ -28,10 +26,11 @@
             color: #fff;
             font-family: "LinotypeUnivers", sans-serif;
             font-weight: 400;
-            overflow-x: hidden;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        /* ── Back button ── */
+        /* ── Back button — fixed top left ── */
         #backLink {
             position: fixed;
             top: 28px;
@@ -50,13 +49,49 @@
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
         }
 
-        /* ── Page ── */
-        .page {
-            padding: var(--m);
-            padding-top: calc(var(--m) + 60px);
+        /* ── Static credit — fixed bottom right ── */
+        .credit {
+            position: fixed;
+            right: 32px;
+            bottom: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35em;
+            z-index: 100;
+        }
+        .credit-link {
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35em;
+        }
+        .credit-link span {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.28);
+            display: block;
+            transition: color 0.3s ease;
+        }
+        .credit-link:hover span {
+            color: rgba(255, 255, 255, 0.75);
         }
 
-        /* ── Shared type scale — same as homepage song rows ── */
+        /* ── Scrollable left column ── */
+        #scrollCol {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 68vw;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: calc(4vw + 60px) 4vw 8vh 32px;
+            scrollbar-width: none;
+        }
+        #scrollCol::-webkit-scrollbar { display: none; }
+
+        /* ── Shared type scale ── */
         .title,
         .body-text p {
             font-size: clamp(16px, 3.5vw, 64px);
@@ -64,44 +99,66 @@
             line-height: 1.15;
         }
 
-        /* ── Title ── */
         .title {
             text-transform: uppercase;
             color: #fff;
             margin-bottom: 0.9em;
         }
 
-        /* ── Body ── */
         .body-text {
             display: flex;
             flex-direction: column;
             gap: 0.85em;
-            max-width: 70vw;
         }
 
         .body-text p {
             color: rgba(255, 255, 255, 0.6);
         }
 
-        /* ── Bottom rule + credit ── */
-        .footer {
-            margin-top: 3em;
-            padding-top: 14px;
-            border-top: 1px solid rgba(255, 255, 255, 0.15);
-            display: flex;
-            justify-content: space-between;
+        /* ── Dancing blob ── */
+        #blobWrap {
+            position: fixed;
+            width: 220px;
+            height: 220px;
+            z-index: 50;
+            pointer-events: none;
+        }
+        #blobDeform {
+            width: 100%;
+            height: 100%;
+            transform-origin: center center;
+        }
+        .blob {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            animation: morph 3.2s ease-in-out infinite, bob 2.1s ease-in-out infinite, spin 7s linear infinite;
+            pointer-events: all;
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
         }
 
-        .footer span,
-        .footer a {
-            font-size: 10px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.28);
-            text-decoration: none;
+        @keyframes morph {
+            0%   { border-radius: 60% 40% 55% 45% / 50% 60% 40% 55%; }
+            15%  { border-radius: 35% 65% 40% 60% / 65% 35% 60% 40%; }
+            30%  { border-radius: 70% 30% 65% 35% / 40% 70% 30% 65%; }
+            45%  { border-radius: 42% 58% 30% 70% / 55% 45% 65% 35%; }
+            60%  { border-radius: 55% 45% 70% 30% / 35% 60% 45% 70%; }
+            75%  { border-radius: 30% 70% 45% 55% / 70% 30% 55% 45%; }
+            100% { border-radius: 60% 40% 55% 45% / 50% 60% 40% 55%; }
         }
 
-        .footer a:hover { color: rgba(255, 255, 255, 0.7); }
+        @keyframes bob {
+            0%, 100% { transform: translateY(0)   scaleX(1)    scaleY(1); }
+            20%       { transform: translateY(-28px) scaleX(0.93) scaleY(1.07); }
+            40%       { transform: translateY(-14px) scaleX(1.06) scaleY(0.95); }
+            60%       { transform: translateY(-36px) scaleX(0.96) scaleY(1.04); }
+            80%       { transform: translateY(-8px)  scaleX(1.04) scaleY(0.97); }
+        }
+
+        @keyframes spin {
+            0%   { rotate: 0deg; }
+            100% { rotate: 360deg; }
+        }
 
         /* ── Cursor ── */
         * {
@@ -113,8 +170,17 @@
 
     <a href="index.html" id="backLink">&#937;</a>
 
-    <div class="page">
+    <div id="blobWrap"><div id="blobDeform"><div class="blob"></div></div></div>
 
+    <div class="credit">
+        <a href="https://sabrina.cargo.site" target="_blank" class="credit-link">
+            <span>Sabrina Wu</span>
+            <span>Parsons School of Design</span>
+            <span>Communication Design &rsquo;26</span>
+        </a>
+    </div>
+
+    <div id="scrollCol">
         <h1 class="title">A Visual History<br>of Electronic Music</h1>
 
         <div class="body-text">
@@ -122,40 +188,129 @@
             <p>To me, electronic music is not simply EDM. It marks a shift in how sound is made. At a certain point, music separated from the instrument &mdash; and sound could be recorded, cut, rearranged, and built in entirely new ways. That moment changed what music could be.</p>
             <p>This website follows that transformation as a narrative. Eleven pieces, spanning 1932 to 2025. Each one represents a different idea about what sound could become once it was freed from a physical source.</p>
             <p>The pieces were chosen because each one did something that had not quite been done before. Schaeffer used recorded noise as raw material. Oram invented a machine to draw sound directly onto film. Derbyshire built music by hand from test oscillators and tape. Eno used process and repetition to make music that listened back to its environment. Each artist was asking a different question.</p>
-            <p>Each visual is designed specifically around the structure, feeling, and musicality of that piece &mdash; not as decoration, not as a generic audio visualizer, but as an interpretation. The goal is for the image to feel like it could only belong to that one piece of music.</p>
+            <p>Each visual is designed specifically around the structure, feeling, and musicality of that piece. The goal is for the image to feel like it could only belong to that one piece of music.</p>
             <p>The visuals do not just react to sound. They interpret it, turning rhythm, texture, and frequency into image.</p>
+            <p>Everything here was built from scratch in pure code &mdash; no templates, no frameworks, no pre-built tools. Each visualization is a custom piece of software written specifically for that song, working directly with audio data to generate form in real time. The entire project lives as a single website. There is no app, no installation, no separate interface. You move through a timeline and the history unfolds as you go, one piece at a time, each with its own visual language.</p>
+            <p>The intention was always to make something that felt authored, not assembled. Every decision &mdash; what to include, how to visualize it, what order to move through &mdash; is part of building a specific argument about what this music is and why it matters.</p>
         </div>
-
-        <div class="footer">
-            <span>Sabrina Wu</span>
-            <span>Parsons School of Design &middot; Communication Design &rsquo;26</span>
-            <a href="index.html">Back to Timeline</a>
-        </div>
-
     </div>
 
     <script>
+        /* ── Auto-scroll ── */
+        const col = document.getElementById('scrollCol');
         let autoScrolling = true;
-        const speed = 0.6; // px per frame
+        let resumeTimer = null;
+        const speed = 0.6;
+        const resumeDelay = 2200;
 
-        function step() {
+        function scrollStep() {
             if (autoScrolling) {
-                window.scrollBy(0, speed);
-                // stop at bottom
-                if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
-                    autoScrolling = false;
-                }
+                col.scrollTop += speed;
+                if (col.scrollTop + col.clientHeight >= col.scrollHeight - 2) autoScrolling = false;
             }
-            requestAnimationFrame(step);
+            requestAnimationFrame(scrollStep);
         }
+        function onUserScroll() {
+            autoScrolling = false;
+            clearTimeout(resumeTimer);
+            resumeTimer = setTimeout(() => {
+                if (col.scrollTop + col.clientHeight < col.scrollHeight - 2) autoScrolling = true;
+            }, resumeDelay);
+        }
+        col.addEventListener('wheel', onUserScroll, { passive: true });
+        col.addEventListener('touchstart', onUserScroll, { passive: true });
+        setTimeout(() => requestAnimationFrame(scrollStep), 800);
 
-        // pause auto-scroll on any manual interaction
-        ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
-            window.addEventListener(evt, () => { autoScrolling = false; }, { passive: true });
+        /* ── Soft press blob ── */
+        const wrap   = document.getElementById('blobWrap');
+        const deform = document.getElementById('blobDeform');
+        const blobEl = wrap.querySelector('.blob');
+
+        const SIZE = 220;
+        const R    = SIZE / 2;  // blob radius
+
+        // fixed home position — right side, vertically centered
+        const homeX = () => window.innerWidth  - 380;
+        const homeY = () => window.innerHeight / 2 - R;
+
+        let px = homeX(), py = homeY();
+        let mx = -9999, my = -9999;
+
+        // deformation state (interpolated each frame)
+        let curDepth  = 0;   // 0 = no press, 1 = fully pressed
+        let curAngle  = 0;   // direction of press in radians
+        let popScale  = 1;   // extra scale for click pop
+
+        // gentle breathing position offset
+        let t = 0;
+
+        function positionWrap() {
+            wrap.style.left = px + 'px';
+            wrap.style.top  = py + 'px';
+        }
+        positionWrap();
+
+        document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+        // click: gentle elastic pop — inflate then settle
+        blobEl.addEventListener('click', () => {
+            popScale = 1.12;
         });
 
-        // short delay before starting
-        setTimeout(() => requestAnimationFrame(step), 800);
+        function lerp(a, b, t) { return a + (b - a) * t; }
+
+        function blobStep() {
+            t += 0.008;
+
+            // lazy breathing drift — blob hovers gently in place
+            const hx = homeX() + Math.sin(t * 0.55) * 8;
+            const hy = homeY() + Math.sin(t * 0.38 + 1.1) * 6;
+            px = lerp(px, hx, 0.012);
+            py = lerp(py, hy, 0.012);
+            positionWrap();
+
+            // cursor relative to blob center
+            const cx = px + R;
+            const cy = py + R;
+            const dx = mx - cx;
+            const dy = my - cy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // how deeply cursor is inside blob (0 at edge, 1 at center)
+            const pressZone = R + 30; // a little beyond edge feels soft
+            const targetDepth = dist < pressZone
+                ? Math.max(0, 1 - dist / pressZone)
+                : 0;
+
+            const targetAngle = Math.atan2(dy, dx);
+
+            // smooth interpolation — slow in, slow out
+            curDepth = lerp(curDepth, targetDepth, 0.06);
+            // angle: only lerp when pressing to avoid snap
+            if (curDepth > 0.02) {
+                // lerp angle on the short arc
+                let da = targetAngle - curAngle;
+                if (da >  Math.PI) da -= Math.PI * 2;
+                if (da < -Math.PI) da += Math.PI * 2;
+                curAngle += da * 0.08;
+            }
+
+            // pop settles back to 1
+            popScale = lerp(popScale, 1, 0.09);
+
+            // build deform transform:
+            // rotate to press axis → compress in that direction → expand perpendicular → rotate back
+            const deg    = curAngle * 180 / Math.PI;
+            const squish = 1 - curDepth * 0.10;   // compress along press axis
+            const bulge  = 1 + curDepth * 0.05;   // expand perpendicular
+            const ps     = popScale;
+
+            deform.style.transform =
+                `scale(${ps}) rotate(${deg}deg) scaleX(${squish}) scaleY(${bulge}) rotate(${-deg}deg)`;
+
+            requestAnimationFrame(blobStep);
+        }
+        requestAnimationFrame(blobStep);
     </script>
 
 </body>
