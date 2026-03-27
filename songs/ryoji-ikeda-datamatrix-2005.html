@@ -244,20 +244,45 @@
 
         /* ── Prev / Next nav ── */
         #nav-prev, #nav-next {
-            position: fixed; top: 50%; transform: translateY(-50%);
-            font-size: 32px;
-            color: rgba(255, 255, 255, 0.3); text-decoration: none; z-index: 100;
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            text-decoration: none;
+            z-index: 100;
             cursor: pointer;
-            transition: color 0.25s ease, text-shadow 0.25s ease;
-            line-height: 1; padding: 16px 0; user-select: none;
+            user-select: none;
+            font-size: 0;
+            line-height: 0;
+            padding: 20px 14px;
+            display: block;
         }
-        #nav-prev { left: 32px; }
-        #nav-next { right: 32px; }
-        #nav-prev:hover, #nav-next:hover {
-            color: rgba(255, 255, 255, 0.85);
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        #nav-prev::before, #nav-next::before {
+            content: '';
+            display: block;
+            width: 12px;
+            height: 22px;
+            background: rgba(255,255,255,0.3);
+            transition: background 0.25s ease, filter 0.25s ease;
         }
-        #nav-prev:active, #nav-next:active { color: rgba(255, 255, 255, 1); }
+        #nav-prev::before { clip-path: polygon(100% 0%, 0% 50%, 100% 100%); }
+        #nav-next::before { clip-path: polygon(0% 0%, 100% 50%, 0% 100%); }
+        #nav-prev { left: 18px; }
+        #nav-next { right: 18px; }
+        #nav-prev:hover::before, #nav-next:hover::before {
+            background: rgba(255,255,255,0.85);
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.5));
+        }
+        #nav-prev:active::before, #nav-next:active::before {
+            background: rgba(255,255,255,1);
+        }
+        @keyframes navPulse {
+            0%   { transform: scale(1);   background: rgba(255,255,255,0.3); }
+            35%  { transform: scale(1.4); background: rgba(255,255,255,0.9); }
+            100% { transform: scale(1);   background: rgba(255,255,255,0.3); }
+        }
+        #nav-prev.nav-tapped::before, #nav-next.nav-tapped::before {
+            animation: navPulse 0.35s ease-out forwards;
+        }
 
 
     
