@@ -335,6 +335,16 @@
             animation: navPulse 0.35s ease-out forwards;
         }
 
+        /* ── Song header — prevent overflow on narrow screens ── */
+        @media (max-width: 600px) {
+            #song-header {
+                max-width: calc(100vw - 130px);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 10px;
+            }
+        }
+
         /* Info panel — responsive type sizes */
         .ip-year, .ip-title, .ip-artist, .ip-text p {
             font-size: clamp(14px, 2.4vw, 44px);

@@ -134,7 +134,39 @@
         #site-footer .footer-credit { text-align: left; padding-left: 4em; }
 
         #site-footer a:hover { color: #fff; }
-    
+
+        /* ── Mobile responsive ── */
+        @media (max-width: 600px) {
+            :root { --m: 5vw; }
+
+            /* Prevent Omega canvas from overflowing viewport width on portrait */
+            #shape-img {
+                height: min(92vh, 88vw);
+                width: min(92vh, 88vw);
+            }
+
+            /* Collapse to 2-column layout: year + artist (hide title) */
+            .song-row,
+            #site-footer {
+                grid-template-columns: 2.8em 1fr;
+            }
+
+            .song-title { display: none; }
+            .song-artist { padding-left: 0.5em; }
+
+            .song-year,
+            .song-artist {
+                font-size: clamp(13px, 4vw, 20px);
+            }
+
+            /* Footer: hide site title, keep Learn More + credit in 2 cols */
+            #site-footer .footer-title { display: none; }
+            #site-footer .footer-credit {
+                text-align: right;
+                padding-left: 0;
+            }
+        }
+
         * {
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
         }

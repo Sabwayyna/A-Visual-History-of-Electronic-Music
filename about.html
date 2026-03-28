@@ -160,6 +160,29 @@
             100% { rotate: 360deg; }
         }
 
+        /* ── Mobile responsive ── */
+        @media (max-width: 700px) {
+            /* Full-width scroll column — blob is hidden on narrow screens */
+            #scrollCol {
+                width: 100vw;
+                padding: calc(3vw + 56px) 7vw 10vh 7vw;
+            }
+
+            .title,
+            .body-text p {
+                font-size: clamp(15px, 4.5vw, 28px);
+            }
+
+            /* Hide blob — it overlaps text on narrow screens and has no hover interaction on touch */
+            #blobWrap { display: none; }
+
+            /* Shift credit away from edge */
+            .credit {
+                right: 20px;
+                bottom: 20px;
+            }
+        }
+
         /* ── Cursor ── */
         * {
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;

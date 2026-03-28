@@ -286,6 +286,39 @@
 
 
     
+        /* ── Responsive: info panel & header ── */
+        .ip-year, .ip-title, .ip-artist, .ip-text p {
+            font-size: clamp(14px, 2.4vw, 44px);
+        }
+        .ip-close-btn { font-size: clamp(10px, 0.85vw, 14px); }
+
+        @media (max-width: 600px) {
+            #song-header {
+                max-width: calc(100vw - 130px);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 10px;
+            }
+        }
+        @media (max-width: 1280px) {
+            .ip-year, .ip-title, .ip-artist, .ip-text p { font-size: clamp(14px, 2.8vw, 36px); }
+            #info-panel-inner { padding: 2vh 6vw 10vh; }
+        }
+        @media (max-width: 768px) {
+            .ip-year, .ip-title, .ip-artist, .ip-text p { font-size: clamp(15px, 4.5vw, 28px); }
+            .ip-close-btn { font-size: 12px; }
+            .ip-images-grid { grid-template-columns: 1fr; gap: 1vw; }
+            .ip-images-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+            #info-panel-inner { padding: 1.5vh 5vw 10vh; }
+        }
+        @media (max-width: 480px) {
+            .ip-year, .ip-title, .ip-artist, .ip-text p { font-size: clamp(14px, 5vw, 22px); }
+            .ip-meta { column-gap: 4vw; }
+            .ip-images-grid { grid-template-columns: 1fr; }
+            .ip-images-grid.cols-3 { grid-template-columns: 1fr; }
+            #info-panel-inner { padding: 1vh 5vw 8vh; }
+        }
+
         * {
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
         }
