@@ -145,21 +145,28 @@
                 width: min(92vh, 88vw);
             }
 
-            /* Collapse to 2-column layout: year + artist (hide title) */
+            /* 2-col layout: year | title — artist hidden */
             .song-row,
             #site-footer {
-                grid-template-columns: 2.8em 1fr;
+                grid-template-columns: 3.2em 1fr;
             }
 
-            .song-title { display: none; }
-            .song-artist { padding-left: 0.5em; }
+            /* Hide artist, show title as the second column */
+            .song-artist { display: none; }
+            .song-title  { display: block; text-align: left; }
 
             .song-year,
-            .song-artist {
-                font-size: clamp(13px, 4vw, 20px);
+            .song-title {
+                font-size: clamp(13px, 4.5vw, 20px);
             }
 
-            /* Footer: hide site title, keep Learn More + credit in 2 cols */
+            /* No hover-fade on touch — rows stay fully visible at all times */
+            .list-section:hover .song-row       { opacity: 1; }
+            .list-section:hover .song-row:hover { letter-spacing: -0.02em; }
+            /* Brief dim on tap for tactile feedback */
+            .song-row:active { opacity: 0.55; }
+
+            /* Footer: hide long site title, keep Learn More + credit */
             #site-footer .footer-title { display: none; }
             #site-footer .footer-credit {
                 text-align: right;
@@ -747,6 +754,22 @@
             bc.beginPath(); bc.moveTo(sx, sy); bc.lineTo(sx, sy + sh); bc.stroke();
         }
         ctx.drawImage(buf, 0, 0);
+    }
+
+    // ── Mobile: auto-cycle visualization modes — orb stays alive without hover ──
+    // On touch-primary devices there is no hover, so we cycle the orb automatically.
+    if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+        const CYCLE = [7, 0, 3, 4, 1, 5, 8, 2, 9, 10, 11];
+        let cycleIdx = 0;
+        function mobileNext() {
+            cycleIdx = (cycleIdx + 1) % CYCLE.length;
+            currentMode = CYCLE[cycleIdx];
+            shapeImg.classList.add('hidden');
+            bc.clearRect(0, 0, W, H); // reset buffer for each new mode
+        }
+        currentMode = CYCLE[0];
+        shapeImg.classList.add('hidden');
+        setInterval(mobileNext, 4000);
     }
 
     requestAnimationFrame(loop);

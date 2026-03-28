@@ -83,7 +83,8 @@
         }
 
         #controlsBtn:hover + #controlsPanel,
-        #controlsPanel:hover {
+        #controlsPanel:hover,
+        #controlsPanel.open {
             opacity: 1;
             pointer-events: auto;
         }
@@ -469,7 +470,7 @@
             <span>Pan</span>
         </div>
         <div class="control-item">
-            <span class="key">Scroll</span>
+            <span class="key">Scroll / Pinch</span>
             <span>Zoom In / Out</span>
         </div>
         <div class="control-item">
@@ -521,6 +522,7 @@ let camera = { x: 0, y: 0, zoom: 1 };
 let isDragging = false;
 let lastMouse = { x: 0, y: 0 };
 let lastTouch = null;
+let lastPinchDist = null;
 let time = 0;
 
 // ── Grid layout ────────────────────────────────────────────────────────────────
@@ -816,16 +818,41 @@ canvas.addEventListener('wheel', e => {
 }, { passive: true });
 
 // ── Camera — touch ─────────────────────────────────────────────────────────────
-canvas.addEventListener('touchstart', e => { lastTouch = e.touches[0]; }, { passive: true });
-canvas.addEventListener('touchmove',  e => {
-    if (!lastTouch) return;
-    const t = e.touches[0];
-    camera.x -= (t.clientX - lastTouch.clientX) / camera.zoom;
-    camera.y -= (t.clientY - lastTouch.clientY) / camera.zoom;
-    lastTouch = t;
+// ── Camera — touch (single-finger pan + two-finger pinch-to-zoom) ──────────────
+canvas.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+        lastTouch = null; // suspend pan while pinching
+        lastPinchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+    } else {
+        lastTouch = e.touches[0];
+        lastPinchDist = null;
+    }
+}, { passive: true });
+canvas.addEventListener('touchmove', e => {
+    if (e.touches.length === 2 && lastPinchDist !== null) {
+        // Pinch: scale camera zoom by the ratio of new to old finger distance
+        const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        camera.zoom = Math.max(0.05, Math.min(3.0, camera.zoom * (dist / lastPinchDist)));
+        lastPinchDist = dist;
+    } else if (e.touches.length === 1 && lastTouch) {
+        // Single finger: pan
+        const t = e.touches[0];
+        camera.x -= (t.clientX - lastTouch.clientX) / camera.zoom;
+        camera.y -= (t.clientY - lastTouch.clientY) / camera.zoom;
+        lastTouch = t;
+    }
     e.preventDefault();
 }, { passive: false });
-canvas.addEventListener('touchend', () => lastTouch = null);
+canvas.addEventListener('touchend', e => {
+    lastTouch = e.touches.length > 0 ? e.touches[0] : null;
+    if (e.touches.length < 2) lastPinchDist = null;
+});
 
 // ── Keyboard controls ──────────────────────────────────────────────────────────
 window.addEventListener('keydown', e => {
@@ -881,6 +908,18 @@ document.addEventListener('click', function startOnClick() {
     togglePlay();
     document.removeEventListener('click', startOnClick);
 }, { once: true });
+
+// ── Controls panel: tap to toggle on mobile (hover works on desktop) ──────────
+(function() {
+    const btn   = document.getElementById('controlsBtn');
+    const panel = document.getElementById('controlsPanel');
+    if (!btn || !panel) return;
+    btn.addEventListener('click', e => {
+        e.stopPropagation();
+        panel.classList.toggle('open');
+    });
+    document.addEventListener('click', () => panel.classList.remove('open'));
+})();
 
 render();
 

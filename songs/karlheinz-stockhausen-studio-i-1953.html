@@ -82,7 +82,8 @@
         }
 
         #controlsBtn:hover + #controlsPanel,
-        #controlsPanel:hover {
+        #controlsPanel:hover,
+        #controlsPanel.open {
             opacity: 1;
             pointer-events: auto;
         }
@@ -476,8 +477,8 @@
             <span>Speed</span>
         </div>
         <div class="control-item">
-            <span class="key">SCROLL</span>
-            <span>Zoom Out</span>
+            <span class="key">Scroll / Pinch</span>
+            <span>Zoom</span>
         </div>
         <div class="control-item">
             <span class="key">S</span>
@@ -801,6 +802,63 @@ function keyPressed() {
     })();
     </script>
 
+
+    <script>
+    // ── Mobile: pinch-to-zoom + controls toggle ───────────────────────────────
+    (function() {
+        // Pinch-to-zoom: modifies scrollZoomTarget (defined in the p5 sketch above)
+        var pinchDist = null;
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 2) {
+                pinchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }, { passive: true });
+        document.addEventListener('touchmove', function(e) {
+            if (e.touches.length < 2 || pinchDist === null) return;
+            e.preventDefault();
+            var d = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            var delta = pinchDist - d; // positive = fingers closer = zoom out
+            var step = Math.min(Math.abs(delta) * 0.008, 0.05);
+            scrollZoomTarget = delta > 0
+                ? scrollZoomTarget * (1 - step)
+                : Math.min(scrollZoomTarget * (1 + step), 1.0);
+            pinchDist = d;
+            var hint = document.getElementById('scrollHint');
+            if (hint) hint.classList.add('hidden');
+        }, { passive: false });
+        document.addEventListener('touchend', function(e) {
+            if (e.touches.length < 2) pinchDist = null;
+        }, { passive: true });
+
+        // On mobile, update hint text and hide it once the user taps to start
+        if ('ontouchstart' in window) {
+            var hint = document.getElementById('scrollHint');
+            if (hint) hint.textContent = 'tap to start';
+            document.addEventListener('click', function() {
+                if (hint) setTimeout(function() { hint.classList.add('hidden'); }, 600);
+            }, { once: true });
+        }
+
+        // Controls panel: toggle on tap (hover works on desktop)
+        var btn   = document.getElementById('controlsBtn');
+        var panel = document.getElementById('controlsPanel');
+        if (btn && panel) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                panel.classList.toggle('open');
+            });
+            document.addEventListener('click', function() {
+                panel.classList.remove('open');
+            });
+        }
+    })();
+    </script>
 
     <script>
     (function() {
