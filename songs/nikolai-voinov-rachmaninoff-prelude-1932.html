@@ -418,6 +418,19 @@
         .p1-btn:hover { opacity: 1; }
         .p1-btn:disabled { opacity: 0.1; cursor: default; }
 
+        @keyframes btnGlowPulse {
+            0%, 100% { opacity: 0.35; filter: drop-shadow(0 0 2px rgba(255,255,255,0)); }
+            50%       { opacity: 1;    filter: drop-shadow(0 0 10px rgba(255,255,255,0.65)); }
+        }
+        .p1-btn.btn-glow {
+            animation: btnGlowPulse 1.8s ease-in-out infinite;
+        }
+        .p1-btn.btn-glow:disabled {
+            animation: none;
+            opacity: 0.1;
+            filter: none;
+        }
+
         #btn-proceed {
             display: none;
             opacity: 0.8;
@@ -506,18 +519,14 @@
         <div class="p1-controls">
             <!-- New Paper: small rectangle -->
             <button id="btn-reset" class="p1-btn" title="New Paper">
-                <svg width="22" height="28" viewBox="0 0 22 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="1" y="1" width="20" height="26" rx="1.5" stroke="white" stroke-width="1.5"/>
+                <svg width="28" height="10" viewBox="0 0 28 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="26" height="8" rx="1" stroke="white" stroke-width="1.5"/>
                 </svg>
             </button>
-            <!-- Feed Audio: 5-bar waveform -->
+            <!-- Feed Audio: play triangle -->
             <button id="btn-feed" class="p1-btn" title="Feed Audio">
-                <svg width="28" height="24" viewBox="0 0 28 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="1"  y="9"  width="4" height="10" rx="2" fill="white"/>
-                    <rect x="7"  y="4"  width="4" height="16" rx="2" fill="white"/>
-                    <rect x="13" y="0"  width="4" height="24" rx="2" fill="white"/>
-                    <rect x="19" y="6"  width="4" height="14" rx="2" fill="white"/>
-                    <rect x="25" y="11" width="4" height="8"  rx="2" fill="white"/>
+                <svg width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="1,1 19,12 1,23" fill="white"/>
                 </svg>
             </button>
             <!-- Proceed: right-pointing chevron -->
@@ -635,6 +644,9 @@
             path = [];
             btnProceed.style.display = 'none';
             instruction.innerText = 'DRAW LASSO TO CUT';
+            btnFeed.classList.add('btn-glow');
+            btnProceed.classList.remove('btn-glow');
+            btnReset.classList.remove('btn-glow');
         }
 
         initPaper();
@@ -767,6 +779,7 @@
                     instruction.innerText = 'SEQUENCE COMPLETE';
                     recentCutImageSrc = paperCanvas.toDataURL('image/png');
                     btnProceed.style.display = 'inline-block';
+                    btnProceed.classList.add('btn-glow');
                     return;
                 }
                 scannerLine.style.left = `${progress * paperCanvas.width}px`;
@@ -791,6 +804,8 @@
         btnFeed.addEventListener('click', () => {
             if (isMachineRunning) return;
             isMachineRunning = true; btnFeed.disabled = true;
+            btnFeed.classList.remove('btn-glow');
+            btnReset.classList.add('btn-glow');
             instruction.innerText = 'PROCESSING';
             wrapper.classList.add('fed-into-machine');
             setTimeout(() => {
@@ -826,107 +841,114 @@
     </script>
 
     <!-- ==========================================
-         PART 2: CUT-PAPER VISUALIZER
+         PART 2: BEAT-PLACED PAPER VISUALIZER
          ========================================== -->
     <script>
     (function() {
-        const visCanvas      = document.getElementById('vis-canvas');
-        const visCtx         = visCanvas.getContext('2d');
-        const paperVisCanvas = document.getElementById('paper-vis-canvas');
-        const paperVisCtx    = paperVisCanvas.getContext('2d');
-        const audioEl        = document.getElementById('rachmaninoff-audio');
+        const canvas  = document.getElementById('vis-canvas');
+        const ctx     = canvas.getContext('2d');
+        const audioEl = document.getElementById('rachmaninoff-audio');
 
-        let analyser;
-        let cutImage   = new Image();
-        let isInverted = false;
+        const paperOverlay = document.getElementById('paper-vis-canvas');
+        if (paperOverlay) paperOverlay.style.display = 'none';
 
-        // Fill vis-canvas once — it is always solid black, never redrawn
-        function initBackground() {
-            visCanvas.width  = window.innerWidth;
-            visCanvas.height = window.innerHeight;
-            visCtx.fillStyle = '#050505';
-            visCtx.fillRect(0, 0, visCanvas.width, visCanvas.height);
+        // Exact beat timestamps captured by tap-logging the song.
+        // One paper piece spawns per entry as the audio passes each time.
+        const BEAT_TIMES = [
+            3.709, 5.064, 6.68, 7.48, 8.295, 9.292, 10.36, 10.696,
+            11.106, 11.488, 11.921, 12.319, 12.747, 13.155, 13.568, 13.97,
+            14.397, 14.774, 15.164, 15.57, 15.975, 16.368, 16.745, 17.125,
+            17.497, 17.878, 18.268, 18.626, 19.017, 19.391, 19.783, 20.125,
+            20.457, 20.798, 21.145, 21.482, 21.804, 22.148, 22.6, 22.996,
+            23.402, 23.755, 24.152, 24.471, 24.944, 25.372, 25.811, 26.204,
+            26.601, 26.995, 27.389, 27.79, 28.206, 28.59, 28.987, 29.385,
+            29.804, 30.251, 30.622, 30.935, 31.374, 31.763, 32.183, 32.58,
+            33.02, 33.411, 33.825, 34.21, 34.617, 35.0, 35.397, 35.757,
+            36.177, 36.565, 36.96, 37.331, 37.745, 38.148, 38.299, 38.469,
+            38.678, 38.877, 39.091, 39.317, 39.51, 39.714, 39.943, 40.187,
+            40.437, 40.678, 40.938, 41.186, 41.439, 41.668, 41.915, 42.15,
+            42.387, 42.63, 42.858, 43.102, 43.35, 43.588, 43.85, 44.09,
+            44.335, 44.578, 44.815, 45.062, 45.301, 45.517, 45.77, 46.024,
+            46.273, 46.507, 46.74, 46.968, 47.162, 47.336, 47.502, 47.635,
+            47.777, 47.907, 48.026, 48.158, 48.274, 48.403, 48.525, 48.658,
+            48.776, 48.9, 49.014, 49.125, 49.241, 49.391, 49.484, 49.599,
+            49.717, 50.45, 50.951, 51.041, 51.197, 51.288, 51.447,
+            52.481, 54.545, 55.044, 56.368
+        ];
+
+        const cutImage = new Image();
+        const pieces   = [];
+        let beatIdx    = 0;
+        let W = 0, H = 0;
+        let audioCtxStarted = false;
+
+        const IMG_W = 1000;
+        const IMG_H = 350;
+
+        function resize() {
+            W = canvas.width  = window.innerWidth;
+            H = canvas.height = window.innerHeight;
         }
-        initBackground();
-        window.addEventListener('resize', initBackground);
+        resize();
+        window.addEventListener('resize', resize);
 
-        window.startVisualizer = function(imageSrc, paperRect) {
-            // Place the paper canvas at EXACTLY the same position as Part 1 paper — no transition
-            if (paperRect) {
-                paperVisCanvas.style.left   = paperRect.left   + 'px';
-                paperVisCanvas.style.top    = paperRect.top    + 'px';
-                paperVisCanvas.style.width  = paperRect.width  + 'px';
-                paperVisCanvas.style.height = paperRect.height + 'px';
-            }
+        function spawnPiece() {
+            const frac = 0.13 + Math.random() * 0.15;
+            const sc   = frac * W / IMG_W;
+            pieces.push({
+                x:     Math.random() * W,
+                y:     Math.random() * H,
+                rot:   (Math.random() - 0.5) * 52,
+                flipX: Math.random() < 0.35 ? -1 : 1,
+                flipY: Math.random() < 0.18 ? -1 : 1,
+                scale: sc,
+            });
+        }
 
+        window.startVisualizer = function(imageSrc) {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 256;
-            // Heavy smoothing so only strong sustained beats register,
-            // not every individual piano note attack.
-            analyser.smoothingTimeConstant = 0.82;
-
-            const source = audioCtx.createMediaElementSource(audioEl);
-            source.connect(analyser);
-            analyser.connect(audioCtx.destination);
-
+            const source   = audioCtx.createMediaElementSource(audioEl);
+            source.connect(audioCtx.destination);
             audioEl.play().catch(e => console.error('Audio play failed:', e));
 
             if (imageSrc) {
-                cutImage.onload = function() {
-                    paperVisCtx.fillStyle = '#050505';
-                    paperVisCtx.fillRect(0, 0, paperVisCanvas.width, paperVisCanvas.height);
-                    paperVisCtx.drawImage(cutImage, 0, 0);
-                    drawLoop();
-                };
+                cutImage.onload = () => drawLoop();
                 cutImage.src = imageSrc;
             } else {
                 drawLoop();
             }
         };
 
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && analyser) {
+        document.addEventListener('keydown', e => {
+            if (e.code === 'Space') {
                 e.preventDefault();
                 if (audioEl.paused) audioEl.play(); else audioEl.pause();
             }
         });
 
-        // Cooldown between inversions — prevents rapid flickering,
-        // keeps flashes feeling intentional and tied to strong beats only.
-        const INVERT_COOLDOWN_MS = 420;
-        const INVERT_HOLD_MS     = 110;
-        let lastInversionTime    = 0;
-        let invertResetTimer     = null;
-
         function drawLoop() {
             requestAnimationFrame(drawLoop);
 
-            const bufLen = analyser.frequencyBinCount;
-            const data   = new Uint8Array(bufLen);
-            analyser.getByteFrequencyData(data);
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, W, H);
 
-            // Average low-mid bins — piano fundamentals sit here
-            let sum = 0;
-            for (let i = 0; i < 12; i++) sum += data[i];
-            const intensity = (sum / 12) / 255;
-
-            const now = performance.now();
-
-            // Only trigger an inversion on a strong beat AND after the cooldown has elapsed.
-            // The inversion auto-resets after INVERT_HOLD_MS so it's always a brief flash,
-            // never a sustained stuck state.
-            if (!isInverted && intensity > 0.72 && (now - lastInversionTime) > INVERT_COOLDOWN_MS) {
-                isInverted = true;
-                lastInversionTime = now;
-                paperVisCanvas.style.filter = 'invert(1)';
-
-                clearTimeout(invertResetTimer);
-                invertResetTimer = setTimeout(() => {
-                    isInverted = false;
-                    paperVisCanvas.style.filter = 'invert(0)';
-                }, INVERT_HOLD_MS);
+            // Advance through beat schedule using audio playback position
+            const t = audioEl.currentTime;
+            while (beatIdx < BEAT_TIMES.length && t >= BEAT_TIMES[beatIdx]) {
+                spawnPiece();
+                beatIdx++;
             }
+
+            // Draw all placed pieces — instant, full opacity
+            pieces.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = 1;
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot * Math.PI / 180);
+                ctx.scale(p.flipX * p.scale, p.flipY * p.scale);
+                ctx.drawImage(cutImage, -IMG_W / 2, -IMG_H / 2);
+                ctx.restore();
+            });
         }
     })();
     </script>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tap Logger</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0d0d0d;
+            color: #fff;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            gap: 24px;
+            padding: 40px;
+        }
+        h1 { font-size: 14px; letter-spacing: 0.2em; color: rgba(255,255,255,0.5); text-transform: uppercase; }
+        #instructions {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+            line-height: 1.8;
+        }
+        #playBtn {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 12px 36px;
+            font-family: monospace;
+            font-size: 14px;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+        }
+        #playBtn:hover { background: #ccc; }
+        #status {
+            font-size: 28px;
+            font-weight: bold;
+            min-height: 40px;
+            color: rgba(255,255,255,0.15);
+        }
+        #status.active { color: #fff; }
+        #tapCount {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+        }
+        #log {
+            width: 100%;
+            max-width: 500px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.04);
+            padding: 12px;
+            font-size: 12px;
+            line-height: 1.8;
+            color: rgba(255,255,255,0.6);
+        }
+        #copyBtn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.6);
+            padding: 8px 24px;
+            font-family: monospace;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+        }
+        #copyBtn:hover { border-color: #fff; color: #fff; }
+        #copied { font-size: 11px; color: rgba(255,255,255,0.3); min-height: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Beat Tap Logger</h1>
+    <div id="instructions">
+        Press PLAY, then tap SPACEBAR on every beat.<br>
+        The timestamps will be recorded automatically.
+    </div>
+
+    <button id="playBtn">PLAY</button>
+    <div id="status">—</div>
+    <div id="tapCount">0 taps recorded</div>
+    <div id="log"></div>
+    <button id="copyBtn">COPY RESULTS</button>
+    <div id="copied"></div>
+
+    <audio id="audio" preload="auto"></audio>
+
+    <script>
+        const audio   = document.getElementById('audio');
+        const playBtn = document.getElementById('playBtn');
+        const status  = document.getElementById('status');
+        const logEl   = document.getElementById('log');
+        const copyBtn = document.getElementById('copyBtn');
+        const copiedEl= document.getElementById('copied');
+        const tapCountEl = document.getElementById('tapCount');
+
+        audio.src = "Musique/Rachmaninoff Prelude (1932) \u2013 Nikolai Voinov.mp3";
+
+        let taps = [];
+        let playing = false;
+
+        playBtn.addEventListener('click', () => {
+            if (!playing) {
+                audio.play();
+                playing = true;
+                playBtn.textContent = 'PAUSE';
+                status.textContent = 'PLAYING — tap SPACE on every beat';
+                status.classList.add('active');
+            } else {
+                audio.pause();
+                playing = false;
+                playBtn.textContent = 'PLAY';
+                status.textContent = 'PAUSED';
+                status.classList.remove('active');
+            }
+        });
+
+        audio.addEventListener('ended', () => {
+            playing = false;
+            playBtn.textContent = 'PLAY';
+            status.textContent = 'DONE';
+            status.classList.remove('active');
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!playing) return;
+
+                const t = parseFloat(audio.currentTime.toFixed(3));
+                taps.push(t);
+
+                // Show interval from previous tap
+                let interval = '';
+                if (taps.length > 1) {
+                    const diff = (t - taps[taps.length - 2]).toFixed(3);
+                    interval = `  (+${diff}s)`;
+                }
+
+                const line = document.createElement('div');
+                line.textContent = `${taps.length}.  ${t}s${interval}`;
+                logEl.appendChild(line);
+                logEl.scrollTop = logEl.scrollHeight;
+
+                tapCountEl.textContent = `${taps.length} taps recorded`;
+
+                // Flash status
+                status.textContent = `TAP ✓  [${t}s]`;
+            }
+        });
+
+        copyBtn.addEventListener('click', () => {
+            if (taps.length === 0) { copiedEl.textContent = 'No taps yet.'; return; }
+
+            // Build a compact result string to paste back
+            const intervals = taps.map((t, i) => {
+                if (i === 0) return null;
+                return (t - taps[i - 1]).toFixed(3);
+            }).filter(Boolean);
+
+            const avgInterval = intervals.length
+                ? (intervals.reduce((a, b) => a + parseFloat(b), 0) / intervals.length).toFixed(3)
+                : 'n/a';
+
+            const result = [
+                `TAPS: ${taps.join(', ')}`,
+                `INTERVALS: ${intervals.join(', ')}`,
+                `AVG INTERVAL: ${avgInterval}s  (~${Math.round(60 / parseFloat(avgInterval))} BPM)`,
+            ].join('\n');
+
+            navigator.clipboard.writeText(result).then(() => {
+                copiedEl.textContent = 'Copied! Paste this back into the conversation.';
+            });
+        });
+    </script>
+</body>
+</html>
