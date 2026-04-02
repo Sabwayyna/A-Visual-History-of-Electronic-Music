@@ -366,6 +366,7 @@
     <!-- Prev / Next -->
     <a href="autechre-dael-1995.html" id="nav-prev">&#9664;</a>
     <a href="oneohtrix-point-never-returnal-2010.html" id="nav-next">&#9654;</a>
+    <script>(function(){if(new URLSearchParams(location.search).get('custom')){document.getElementById('backLink').href='../custom.html';var p=document.getElementById('nav-prev');var n=document.getElementById('nav-next');if(p)p.style.display='none';if(n)n.style.display='none';}})();</script>
 
     <!-- Controls button (top right) -->
     <div id="controlsBtn">
@@ -391,7 +392,9 @@
         import * as THREE from 'three';
         import { FaceLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
 
-        const AUDIO_PATH = '../Musique/13 - Ryoji Ikeda - data.matrix.mp3';
+        const _ca = sessionStorage.getItem('customAudio') || null;
+        if (_ca) sessionStorage.removeItem('customAudio');
+        const AUDIO_PATH = _ca || '../Musique/13 - Ryoji Ikeda - data.matrix.mp3';
 
         let scene, camera, renderer, audioCtx, analyser, dataArray, noiseTex;
         let audioStarted = false;

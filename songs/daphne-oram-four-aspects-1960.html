@@ -482,6 +482,8 @@
 // Song progress sweeps a spiral from centre outward; each mark is a fat,
 // tapered worm-shape inspired by the hand-drawn Oramics film strips.
 const AUTO_LOAD_AUDIO = '../Musique/04 - Daphne Oram - Four Aspects.mp3';
+const _customAudio = sessionStorage.getItem('customAudio') || null;
+if (_customAudio) sessionStorage.removeItem('customAudio');
 
 var song, fft, amp;
 var started = false;
@@ -504,7 +506,7 @@ var viewScale   = 2.4;
 var smoothedVol = 0;
 
 function preload() {
-  song = loadSound(AUTO_LOAD_AUDIO,
+  song = loadSound(_customAudio || AUTO_LOAD_AUDIO,
     function() { console.log("Song loaded"); },
     function(e) { console.error("Error:", e); }
   );

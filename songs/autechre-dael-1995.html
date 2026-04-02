@@ -454,6 +454,7 @@
     <a href="../index.html" id="backLink">&#937;</a>
     <a href="laurie-spiegel-patchwork-1980.html" id="nav-prev">&#9664;</a>
     <a href="ryoji-ikeda-datamatrix-2005.html" id="nav-next">&#9654;</a>
+    <script>(function(){if(new URLSearchParams(location.search).get('custom')){document.getElementById('backLink').href='../custom.html';var p=document.getElementById('nav-prev');var n=document.getElementById('nav-next');if(p)p.style.display='none';if(n)n.style.display='none';}})();</script>
 
     <!-- Minimalist controls button (top right) -->
     <div id="controlsBtn">
@@ -495,6 +496,8 @@
 
 // Auto-load audio path
 const AUTO_LOAD_AUDIO = '../Musique/11 - Dael · Autechre.mp3';
+const _customAudio = sessionStorage.getItem('customAudio') || null;
+if (_customAudio) sessionStorage.removeItem('customAudio');
 
 let song, fft, amp;
 let started = false;
@@ -531,7 +534,7 @@ let sectionMinDistance = 200; // Minimum pixels between sections
 function preload() {
   // Auto-load the song if AUTO_LOAD_AUDIO is defined
   if (typeof AUTO_LOAD_AUDIO !== 'undefined' && AUTO_LOAD_AUDIO) {
-    song = loadSound(AUTO_LOAD_AUDIO,
+    song = loadSound(_customAudio || AUTO_LOAD_AUDIO,
       () => {
         console.log("Song loaded successfully");
       },

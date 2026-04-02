@@ -505,6 +505,8 @@
 
 // Studie I: Outer space starfield  -  drifting through liminal darkness
 const AUTO_LOAD_AUDIO = '../Musique/Karlheinz Stockhausen_ Studie I (1953).mp3';
+const _customAudio = sessionStorage.getItem('customAudio') || null;
+if (_customAudio) sessionStorage.removeItem('customAudio');
 
 let song, fft, amp;
 let started = false;
@@ -519,7 +521,7 @@ let scrollZoom = 1.0;       // current (lerped) scroll zoom
 let scrollZoomTarget = 1.0; // target zoom — lerped toward each frame
 
 function preload() {
-  song = loadSound(AUTO_LOAD_AUDIO,
+  song = loadSound(_customAudio || AUTO_LOAD_AUDIO,
     () => console.log("Song loaded successfully"),
     (error) => console.error("Error loading song:", error)
   );

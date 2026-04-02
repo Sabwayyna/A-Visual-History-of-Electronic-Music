@@ -474,6 +474,8 @@
     <script>
 
 const AUTO_LOAD_AUDIO = '../Musique/01 - Pierre Schaeffer - Cinq études de bruits (1948) - Etude aux chemins de fer.mp3';
+const _customAudio = sessionStorage.getItem('customAudio') || null;
+if (_customAudio) sessionStorage.removeItem('customAudio');
 
 let song, fft, amp;
 let started = false;
@@ -481,7 +483,7 @@ let showUI = true;
 let playbackSpeed = 1.0;
 
 function preload() {
-  song = loadSound(AUTO_LOAD_AUDIO,
+  song = loadSound(_customAudio || AUTO_LOAD_AUDIO,
     () => console.log("Song loaded successfully"),
     (error) => console.error("Error loading song:", error)
   );

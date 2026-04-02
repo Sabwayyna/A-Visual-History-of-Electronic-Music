@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom — A Visual History of Electronic Music</title>
+    <link rel="icon" href="favicon/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon/favicon.ico" sizes="any">
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegularItalic.otf") format("opentype");
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        :root { --m: 4vw; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            background: #0d0d0d;
+            color: #fff;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-weight: 400;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ── Identical 3-col grid to index.html ── */
+        .viz-row,
+        #site-footer {
+            display: grid;
+            grid-template-columns: 2.8em 40% 1fr;
+            column-gap: var(--m);
+            width: calc(100vw - 2 * var(--m));
+            align-items: baseline;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .list-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 0;
+            padding: var(--m) 0 0;
+            width: calc(100vw - 2 * var(--m));
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Rows */
+        .viz-row {
+            text-decoration: none;
+            color: #fff;
+            line-height: 1.15;
+            transition: opacity 0.35s, letter-spacing 0.35s;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .list-section:hover .viz-row           { opacity: 0.15; }
+        .list-section:hover .viz-row:hover     { opacity: 1; letter-spacing: 0.12em; }
+        .viz-row:active                        { opacity: 0.5; }
+
+        .viz-num, .viz-name, .viz-artist {
+            font-size: clamp(16px, 3.5vw, 64px);
+            letter-spacing: -0.02em;
+            line-height: inherit;
+            color: #fff;
+        }
+
+        .viz-name   { text-transform: uppercase; padding-left: 1.5em; }
+        .viz-artist { text-transform: uppercase; text-align: right; }
+
+        /* ── Footer ── */
+        #site-footer {
+            margin: 0 0 var(--m);
+            position: relative;
+            z-index: 10;
+        }
+
+        #site-footer span,
+        #site-footer a {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            color: rgba(255,255,255,0.38);
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        #site-footer .footer-title { padding-left: calc(1.5 * clamp(16px, 3.5vw, 64px)); }
+        #site-footer .footer-right { text-align: right; }
+        #site-footer a:hover { color: #fff; }
+
+        /* ── Audio panel — slides up from bottom ── */
+        #audio-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0d0d0d;
+            border-top: 1px solid rgba(255,255,255,0.12);
+            padding: calc(var(--m) * 1.1) calc(var(--m) * 2) calc(var(--m) * 1.2);
+            z-index: 500;
+            transform: translateY(100%);
+            transition: transform 0.38s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+        #audio-panel.open { transform: translateY(0); }
+
+        /* Panel: selected name */
+        #panel-title {
+            font-size: clamp(13px, 1.6vw, 26px);
+            letter-spacing: -0.01em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: calc(var(--m) * 0.7);
+        }
+
+        /* Panel: action row */
+        .panel-actions {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--m) * 1.2);
+        }
+
+        .panel-btn {
+            background: none;
+            border: none;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.55);
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        .panel-btn:hover  { color: #fff; }
+        .panel-btn.primary { color: rgba(255,255,255,0.90); }
+
+        #panel-cancel {
+            margin-left: auto;
+            background: none;
+            border: none;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.28);
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        #panel-cancel:hover { color: rgba(255,255,255,0.7); }
+
+        /* Recording state (hidden until recording starts) */
+        #rec-state {
+            display: none;
+            align-items: center;
+            gap: calc(var(--m) * 0.6);
+            width: 100%;
+        }
+        #rec-state.active { display: flex; }
+
+        #rec-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #fff;
+            animation: recPulse 1s ease-in-out infinite;
+        }
+        @keyframes recPulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.2; }
+        }
+
+        #rec-timer {
+            font-size: 11px;
+            letter-spacing: 0.10em;
+            color: rgba(255,255,255,0.55);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+            :root { --m: 5vw; }
+
+            .viz-row, #site-footer {
+                grid-template-columns: 3.2em 1fr;
+            }
+            .viz-artist { display: none; }
+            .viz-num, .viz-name { font-size: clamp(13px, 4.5vw, 20px); }
+
+            .list-section:hover .viz-row       { opacity: 1; }
+            .list-section:hover .viz-row:hover { letter-spacing: -0.02em; }
+
+            #site-footer .footer-title { display: none; }
+            #site-footer .footer-right { text-align: right; }
+
+            #audio-panel {
+                padding: calc(var(--m) * 1.2) var(--m) calc(var(--m) * 1.4);
+            }
+        }
+
+        * {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
+        }
+    </style>
+</head>
+<body>
+
+    <section class="list-section" id="viz-list">
+
+        <div class="viz-row" data-href="songs/brian-eno-music-for-airports-11-1978.html" data-label="Drift">
+            <span class="viz-num">I</span>
+            <span class="viz-name">Drift</span>
+            <span class="viz-artist">Eno</span>
+        </div>
+
+        <div class="viz-row" data-href="songs/laurie-spiegel-patchwork-1980.html" data-label="Grid">
+            <span class="viz-num">II</span>
+            <span class="viz-name">Grid</span>
+            <span class="viz-artist">Spiegel</span>
+        </div>
+
+        <div class="viz-row" data-href="songs/autechre-dael-1995.html" data-label="Glitch">
+            <span class="viz-num">III</span>
+            <span class="viz-name">Glitch</span>
+            <span class="viz-artist">Autechre</span>
+        </div>
+
+        <div class="viz-row" data-href="songs/oneohtrix-point-never-returnal-2010.html" data-label="Wave">
+            <span class="viz-num">IV</span>
+            <span class="viz-name">Wave</span>
+            <span class="viz-artist">OPN</span>
+        </div>
+
+        <div class="viz-row" data-href="songs/ryoji-ikeda-datamatrix-2005.html" data-label="Matrix">
+            <span class="viz-num">V</span>
+            <span class="viz-name">Matrix</span>
+            <span class="viz-artist">Ikeda</span>
+        </div>
+
+        <div class="viz-row" data-href="songs/rashad-becker-busy-ready-what-corroborators-2025.html" data-label="Field">
+            <span class="viz-num">VI</span>
+            <span class="viz-name">Field</span>
+            <span class="viz-artist">Becker</span>
+        </div>
+
+    </section>
+
+    <footer id="site-footer">
+        <a href="index.html">&larr; Back</a>
+        <span class="footer-title">Custom Visualizer</span>
+        <span class="footer-right">Upload or record audio</span>
+    </footer>
+
+    <!-- ── Audio panel ── -->
+    <div id="audio-panel">
+        <div id="panel-title">—</div>
+
+        <!-- Default state: upload + record buttons -->
+        <div class="panel-actions" id="panel-default">
+            <button class="panel-btn primary" id="btn-upload">Upload File ↑</button>
+            <button class="panel-btn" id="btn-record">● Record</button>
+            <button id="panel-cancel">Cancel</button>
+        </div>
+
+        <!-- Recording state: timer + stop -->
+        <div class="panel-actions" id="rec-state">
+            <div id="rec-dot"></div>
+            <span id="rec-timer">00:00</span>
+            <span id="rec-label" style="font-size:11px;letter-spacing:0.10em;text-transform:uppercase;color:rgba(255,255,255,0.38);">Recording</span>
+            <button class="panel-btn primary" id="btn-stop" style="margin-left:auto;">Stop</button>
+            <button id="panel-cancel-rec" style="background:none;border:none;font-family:inherit;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);cursor:pointer;padding:0;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="file-input" accept="audio/*" style="display:none">
+
+    <script>
+    (function () {
+        const panel        = document.getElementById('audio-panel');
+        const panelTitle   = document.getElementById('panel-title');
+        const panelDef     = document.getElementById('panel-default');
+        const recState     = document.getElementById('rec-state');
+        const btnUpload    = document.getElementById('btn-upload');
+        const btnRecord    = document.getElementById('btn-record');
+        const btnStop      = document.getElementById('btn-stop');
+        const btnCancel    = document.getElementById('panel-cancel');
+        const btnCancelRec = document.getElementById('panel-cancel-rec');
+        const recTimer     = document.getElementById('rec-timer');
+        const fileInput    = document.getElementById('file-input');
+
+        let selectedHref  = '';
+        let selectedLabel = '';
+        let mediaRecorder = null;
+        let recChunks     = [];
+        let recStream     = null;
+        let recInterval   = null;
+        let recSeconds    = 0;
+
+        // Max file size for upload (10 MB unencoded → ~13 MB base64, fits Chrome sessionStorage)
+        const MAX_BYTES = 10 * 1024 * 1024;
+
+        // ── Row click: open panel ─────────────────────────────────────────
+        document.getElementById('viz-list').addEventListener('click', e => {
+            const row = e.target.closest('.viz-row');
+            if (!row) return;
+            selectedHref  = row.dataset.href;
+            selectedLabel = row.dataset.label;
+            panelTitle.textContent = selectedLabel;
+            showDefault();
+            panel.classList.add('open');
+        });
+
+        // ── Cancel ────────────────────────────────────────────────────────
+        function closePanel() {
+            panel.classList.remove('open');
+            stopRecording(true);
+            setTimeout(() => { panelTitle.textContent = '—'; }, 400);
+        }
+        btnCancel.addEventListener('click', closePanel);
+        btnCancelRec.addEventListener('click', closePanel);
+
+        document.addEventListener('click', e => {
+            if (!panel.classList.contains('open')) return;
+            if (!panel.contains(e.target) && !e.target.closest('.viz-row')) closePanel();
+        });
+
+        // ── Status helper ─────────────────────────────────────────────────
+        function setStatus(msg) { panelTitle.textContent = msg; }
+        function resetStatus()  { panelTitle.textContent = selectedLabel; }
+
+        // ── Store data URL and navigate ───────────────────────────────────
+        // We use FileReader.readAsDataURL() so the audio is stored as a
+        // self-contained base64 string. This survives page navigation reliably,
+        // unlike blob:// URLs which are tied to the document that created them
+        // and get invalidated the moment custom.html navigates away.
+        function storeAndGo(blob) {
+            setStatus('Loading…');
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    sessionStorage.setItem('customAudio', reader.result);
+                    window.location.href = selectedHref + '?custom=1';
+                } catch (e) {
+                    // sessionStorage full (file too large even after size check)
+                    setStatus('File too large for storage. Try a shorter file.');
+                    setTimeout(resetStatus, 3000);
+                }
+            };
+            reader.onerror = () => {
+                setStatus('Could not read file.');
+                setTimeout(resetStatus, 3000);
+            };
+            reader.readAsDataURL(blob);
+        }
+
+        // ── Upload file ───────────────────────────────────────────────────
+        btnUpload.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            fileInput.value = '';
+            if (!file) return;
+
+            if (file.size > MAX_BYTES) {
+                setStatus('File over 10 MB — try a shorter track or record instead.');
+                setTimeout(resetStatus, 3500);
+                return;
+            }
+            storeAndGo(file);
+        });
+
+        // ── Record ────────────────────────────────────────────────────────
+        btnRecord.addEventListener('click', () => {
+            navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                .then(stream => {
+                    recStream  = stream;
+                    recChunks  = [];
+                    recSeconds = 0;
+
+                    const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', 'audio/mp4']
+                        .find(t => MediaRecorder.isTypeSupported(t)) || '';
+
+                    mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+
+                    mediaRecorder.ondataavailable = e => {
+                        if (e.data && e.data.size > 0) recChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(recChunks, { type: mime || 'audio/webm' });
+                        // Release mic before navigating
+                        recStream.getTracks().forEach(t => t.stop());
+                        recStream = null;
+                        clearInterval(recInterval);
+                        recInterval = null;
+                        storeAndGo(blob);
+                    };
+
+                    mediaRecorder.start(100);
+
+                    recInterval = setInterval(() => {
+                        recSeconds++;
+                        const m = String(Math.floor(recSeconds / 60)).padStart(2, '0');
+                        const s = String(recSeconds % 60).padStart(2, '0');
+                        recTimer.textContent = m + ':' + s;
+                    }, 1000);
+
+                    showRecording();
+                })
+                .catch(() => {
+                    setStatus('Microphone access denied.');
+                    setTimeout(resetStatus, 3000);
+                });
+        });
+
+        btnStop.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop(); // → onstop → storeAndGo → navigate
+            }
+        });
+
+        // ── Helpers ───────────────────────────────────────────────────────
+        function showDefault() {
+            panelDef.style.display = 'flex';
+            recState.classList.remove('active');
+        }
+
+        function showRecording() {
+            panelDef.style.display = 'none';
+            recState.classList.add('active');
+            recTimer.textContent = '00:00';
+        }
+
+        function stopRecording(discard) {
+            if (recInterval) { clearInterval(recInterval); recInterval = null; }
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                if (discard) mediaRecorder.onstop = null;
+                mediaRecorder.stop();
+            }
+            if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null; }
+            showDefault();
+        }
+    })();
+    </script>
+
+</body>
+</html>

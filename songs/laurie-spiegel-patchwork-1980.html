@@ -422,6 +422,7 @@
     <a href="../index.html" id="backLink">&#937;</a>
     <a href="brian-eno-music-for-airports-11-1978.html" id="nav-prev">&#9664;</a>
     <a href="autechre-dael-1995.html" id="nav-next">&#9654;</a>
+    <script>(function(){if(new URLSearchParams(location.search).get('custom')){document.getElementById('backLink').href='../custom.html';var p=document.getElementById('nav-prev');var n=document.getElementById('nav-next');if(p)p.style.display='none';if(n)n.style.display='none';}})();</script>
 
     <!-- Minimalist controls button (top right) -->
     <div id="controlsBtn">
@@ -551,7 +552,9 @@
             analyser.smoothingTimeConstant = 0.6;
             dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-            audioEl = new Audio('../Musique/Patchwork.mp3');
+            const _ca = sessionStorage.getItem('customAudio') || null;
+            if (_ca) sessionStorage.removeItem('customAudio');
+            audioEl = new Audio(_ca || '../Musique/Patchwork.mp3');
             audioEl.crossOrigin = 'anonymous';
             const source = audioCtx.createMediaElementSource(audioEl);
             source.connect(analyser);

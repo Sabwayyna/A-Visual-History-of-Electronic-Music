@@ -506,7 +506,13 @@
 
     <!-- Rachmaninoff audio (src set via JS so the en-dash filename is handled correctly) -->
     <audio id="rachmaninoff-audio" preload="auto"></audio>
-    <script>document.getElementById('rachmaninoff-audio').src = '../Musique/Rachmaninoff Prelude (1932) \u2013 Nikolai Voinov.mp3';</script>
+    <script>
+        (function() {
+            var _ca = sessionStorage.getItem('customAudio') || null;
+            if (_ca) sessionStorage.removeItem('customAudio');
+            document.getElementById('rachmaninoff-audio').src = _ca || '../Musique/Rachmaninoff Prelude (1932) \u2013 Nikolai Voinov.mp3';
+        })();
+    </script>
 
     <!-- Part 1: Paper-cutting overlay -->
     <div id="part1-overlay">

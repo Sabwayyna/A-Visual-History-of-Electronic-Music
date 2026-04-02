@@ -135,6 +135,21 @@
 
         #site-footer a:hover { color: #fff; }
 
+        /* Custom page link — fixed bottom-right, matches footer text style */
+        #custom-link {
+            position: fixed;
+            bottom: var(--m);
+            right: var(--m);
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            color: rgba(255,255,255,0.38);
+            text-decoration: none;
+            text-transform: uppercase;
+            z-index: 20;
+            transition: color 0.25s;
+        }
+        #custom-link:hover { color: #fff; }
+
         /* ── Mobile responsive ── */
         @media (max-width: 600px) {
             :root { --m: 5vw; }
@@ -242,6 +257,8 @@
             <span class="song-title">BUSY READY WHAT</span>
         </a>
     </section>
+
+    <a href="custom.html" id="custom-link">Custom</a>
 
     <footer id="site-footer">
         <a href="about.html">Learn More</a>

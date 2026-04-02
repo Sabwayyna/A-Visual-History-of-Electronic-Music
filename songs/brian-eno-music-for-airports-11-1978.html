@@ -454,6 +454,7 @@
     <a href="../index.html" id="backLink">&#937;</a>
     <a href="delia-derbyshire-doctor-who-theme-1963.html" id="nav-prev">&#9664;</a>
     <a href="laurie-spiegel-patchwork-1980.html" id="nav-next">&#9654;</a>
+    <script>(function(){if(new URLSearchParams(location.search).get('custom')){document.getElementById('backLink').href='../custom.html';var p=document.getElementById('nav-prev');var n=document.getElementById('nav-next');if(p)p.style.display='none';if(n)n.style.display='none';}})();</script>
 
     <!-- Minimalist controls button (top right) -->
     <div id="controlsBtn">
@@ -554,7 +555,9 @@ function initAudio() {
     analyser.fftSize = 256;
     audioData = new Uint8Array(analyser.frequencyBinCount);
 
-    audioEl = new Audio('../Musique/08 - Brian Eno - 1:1  Music for Airports (Remastered 2004).mp3');
+    const _ca = sessionStorage.getItem('customAudio') || null;
+    if (_ca) sessionStorage.removeItem('customAudio');
+    audioEl = new Audio(_ca || '../Musique/08 - Brian Eno - 1:1  Music for Airports (Remastered 2004).mp3');
     audioEl.crossOrigin = 'anonymous';
     const src = audioCtx.createMediaElementSource(audioEl);
     src.connect(analyser);
