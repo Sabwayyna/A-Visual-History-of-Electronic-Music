@@ -478,9 +478,9 @@
 
     <script>
 
-// Four Aspects  -  organic spiral blob visualizer (no grid)
-// Song progress sweeps a spiral from centre outward; arc-blobs shaped like
-// the organic torn-paper / waveform strips in the reference images.
+// Four Aspects  -  organic spiral worm visualizer
+// Song progress sweeps a spiral from centre outward; each mark is a fat,
+// tapered worm-shape inspired by the hand-drawn Oramics film strips.
 const AUTO_LOAD_AUDIO = '../Musique/04 - Daphne Oram - Four Aspects.mp3';
 
 var song, fft, amp;
@@ -495,12 +495,12 @@ var gcx, gcy, outerR;
 
 // ── spiral state ──────────────────────────────────────────────────────────────
 var lastTotalAngle = -1;
-var numRevolutions = 7;        // rings in the full spiral
-var NUM_STEPS_PER_REV = 100;   // drawing steps per revolution
-var DRAW_STEP  = 0.0628;       // TWO_PI / 100  -  set in setup
-var ARC_SPAN   = 0.220;        // DRAW_STEP * 3.5  -  moderate overlap
-var SILENCE_THRESHOLD = 0.013;
-var viewScale   = 2.8;
+var numRevolutions = 6;
+var NUM_STEPS_PER_REV = 72;    // steps per full ring
+var DRAW_STEP  = 0.0873;       // TWO_PI / 72 — set in setup
+var ARC_SPAN   = 0.480;        // DRAW_STEP * 5.5 — wide worm overlap
+var SILENCE_THRESHOLD = 0.010;
+var viewScale   = 2.4;
 var smoothedVol = 0;
 
 function preload() {
@@ -527,7 +527,7 @@ function buildGrainBuffer() {
     grainBuffer.pixels[i]     = v;
     grainBuffer.pixels[i + 1] = v;
     grainBuffer.pixels[i + 2] = v;
-    grainBuffer.pixels[i + 3] = floor(random(20, 45));
+    grainBuffer.pixels[i + 3] = floor(random(18, 40));
   }
   grainBuffer.updatePixels();
 }
@@ -540,7 +540,7 @@ function setup() {
 
   initGeometry();
   DRAW_STEP = (Math.PI * 2) / NUM_STEPS_PER_REV;
-  ARC_SPAN  = DRAW_STEP * 3.5;
+  ARC_SPAN  = DRAW_STEP * 5.5;
 
   blobBuffer = createGraphics(windowWidth, windowHeight);
   blobBuffer.clear();
@@ -557,7 +557,7 @@ function resetBlobBuffer() {
   if (blobBuffer) blobBuffer.remove();
   blobBuffer = createGraphics(windowWidth, windowHeight);
   blobBuffer.clear();
-  viewScale   = 2.8;
+  viewScale   = 2.4;
   smoothedVol = 0;
   if (song && song.isLoaded() && song.duration && song.duration() > 0) {
     lastTotalAngle = (song.currentTime() / song.duration()) * Math.PI * 2 * numRevolutions;
@@ -574,8 +574,8 @@ function draw() {
     var dur = song.duration ? song.duration() : 0;
     if (dur > 0) {
       var songFrac    = constrain(song.currentTime() / dur, 0, 1);
-      var targetScale = map(songFrac, 0, 0.88, 2.8, 1.0, true);
-      viewScale = lerp(viewScale, targetScale, 0.016);
+      var targetScale = map(songFrac, 0, 0.88, 2.4, 1.0, true);
+      viewScale = lerp(viewScale, targetScale, 0.018);
     }
   }
 
@@ -605,19 +605,20 @@ function updateSpiral() {
   if (totalAngle <= lastTotalAngle) return;
 
   var vol = amp.getLevel();
-  smoothedVol = lerp(smoothedVol, vol, 0.10);
-  var effVol  = smoothedVol * 0.60 + vol * 0.40;
+  // Faster smoothing — shapes react more fluidly to the audio
+  smoothedVol = lerp(smoothedVol, vol, 0.18);
+  var effVol  = smoothedVol * 0.55 + vol * 0.45;
 
   var S             = min(width, height);
   var totalAngleMax = numRevolutions * Math.PI * 2;
 
   var steps = 0;
-  while (lastTotalAngle < totalAngle && steps < 3) {
+  while (lastTotalAngle < totalAngle && steps < 7) {
     var t          = lastTotalAngle;
     var revolution = Math.floor(t / (Math.PI * 2));
     if (revolution >= numRevolutions) break;
 
-    // Silence → leave a visible gap in the spiral
+    // Silence → leave a visible gap
     if (effVol < SILENCE_THRESHOLD) {
       lastTotalAngle += DRAW_STEP;
       steps++;
@@ -626,67 +627,78 @@ function updateSpiral() {
 
     var angleOnRing = (t % (Math.PI * 2)) - Math.PI / 2;
     var spiralFrac  = t / totalAngleMax;
-    // Radius: begins at a small dot near centre, expands to near the screen edge
-    var ringR = map(spiralFrac, 0, 1, S * 0.010, outerR * 0.96);
+    var ringR = map(spiralFrac, 0, 1, S * 0.012, outerR * 0.96);
 
-    // Thickness: thin ribbon at quiet moments, moderate bulge when loud.
-    // Kept small so rings stay distinct and never merge into a solid disk.
-    var thick = map(effVol, SILENCE_THRESHOLD, 0.45, S * 0.002, S * 0.018, true);
-    thick = Math.max(thick, S * 0.0015);
+    // Fat worm thickness — much more presence than before
+    var thick = map(effVol, SILENCE_THRESHOLD, 0.45, S * 0.014, S * 0.058, true);
+    thick = Math.max(thick, S * 0.010);
 
-    var alpha     = floor(map(effVol, SILENCE_THRESHOLD, 0.4, 140, 245, true));
+    var alpha     = floor(map(effVol, SILENCE_THRESHOLD, 0.4, 160, 252, true));
     var noiseBase = revolution * 37.3;
 
-    drawArcBlob(angleOnRing, ringR, thick, noiseBase, alpha);
+    drawWorm(angleOnRing, ringR, thick, noiseBase, alpha, revolution);
 
     lastTotalAngle += DRAW_STEP;
     steps++;
   }
 }
 
-// ── draw one arc-blob ─────────────────────────────────────────────────────────
-// Shape inspired by the organic torn-paper / waveform-strip reference images:
-//   • Outer edge: smooth, rounded bumps that rise outward (like the positive
-//     half of a waveform). Uses only coarse noise → soft, no jagged spikes.
-//   • Inner edge: barely moves  -  thin baseline, only tiny inward dimples.
-// Together these create the variable-width ribbon shapes from the reference.
-function drawArcBlob(angle, ringR, thickness, noiseBase, alpha) {
+// ── draw one worm-blob ────────────────────────────────────────────────────────
+// Each mark is shaped like one of Oram's hand-drawn Oramics film strips:
+//   • Tapers to a rounded point at both ends  (sin(t·π) envelope)
+//   • Belly bulges organically along the body  (Perlin noise, arc-parameterised)
+//   • Inner edge gently dips, giving a plump, convex silhouette
+//   • curveVertex → smooth Catmull-Rom spline, no jagged vertices
+function drawWorm(angle, ringR, thickness, noiseBase, alpha, revolution) {
   var g = blobBuffer;
-  var N = 30; // high point count → smooth curves
+  var N = 22;  // spine sample count — enough for smooth curves
+
+  // Pre-compute outer and inner edge points
+  var ox = [], oy = [], ix = [], iy = [];
+
+  for (var i = 0; i <= N; i++) {
+    var t  = i / N;                               // 0 → 1 along the worm
+    var a  = angle + (t - 0.5) * ARC_SPAN;
+    var ca = Math.cos(a);
+    var sa = Math.sin(a);
+
+    // Taper envelope: 0 at both tips, full belly in the middle
+    var taper = Math.pow(Math.sin(t * Math.PI), 0.60);
+
+    // Noise parameterised along the arc + slow time drift so each new worm
+    // looks slightly different from the one before it (no frozen texture)
+    var n1 = noise(noiseBase + t * 7.0, frameCount * 0.00035 + revolution * 1.9);
+    var n2 = noise(noiseBase + 55 + t * 5.5, frameCount * 0.00025 + revolution * 2.4);
+
+    // Outer edge: taper × noise-modulated bulge
+    var bulge   = 0.55 + n1 * 0.90;              // 0.55 – 1.45 range
+    var oR      = ringR + taper * thickness * bulge;
+
+    // Inner edge: subtle inward dip — stays plump, not hollow
+    var dip     = 0.06 + n2 * 0.22;
+    var iR      = Math.max(ringR - taper * thickness * dip, 2);
+
+    ox.push(gcx + ca * oR);
+    oy.push(gcy + sa * oR);
+    ix.push(gcx + ca * iR);
+    iy.push(gcy + sa * iR);
+  }
 
   g.push();
   g.noStroke();
   g.fill(255, alpha);
-
   g.beginShape();
 
-  // ── outer edge: outward-only bumps driven by smooth Perlin noise ──────────
-  for (var i = 0; i <= N; i++) {
-    var a  = angle + (i / N - 0.5) * ARC_SPAN;
-    var ca = Math.cos(a);
-    var sa = Math.sin(a);
+  // Outer edge — forward pass
+  // First point repeated as phantom control point for curveVertex
+  g.curveVertex(ox[0], oy[0]);
+  for (var i = 0; i <= N; i++) g.curveVertex(ox[i], oy[i]);
+  g.curveVertex(ox[N], oy[N]);
 
-    // Single coarse noise layer → soft, rounded bumps (no fine noise = no jaggies)
-    var nVal = noise(noiseBase + ca * 4.5, noiseBase + sa * 4.5);
-    // Remap: below 0.30 → flat baseline; above 0.30 → rises smoothly into bump
-    var bump = Math.max(0, (nVal - 0.30) / 0.70);
-    // Ease the bump with a power curve for rounder, softer peaks
-    bump = Math.pow(bump, 0.75);
-    var oR = ringR + bump * thickness * 2.6;
-    g.vertex(gcx + ca * oR, gcy + sa * oR);
-  }
-
-  // ── inner edge: nearly flat  -  only gentle inward dimples ─────────────────
-  for (var i = N; i >= 0; i--) {
-    var a  = angle + (i / N - 0.5) * ARC_SPAN;
-    var ca = Math.cos(a);
-    var sa = Math.sin(a);
-
-    var nVal  = noise(noiseBase + 70 + ca * 3.0, noiseBase + 70 + sa * 3.0);
-    var inner = Math.max(0, (nVal - 0.42) / 0.58);
-    var iR    = Math.max(ringR - inner * thickness * 0.5, 2);
-    g.vertex(gcx + ca * iR, gcy + sa * iR);
-  }
+  // Inner edge — backward pass
+  g.curveVertex(ix[N], iy[N]);
+  for (var i = N; i >= 0; i--) g.curveVertex(ix[i], iy[i]);
+  g.curveVertex(ix[0], iy[0]);
 
   g.endShape(CLOSE);
   g.pop();
@@ -694,7 +706,7 @@ function drawArcBlob(angle, ringR, thickness, noiseBase, alpha) {
 
 function drawGrain() {
   push();
-  tint(255, 35);
+  tint(255, 32);
   for (var gx = 0; gx < width; gx += 512) {
     for (var gy = 0; gy < height; gy += 512) {
       image(grainBuffer, gx, gy);

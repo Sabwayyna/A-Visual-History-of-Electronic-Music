@@ -62,15 +62,15 @@
             }
         }
 
-        /* Distortion canvas — sits above video, below UI */
-        #distortion-canvas {
-            position: fixed;
+        /* Video wrapper — receives the parallax transform */
+        #video-wrapper {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 10;
-            pointer-events: none;
+            will-change: transform;
+            transform-origin: center center;
         }
 
         /* Start overlay */
@@ -431,7 +431,6 @@
         <span>Tap to play</span>
     </div>
 
-    <canvas id="distortion-canvas"></canvas>
 
     <!-- Back to timeline -->
     <a href="../index.html" id="backLink">&#937;</a>
@@ -440,9 +439,11 @@
 
     <!-- Video: playsinline prevents iOS fullscreen takeover; muted allows autoplay -->
     <div id="video-container">
-        <video id="video" preload="auto" playsinline webkit-playsinline muted autoplay loop>
-            <source src="../Videos/DoctorWho Video.mp4" type="video/mp4">
-        </video>
+        <div id="video-wrapper">
+            <video id="video" preload="auto" playsinline webkit-playsinline muted autoplay loop>
+                <source src="../Videos/DoctorWho Video.mp4" type="video/mp4">
+            </video>
+        </div>
     </div>
 
     <!-- Bottom-left navigation -->
@@ -451,112 +452,74 @@
     <script>
         const video   = document.getElementById('video');
         const overlay = document.getElementById('startOverlay');
-        const distCanvas = document.getElementById('distortion-canvas');
-        const distCtx    = distCanvas.getContext('2d');
+        const wrapper = document.getElementById('video-wrapper');
 
-        // ── Canvas sizing ────────────────────────────────────────────────────
-        function resizeDist() {
-            distCanvas.width  = window.innerWidth;
-            distCanvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeDist);
-        resizeDist();
-
-        // ── Overlay tap: unmute + ensure playback + unlock distortion ────────
+        // ── Overlay: unmute + start audio on first interaction ───────────────
         overlay.addEventListener('click', () => {
             overlay.classList.add('hidden');
             video.muted = false;
             video.play().catch(() => { video.muted = true; video.play(); });
-            distCanvas.style.pointerEvents = 'auto';
         });
 
-        // ── Distortion particles ─────────────────────────────────────────────
-        let particles = [];
+        // ── Parallax state ───────────────────────────────────────────────────
+        // targetX/Y: normalised pointer position, −1 (left/top) → +1 (right/bottom)
+        // currentX/Y: smoothed version, updated each frame via lerp
+        let targetX  = 0, targetY  = 0;
+        let currentX = 0, currentY = 0;
 
-        function addTap(x, y) {
-            particles.push({ type: 'tap', x, y, life: 55, maxLife: 55 });
+        // How far the video travels at the extreme pointer position.
+        // Kept intentionally small so the effect feels spatial, not seasick.
+        const PAN_X   = 2.2;  // % of viewport width
+        const PAN_Y   = 1.4;  // % of viewport height
+        const TILT_Y  = 1.8;  // degrees of rotateY (left/right lean)
+        const TILT_X  = 1.2;  // degrees of rotateX (up/down lean)
+        const SCALE   = 1.07; // keeps edges hidden during maximum pan
+        const LERP    = 0.055; // smoothing — lower = slower, dreamier follow
+
+        // ── Pointer tracking ─────────────────────────────────────────────────
+        function setTarget(clientX, clientY) {
+            targetX = (clientX / window.innerWidth  - 0.5) * 2; // −1 → +1
+            targetY = (clientY / window.innerHeight - 0.5) * 2;
         }
 
-        function addDrag(x, y) {
-            particles.push({ type: 'drag', x, y, life: 28, maxLife: 28 });
+        // Desktop mouse
+        document.addEventListener('mousemove', e => setTarget(e.clientX, e.clientY));
+
+        // When cursor leaves the window, drift gently back to centre
+        document.addEventListener('mouseleave', () => { targetX = 0; targetY = 0; });
+
+        // Mobile touch — track the first finger
+        document.addEventListener('touchmove', e => {
+            const t = e.touches[0];
+            setTarget(t.clientX, t.clientY);
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => { targetX = 0; targetY = 0; });
+
+        // ── Animation loop ───────────────────────────────────────────────────
+        function tick() {
+            requestAnimationFrame(tick);
+
+            // Lerp toward target position
+            currentX += (targetX - currentX) * LERP;
+            currentY += (targetY - currentY) * LERP;
+
+            const tx = currentX * PAN_X;           // translate %, viewport units
+            const ty = currentY * PAN_Y;
+            const ry =  currentX * TILT_Y;          // rotate around Y axis (left/right)
+            const rx = -currentY * TILT_X;          // rotate around X axis (up/down)
+
+            // perspective() sets the depth of the 3-D space.
+            // A large value (1200 px) keeps the tilt very subtle — just enough
+            // to imply the video is a flat plane in real space, not a cartoon spin.
+            wrapper.style.transform =
+                `perspective(1200px)` +
+                ` rotateX(${rx}deg)` +
+                ` rotateY(${ry}deg)` +
+                ` translate(${tx}%, ${ty}%)` +
+                ` scale(${SCALE})`;
         }
-
-        // Touch: tap = scan-line burst, drag = glitch bands
-        distCanvas.addEventListener('touchstart', e => {
-            e.preventDefault();
-            for (let t of e.touches) addTap(t.clientX, t.clientY);
-        }, { passive: false });
-
-        distCanvas.addEventListener('touchmove', e => {
-            e.preventDefault();
-            for (let t of e.touches) {
-                if (Math.random() < 0.5) addDrag(t.clientX, t.clientY);
-            }
-        }, { passive: false });
-
-        // Mouse fallback for desktop
-        distCanvas.addEventListener('mousedown', e => addTap(e.clientX, e.clientY));
-        distCanvas.addEventListener('mousemove', e => {
-            if (e.buttons && Math.random() < 0.3) addDrag(e.clientX, e.clientY);
-        });
-
-        // ── Render loop ──────────────────────────────────────────────────────
-        function renderDist() {
-            requestAnimationFrame(renderDist);
-            distCtx.clearRect(0, 0, distCanvas.width, distCanvas.height);
-            const W = distCanvas.width, H = distCanvas.height;
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                const t = p.life / p.maxLife; // 1 → 0
-
-                if (p.type === 'tap') {
-                    // Scan-line burst: horizontal lines spread up & down from tap Y
-                    const spread = (1 - t) * H * 0.55;
-                    const numLines = 10;
-                    for (let j = 0; j < numLines; j++) {
-                        const frac   = j / numLines;
-                        const offset = frac * spread;
-                        const alpha  = t * (1 - frac) * 0.65;
-                        const lw     = j === 0 ? 2 : 1;
-                        distCtx.lineWidth   = lw;
-                        distCtx.strokeStyle = `rgba(255,255,255,${alpha})`;
-
-                        // line below tap
-                        distCtx.beginPath();
-                        distCtx.moveTo(0, p.y + offset);
-                        distCtx.lineTo(W, p.y + offset);
-                        distCtx.stroke();
-
-                        // line above tap (skip duplicate at offset=0)
-                        if (j > 0) {
-                            distCtx.beginPath();
-                            distCtx.moveTo(0, p.y - offset);
-                            distCtx.lineTo(W, p.y - offset);
-                            distCtx.stroke();
-                        }
-                    }
-                    // Brief bright centre bar at impact
-                    if (t > 0.7) {
-                        distCtx.fillStyle = `rgba(255,255,255,${(t - 0.7) / 0.3 * 0.45})`;
-                        distCtx.fillRect(0, p.y - 1, W, 3);
-                    }
-
-                } else if (p.type === 'drag') {
-                    // Glitch band: partial-width white bar at drag Y
-                    const alpha = t * 0.30;
-                    distCtx.fillStyle = `rgba(255,255,255,${alpha})`;
-                    const bx = Math.random() * W * 0.25;
-                    const bw = W * (0.45 + Math.random() * 0.45);
-                    const bh = 1 + Math.floor(Math.random() * 2);
-                    distCtx.fillRect(bx, p.y, bw, bh);
-                }
-
-                p.life--;
-                if (p.life <= 0) particles.splice(i, 1);
-            }
-        }
-        renderDist();
+        tick();
     </script>
 
 
