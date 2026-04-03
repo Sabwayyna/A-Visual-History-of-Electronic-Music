@@ -138,17 +138,18 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #ffffff;
-            border: 3px solid #000000;
-            padding: 20px 40px;
-            font-size: 14px;
-            font-weight: 700;
-            box-shadow: 6px 6px 0px #000000;
+            background: #000;
+            padding: 12px 24px;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
             z-index: 1000;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s ease;
-            letter-spacing: 2px;
+            transition: opacity 0.3s ease;
         }
 
         #speedIndicator.show {
@@ -502,6 +503,7 @@ if (_customAudio) sessionStorage.removeItem('customAudio');
 let song, fft, amp;
 let started = false;
 let shapes = []; // Array to store all permanent shapes
+let lastDrawnIndex = 0; // Index up to which shapes have already been drawn
 let waveform;
 let time = 0;
 let frameCounter = 0;
@@ -546,6 +548,7 @@ function preload() {
 }
 
 function setup() {
+  pixelDensity(window.devicePixelRatio || 2);
   createCanvas(windowWidth, windowHeight);
   angleMode(DEGREES);
   fft = new p5.FFT(0.8, 1024);
@@ -621,7 +624,7 @@ function windowResized() {
 }
 
 // Max shapes kept in memory — oldest are evicted when exceeded
-const MAX_SHAPES = 500;
+const MAX_SHAPES = 900;
 // Minimum canvas-distance the position must travel before new shapes are added
 const MIN_TRAVEL = 3.5;
 
@@ -643,10 +646,8 @@ function draw() {
     return;
   }
 
-  // ── Fade toward soft gray floor — marks settle as faint traces, not pure black ──
-  noStroke();
-  fill(32, 32, 32, 1);
-  rect(0, 0, width, height);
+  // Canvas is never cleared — shapes accumulate on black background
+
 
   frameCounter++;
   
@@ -817,26 +818,40 @@ function draw() {
     shouldGenerate = true;                               // always fire on beats
   } else if (frameCounter % 4 === 0 && vol > 0.03) {
     shouldGenerate = distTravelled > MIN_TRAVEL;         // every 4th frame + distance gate
-  } else if (vol > 0.18 && frameCounter % 2 === 0) {
-    shouldGenerate = distTravelled > MIN_TRAVEL * 0.5;   // loud: every other frame
+  } else if (vol > 0.14 && frameCounter % 2 === 0) {
+    shouldGenerate = distTravelled > MIN_TRAVEL * 0.4;   // loud: every other frame, lower gate
+  } else if (vol > 0.08 && frameCounter % 3 === 0) {
+    shouldGenerate = true;                               // moderate: every 3rd frame
   } else if (random() < 0.12) {
     shouldGenerate = true;                               // sparse random fill
   }
 
   if (shouldGenerate && vol > 0.003) {
     generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
+    // Burst: spawn extra passes on strong beats / bass drops
+    if (isBeat && isVeryLoud) {
+      let bursts = vol > 0.5 ? 3 : 2;
+      for (let b = 0; b < bursts; b++) {
+        generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
+      }
+    } else if (isBeat && isLoud) {
+      generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
+    } else if (isVeryLoud && bassNorm > 0.4) {
+      generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
+    }
     lastX = currentX;
   } else if (isQuiet && quietStreak > 40) {
     if (random() < 0.06) generateQuietMark(vol);
   }
 
-  // ── Evict oldest shapes once we hit the cap ──
-  if (shapes.length > MAX_SHAPES) {
-    shapes.splice(0, shapes.length - MAX_SHAPES);
+  // Draw only newly added shapes this frame — old shapes stay on canvas permanently
+  for (let i = lastDrawnIndex; i < shapes.length; i++) {
+    if (!shapes[i]) continue;
+    drawSingleShape(shapes[i], false);
+    drawSingleShape(shapes[i], true);
   }
-
-  // Draw all current shapes
-  drawShapes();
+  blendMode(BLEND);
+  lastDrawnIndex = shapes.length;
 
   lastVol = vol;
   time += 0.1;
@@ -918,9 +933,11 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
   }
 
   // INTRICATE PATTERNS - Add varied textural elements with better balance
+  // Boost probability on loud/beat moments
+  let patternBoost = isVeryLoud ? 1.7 : (isLoud ? 1.3 : 1.0);
   if (vol > 0.05) {
     // Organic blob clusters - MORE FREQUENT (less rectangles)
-    if (random() < 0.55 && vol > 0.06) {
+    if (random() < 0.55 * patternBoost && vol > 0.06) {
       let blobX, blobY;
       if (visualMode === 'horizontal') {
         let lineOffset = currentLine * lineHeight;
@@ -940,7 +957,7 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
     }
 
     // Scattered fields - more frequent
-    if (random() < 0.55 && vol > 0.06) {
+    if (random() < 0.55 * patternBoost && vol > 0.06) {
       let fieldX, fieldY;
       if (visualMode === 'horizontal') {
         let lineOffset = currentLine * lineHeight;
@@ -966,7 +983,7 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
     }
 
     // Wave patterns - MORE FREQUENT (less rectangles)
-    if (random() < 0.6 && (treble > 0.06 || highMid > 0.06)) {
+    if (random() < 0.6 * patternBoost && (treble > 0.06 || highMid > 0.06)) {
       let lineOffset = currentLine * lineHeight;
       let waveY = random(lineOffset, lineOffset + lineHeight);
       addWavePattern(currentX + random(-20, 20), waveY, map(treble, 0, 1, 35, 100), map(treble, 0, 1, 4, 18), vol);
@@ -995,8 +1012,8 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
   }
 
   // VERY LOUD / BEAT DROPS
-  if ((isVeryLoud || (isBeat && isLoud)) && random() < 0.6) {
-    let numPillars = floor(random(1, 3));
+  if ((isVeryLoud || (isBeat && isLoud)) && random() < 0.92) {
+    let numPillars = isVeryLoud && isBeat ? floor(random(3, 6)) : floor(random(2, 4));
 
     for (let p = 0; p < numPillars; p++) {
       // HORIZONTAL VARIANCE - each pillar at different X position
@@ -1017,7 +1034,7 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
         let blockHeight = map(bass, 0, 1, height * 0.15, height * 0.5);
 
         // Create fragmented elements with Y-variation
-        let numFragments = floor(random(4, 10));
+        let numFragments = isBeat ? floor(random(10, 22)) : floor(random(4, 10));
 
         for (let f = 0; f < numFragments; f++) {
           // Random Y position across entire canvas, with bias toward bottom
@@ -1097,7 +1114,7 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
 
       } else if (pillarType < 0.6 && mid > 0.3) {
         // FRAGMENTED LINE CLUSTER - scattered across Y-axis
-        let numFragments = floor(random(3, 8));
+        let numFragments = isBeat ? floor(random(8, 18)) : floor(random(3, 8));
 
         for (let i = 0; i < numFragments; i++) {
           // Random Y positioning across canvas
@@ -1173,7 +1190,7 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
 
       } else if (treble > 0.2) {
         // SCATTERED TEXTURE ELEMENTS (treble-aligned) - fragmented across Y
-        let numElements = floor(random(4, 10));
+        let numElements = isBeat ? floor(random(10, 20)) : floor(random(4, 10));
 
         for (let e = 0; e < numElements; e++) {
           // Scatter elements across Y-axis with bias toward middle/upper
@@ -2997,48 +3014,6 @@ function getMirroredX(x) {
 // Draw a single shape, optionally mirrored horizontally
 function drawSingleShape(shape, mirrored) {
 
-  // ── Drop-shadow pass for bright shapes ──────────────────────────────────
-  // Draws a near-black copy offset (+2.5, +2.5) before the lit shape,
-  // creating a false sense of depth and light direction.
-  if (!shape._isShadow && typeof shape.color === 'number' && shape.color > 158) {
-    const SO = 2.5; // shadow offset (px)
-    const sx = (mirrored && shape.x !== undefined ? getMirroredX(shape.x) : (shape.x || 0)) + SO;
-    const sy = (shape.y || 0) + SO;
-    // Shadow is a mid-dark tone — just noticeably darker, not black
-    const shCol = floor(shape.color * 0.32);
-    push();
-    stroke(shCol); fill(shCol);
-    strokeWeight((shape.weight || 0.5) * 0.6);
-    noFill();
-    switch (shape.type) {
-      case 'horizontalLine':
-        line(sx, sy, sx + (shape.length || 0), sy); break;
-      case 'verticalLine':
-        line(sx, sy, sx, sy + (shape.length || 0)); break;
-      case 'rectangle':
-        rect(sx - (shape.w||0)/2, sy - (shape.h||0)/2, shape.w||0, shape.h||0); break;
-      case 'square':
-        if (shape.filled) fill(shCol);
-        rect(sx - (shape.size||0)/2, sy - (shape.size||0)/2, shape.size||0, shape.size||0); break;
-      case 'circle':
-        if (shape.filled) fill(shCol);
-        ellipse(sx, sy, shape.size||0, shape.size||0); break;
-      case 'cross':
-        if (shape.size) {
-          line(sx - shape.size, sy, sx + shape.size, sy);
-          line(sx, sy - shape.size, sx, sy + shape.size);
-        } break;
-      case 'diagonalLine':
-        if (shape.length) {
-          let dx = cos(shape.angle || 45) * shape.length;
-          let dy = sin(shape.angle || 45) * shape.length;
-          line(sx, sy, sx + dx, sy + dy);
-        } break;
-    }
-    pop();
-  }
-  // ────────────────────────────────────────────────────────────────────────
-
   // Apply blend mode if specified
   if (shape.blendMode) {
     if (shape.blendMode === 'difference') {
@@ -3070,7 +3045,7 @@ function drawSingleShape(shape, mirrored) {
     fill(255);
   }
 
-  strokeWeight(shape.weight || 0.5);
+  strokeWeight((shape.weight || 0.5) * 0.5);
 
   // Get coordinates (mirrored if needed)
   let x = mirrored && shape.x !== undefined ? getMirroredX(shape.x) : shape.x;
@@ -3246,7 +3221,7 @@ function drawSingleShape(shape, mirrored) {
           rect(x - shape.width/2, shape.y, shape.width, shape.height);
           noFill();
           stroke(shape.color || 255);
-          strokeWeight(shape.weight || 1);
+          strokeWeight((shape.weight || 1) * 0.5);
           rect(x - shape.width/2, shape.y, shape.width, shape.height);
         }
         break;
@@ -3269,7 +3244,7 @@ function drawSingleShape(shape, mirrored) {
           // thin stroke ring
           noFill();
           stroke(c0);
-          strokeWeight(0.4);
+          strokeWeight(0.2);
           ellipse(x, shape.y, shape.size, shape.size);
         }
         break;
@@ -3290,7 +3265,7 @@ function drawSingleShape(shape, mirrored) {
           // outline
           noFill();
           stroke(ca);
-          strokeWeight(0.35);
+          strokeWeight(0.18);
           rect(x - shape.w/2, y0, shape.w, shape.h);
         }
         break;
@@ -3305,7 +3280,7 @@ function drawSingleShape(shape, mirrored) {
           grd.addColorStop(0, `rgba(${ca},${ca},${ca},0.9)`);
           grd.addColorStop(1, `rgba(${cb},${cb},${cb},0.1)`);
           drawingContext.strokeStyle = grd;
-          drawingContext.lineWidth   = shape.weight || 0.8;
+          drawingContext.lineWidth   = (shape.weight || 0.8) * 0.5;
           drawingContext.beginPath();
           drawingContext.moveTo(x, shape.y);
           drawingContext.lineTo(mirrored ? x - shape.length : x + shape.length, shape.y);

@@ -463,7 +463,7 @@
                     const cats = results.faceBlendshapes[0].categories;
                     const blinkL = cats.find(s => s.categoryName === 'eyeBlinkLeft')?.score  ?? 0;
                     const blinkR = cats.find(s => s.categoryName === 'eyeBlinkRight')?.score ?? 0;
-                    blinkDiv.style.opacity = (blinkL + blinkR) / 2 > 0.45 ? '1' : '0';
+                    blinkDiv.style.opacity = (blinkL + blinkR) / 2 > 0.45 ? '0.55' : '0';
                 }
             }
         }

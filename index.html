@@ -57,7 +57,7 @@
         #viz-canvas {
             position: fixed;
             left: 50%;
-            top: 50%;
+            top: 54%;
             transform: translate(-50%, -50%);
             pointer-events: none;
             z-index: 6;
@@ -790,6 +790,22 @@
     }
 
     requestAnimationFrame(loop);
+})();
+</script>
+
+<script>
+/* ── Film grain (static, fine) ── */
+(function(){
+    var c=document.createElement('canvas');
+    c.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;opacity:0.055;';
+    document.body.appendChild(c);
+    var dpr=window.devicePixelRatio||1;
+    c.width=Math.ceil(window.innerWidth*dpr);
+    c.height=Math.ceil(window.innerHeight*dpr);
+    var cx=c.getContext('2d');
+    var id=cx.createImageData(c.width,c.height),d=id.data;
+    for(var i=0;i<d.length;i+=4){var v=Math.random()*255|0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255;}
+    cx.putImageData(id,0,0);
 })();
 </script>
 </body>

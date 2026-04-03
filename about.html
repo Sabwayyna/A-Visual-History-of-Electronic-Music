@@ -207,14 +207,15 @@
         <h1 class="title">A Visual History<br>of Electronic Music</h1>
 
         <div class="body-text">
-            <p>This project is a way of experiencing the history of electronic music, not just learning it.</p>
-            <p>To me, electronic music is not simply EDM. It marks a shift in how sound is made. At a certain point, music separated from the instrument &mdash; and sound could be recorded, cut, rearranged, and built in entirely new ways. That moment changed what music could be.</p>
-            <p>This website follows that transformation as a narrative. Eleven pieces, spanning 1932 to 2025. Each one represents a different idea about what sound could become once it was freed from a physical source.</p>
-            <p>The pieces were chosen because each one did something that had not quite been done before. Schaeffer used recorded noise as raw material. Oram invented a machine to draw sound directly onto film. Derbyshire built music by hand from test oscillators and tape. Eno used process and repetition to make music that listened back to its environment. Each artist was asking a different question.</p>
-            <p>Each visual is designed specifically around the structure, feeling, and musicality of that piece. The goal is for the image to feel like it could only belong to that one piece of music.</p>
-            <p>The visuals do not just react to sound. They interpret it, turning rhythm, texture, and frequency into image.</p>
-            <p>Everything here was built from scratch in pure code &mdash; no templates, no frameworks, no pre-built tools. Each visualization is a custom piece of software written specifically for that song, working directly with audio data to generate form in real time. The entire project lives as a single website. There is no app, no installation, no separate interface. You move through a timeline and the history unfolds as you go, one piece at a time, each with its own visual language.</p>
-            <p>The intention was always to make something that felt authored, not assembled. Every decision &mdash; what to include, how to visualize it, what order to move through &mdash; is part of building a specific argument about what this music is and why it matters.</p>
+            <p>What does sound look like? That is the question this project is trying to answer.</p>
+            <p>Throughout the twentieth century, music was radically reimagined. In 1930s Paris, Pierre Schaeffer, a telecommunications engineer with a deep curiosity about sound, cut and rearranged reels of tape to create strange new loops. As a key figure in musique concrete, he helped begin a sonic shift that still shapes music today. What he was doing sounds almost obvious now, but at the time it was genuinely strange: treating recorded noise as a musical material, something to be sculpted rather than simply captured.</p>
+            <p>This project traces that evolution. Eleven pieces, spanning 1932 to 2025, each one marking a different moment in a larger story about what music can be when it no longer needs a traditional instrument to exist. The range is intentional: from early electroacoustic experiments in European studios to Acid House breaking open on Chicago dance floors, from Daphne Oram drawing sound directly onto film strips to Oneohtrix Point Never building drifting synthesizer worlds in a bedroom.</p>
+            <p>Freed from traditional instruments, electronic music can take on almost any form. It can be patient and ambient, like Brian Eno's slowly accumulating tones in Music for Airports. It can be precise and almost architectural, like Autechre's interlocking grid rhythms. It can be abrasive and clinical, like Ryoji Ikeda treating data streams as composition. Each artist was working with a different question, and each one found a genuinely different answer.</p>
+            <p>Through a series of real-time interactive visualizers, I try to make those ideas visible. Each one is built specifically around a single piece: its structure, its texture, its feeling and pacing. Some are flat and geometric. Others are spatial and immersive. Some respond to rhythm and pulse directly, others drift and accumulate over time. The goal was always for each image to feel like it could only belong to that one piece of music, and no other.</p>
+            <p>Each visualizer reacts to the music as it plays, translating frequency, amplitude, and rhythm into moving image. Sound, once built from tape loops and waveform generators and mathematical functions, becomes something you can actually see. That translation is not meant to explain the music or illustrate it. It is meant to sit alongside it, to give a shape to something that usually exists only in time and air.</p>
+            <p>Everything here was built from scratch in pure code. No templates, no frameworks, no pre-built tools. Each visualization is a custom piece of software written specifically for its song, working directly with audio data to generate form in real time. The whole project lives as a single website. There is no app, no installation. You move through a timeline and the history unfolds as you go, one piece at a time, each with its own visual language.</p>
+            <p>The intention was always to make something that felt authored rather than assembled. Every choice, what to include, how to visualize it, what order to move through, is part of building a specific argument about what this music is and why it still matters.</p>
+            <p>The question that started all of this was a simple one. What does sound look like? I am still not entirely sure there is one answer. But I think that is exactly the right kind of question to spend a thesis on.</p>
         </div>
     </div>
 
@@ -334,6 +335,22 @@
             requestAnimationFrame(blobStep);
         }
         requestAnimationFrame(blobStep);
+    </script>
+
+    <script>
+    /* ── Film grain (static, fine) ── */
+    (function(){
+        var c=document.createElement('canvas');
+        c.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;opacity:0.055;';
+        document.body.appendChild(c);
+        var dpr=window.devicePixelRatio||1;
+        c.width=Math.ceil(window.innerWidth*dpr);
+        c.height=Math.ceil(window.innerHeight*dpr);
+        var cx=c.getContext('2d');
+        var id=cx.createImageData(c.width,c.height),d=id.data;
+        for(var i=0;i<d.length;i+=4){var v=Math.random()*255|0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255;}
+        cx.putImageData(id,0,0);
+    })();
     </script>
 
 </body>
