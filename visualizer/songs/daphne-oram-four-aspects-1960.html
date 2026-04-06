@@ -307,6 +307,8 @@
             width: 60%;
             height: 60%;
         }
+        /* static fine grain */
+        body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.055; background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>"); background-repeat: repeat; background-size: 160px; }
     </style>
 </head>
 <body>
@@ -690,14 +692,14 @@ function draw() {
   let volChange = vol - lastVol;
   let avgVol = volHistory.length > 0 ? volHistory.reduce((a, b) => a + b, 0) / volHistory.length : vol;
 
-  // Better beat detection - MORE SENSITIVE
-  let isBeat = (volChange > 0.04 && vol > avgVol * 1.1) || // Sharp increase
-               (vol > 0.35 && volChange > 0.02) || // Loud with increase
-               (vol > 0.15 && volChange > 0.06); // Medium with sharp change
+  // Beat detection — sensitive to transients so blobs pop on sound events
+  let isBeat = (volChange > 0.025 && vol > avgVol * 1.08) || // Sharp transient
+               (vol > 0.25 && volChange > 0.015) ||          // Loud with rise
+               (vol > 0.10 && volChange > 0.045);            // Medium sharp change
 
-  let isLoud = vol > 0.12; // More sensitive
-  let isVeryLoud = vol > 0.3; // More sensitive
-  let isQuiet = vol < 0.05; // More sensitive
+  let isLoud = vol > 0.10;
+  let isVeryLoud = vol > 0.25;
+  let isQuiet = vol < 0.04;
   
   // Track quiet streaks for breaks
   if (isQuiet) {
@@ -714,26 +716,20 @@ function draw() {
   let highMidNorm = map(highMid, 0, 255, 0, 1);
   let trebleNorm = map(treble, 0, 255, 0, 1);
   
-  // Generate shapes more frequently for better visibility
+  // Generate on every audible frame — sync tightly to audio
   let shouldGenerate = false;
 
-  if (isBeat && vol > 0.05) {
-    shouldGenerate = true; // Generate on beats
-  } else if (frameCounter % 1 === 0 && vol > 0.02) {
-    shouldGenerate = true; // EVERY frame if volume present
-  } else if (vol > 0.15) {
-    shouldGenerate = true; // Loud sections
-  } else if (random() < 0.4) {
-    shouldGenerate = true; // Random generation for continuity
+  if (vol > 0.008) {
+    shouldGenerate = true; // Any audible sound
+  } else if (random() < 0.12) {
+    shouldGenerate = true; // Rare spontaneous mark in true silence
   }
 
   if (shouldGenerate && vol > 0.003) {
-    // Generate shapes based on audio with 6 frequency bands
     generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
     lastX = currentX;
-  } else if (isQuiet && quietStreak > 30) {
-    // Sparse marks during extended quiet sections
-    if (random() < 0.1) { // Balanced - some marks in quiet areas
+  } else if (isQuiet && quietStreak > 40) {
+    if (random() < 0.05) {
       generateQuietMark(vol);
     }
   }
@@ -779,11 +775,43 @@ function getGrayscaleColor(vol, frequencyType, isVeryLoud, isLoud, isQuiet) {
 
 
 function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat, isLoud, isVeryLoud, isQuiet, volChange, sizeMultiplier = 1.0) {
-  // Calculate positions based on visualization mode
-  let subBassY, bassY, lowMidY, midY, highMidY, trebleY;
+  // Current play-position X
+  let posX;
+  if (visualMode === 'radial') {
+    let angleRad = radians(currentAngle);
+    posX = centerX + cos(angleRad) * currentRadius;
+  } else {
+    posX = currentX;
+  }
 
-  if (visualMode === 'horizontal') {
-    // HORIZONTAL MODE: Use line offset for two-line layout
+  // Number of blobs this frame — bursts on beats
+  let numBlobs = 1;
+  if (isBeat)     numBlobs += floor(random(1, 4));
+  if (isVeryLoud) numBlobs += floor(random(0, 2));
+  numBlobs = constrain(numBlobs, 1, 5);
+
+  for (let b = 0; b < numBlobs; b++) {
+    let blobX    = posX + random(-width * 0.08, width * 0.08);
+    let blobY    = random(height * 0.06, height * 0.94);
+    let blobSize = map(vol, 0, 1, 5, 85) * sizeMultiplier * random(0.5, 2.4);
+    addOrganicBlob(blobX, blobY, blobSize, vol);
+  }
+
+  // Organic concentric rings on very loud peaks (spiral reference)
+  if (isVeryLoud && random() < 0.15) {
+    let numRings = floor(random(2, 5));
+    let ringCX   = posX + random(-120, 120);
+    let ringCY   = random(height * 0.15, height * 0.85);
+    for (let r = 0; r < numRings; r++) {
+      let radius = random(15, 60) * (r + 1) * 0.55 * sizeMultiplier;
+      addOrganicRing(ringCX, ringCY, radius, vol);
+    }
+  }
+
+  // placeholder so the rest of the old code below compiles (unused)
+  if (false) {
+    let subBassY, bassY, lowMidY, midY, highMidY, trebleY;
+    if (visualMode === 'horizontal') {
     let lineOffset = currentLine * lineHeight;
     subBassY = map(subBass, 0, 1, lineOffset + lineHeight * 0.83, lineOffset + lineHeight);
     bassY = map(bass, 0, 1, lineOffset + lineHeight * 0.67, lineOffset + lineHeight * 0.83);
@@ -810,75 +838,56 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
     sectionCounter++;
   }
 
-  // INTRICATE PATTERNS - Add varied textural elements with better balance
-  if (vol > 0.05) {
-    // Organic blob clusters - MORE FREQUENT (less rectangles)
-    if (random() < 0.55 && vol > 0.06) {
+  // BLOB STRIPS — primary visual element, Oramics-inspired
+  if (vol > 0.03) {
+    // Number of blobs this frame scales with loudness and randomness
+    let numBlobs = 1;
+    if (isBeat) numBlobs += floor(random(1, 4));
+    if (isVeryLoud) numBlobs += floor(random(1, 3));
+    numBlobs = constrain(numBlobs, 1, 6);
+
+    for (let b = 0; b < numBlobs; b++) {
       let blobX, blobY;
       if (visualMode === 'horizontal') {
-        let lineOffset = currentLine * lineHeight;
-        blobX = currentX + random(-30, 30);
-        blobY = random() < 0.6 ?
-          random(lineOffset + lineHeight * 0.3, lineOffset + lineHeight) :
-          random(lineOffset, lineOffset + lineHeight * 0.5);
+        // Spread Y across the FULL canvas — very random placement
+        blobX = currentX + random(-50, 50);
+        blobY = random(height * 0.05, height * 0.95);
       } else {
-        // Radial mode: position around current angle
-        let angleOffset = random(-30, 30);
-        let radiusOffset = random(-20, 20);
+        let angleOffset = random(-45, 45);
+        let radiusOffset = random(-30, 30);
         let a = radians(currentAngle + angleOffset);
         blobX = centerX + cos(a) * (currentRadius + radiusOffset);
         blobY = centerY + sin(a) * (currentRadius + radiusOffset);
       }
-      addOrganicBlob(blobX, blobY, map(vol, 0, 1, 30, 80) * sizeMultiplier, vol);
+      // Blob size directly tied to volume — bigger on loud moments
+      let blobSize = map(vol, 0, 1, 15, 120) * sizeMultiplier * random(0.5, 1.8);
+      addOrganicBlob(blobX, blobY, blobSize, vol);
     }
 
-    // Scattered fields - more frequent
-    if (random() < 0.55 && vol > 0.06) {
+    // Wave patterns — occasional, driven by treble
+    if (random() < 0.3 && (treble > 0.06 || highMid > 0.06)) {
+      let waveY = random(height * 0.05, height * 0.95);
+      addWavePattern(currentX + random(-40, 40), waveY, map(treble, 0, 1, 40, 130), map(treble, 0, 1, 5, 22), vol);
+    }
+
+    // Scattered fields — rare accent texture
+    if (random() < 0.18 && vol > 0.1) {
       let fieldX, fieldY;
       if (visualMode === 'horizontal') {
-        let lineOffset = currentLine * lineHeight;
-        fieldX = currentX;
-        fieldY = random(lineOffset, lineOffset + lineHeight);
+        fieldX = currentX + random(-60, 60);
+        fieldY = random(0, height);
       } else {
         let a = radians(currentAngle);
         fieldX = centerX + cos(a) * currentRadius;
         fieldY = centerY + sin(a) * currentRadius;
       }
-      let fieldWidth = random(50, 120) * sizeMultiplier;
-      let fieldHeight = random(40, 100) * sizeMultiplier;
-      addScatteredField(fieldX, fieldY, fieldWidth, fieldHeight, map(vol, 0, 1, 0.4, 1.2) * sizeMultiplier, vol);
+      addScatteredField(fieldX, fieldY, random(40, 100) * sizeMultiplier, random(30, 80) * sizeMultiplier, map(vol, 0, 1, 0.3, 1.0) * sizeMultiplier, vol);
     }
 
-    // Cross-hatching patterns - REDUCED
-    if (random() < 0.25 && (isLoud || mid > 0.2)) {
-      let lineOffset = currentLine * lineHeight;
-      let hatchY = random() < 0.5 ?
-        random(lineOffset + lineHeight * 0.4, lineOffset + lineHeight) :
-        random(lineOffset, lineOffset + lineHeight * 0.6);
+    // Cross-hatch — very rare, only on very loud peaks
+    if (random() < 0.08 && isVeryLoud) {
+      let hatchY = random(height * 0.1, height * 0.9);
       addCrossHatch(currentX, hatchY, map(vol, 0, 1, 20, 60), map(vol, 0, 1, 25, 80), map(vol, 0, 1, 4, 12), vol);
-    }
-
-    // Wave patterns - MORE FREQUENT (less rectangles)
-    if (random() < 0.6 && (treble > 0.06 || highMid > 0.06)) {
-      let lineOffset = currentLine * lineHeight;
-      let waveY = random(lineOffset, lineOffset + lineHeight);
-      addWavePattern(currentX + random(-20, 20), waveY, map(treble, 0, 1, 35, 100), map(treble, 0, 1, 4, 18), vol);
-    }
-
-    // Architectural elements - RARE, loud parts only
-    if (random() < 0.08 && bass > 0.5 && isVeryLoud) {
-      let archY = random() < 0.6 ?
-        random(height * 0.5, height) :
-        random(0, height * 0.7);
-      addArchitecturalElement(currentX + random(-25, 25), archY, map(bass, 0, 1, 35, 100), vol);
-    }
-
-    // Dense grid patterns - moderate frequency
-    if (random() < 0.25 && mid > 0.25) {
-      let gridY = random() < 0.5 ?
-        random(height * 0.3, height) :
-        random(0, height * 0.6);
-      addDenseGrid(currentX, gridY, map(mid, 0, 1, 25, 70), map(mid, 0, 1, 25, 70), map(mid, 0, 1, 5, 12), vol);
     }
   }
 
@@ -1905,6 +1914,7 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
       addArchitecturalElement(currentX, random(height * 0.4, height * 0.6), random(40, 80), vol);
     }
   }
+  } // end if (false)
 }
 
 function generateQuietMark(vol) {
@@ -2584,83 +2594,62 @@ function addDenseGrid(x, y, gridWidth, gridHeight, cellSize, vol) {
   });
 }
 
-// NEW: Add organic irregular blob/cluster
+// Organic filled blob — elongated horizontal strip like Oramics waveform printouts
 function addOrganicBlob(x, y, size, vol) {
-  let numPoints = floor(random(8, 20));
   let baseColor = getShapeColor(vol, 'mid', false, false, false, 0.5);
 
-  // Create irregular shape with varied radii
-  for (let i = 0; i < numPoints; i++) {
-    let angle = (i / numPoints) * 360;
-    let radius = size * random(0.4, 1.2); // Irregular radius
-    let px = x + cos(angle) * radius;
-    let py = y + sin(angle) * radius;
+  // Width: very elongated, varies dramatically per shape
+  let blobWidth  = size * random(2.5, 9.0);
 
-    // Draw various marks at each point
-    let markType = floor(random(5));
-    if (markType === 0) {
-      shapes.push({
-        type: 'circle',
-        x: px,
-        y: py,
-        size: random(1, 4),
-        filled: random() < 0.5,
-        weight: random(0.2, 0.5),
-        color: baseColor
-      });
-    } else if (markType === 1) {
-      shapes.push({
-        type: 'cross',
-        x: px,
-        y: py,
-        size: random(2, 6),
-        weight: random(0.2, 0.5),
-        color: baseColor
-      });
-    } else if (markType === 2) {
-      shapes.push({
-        type: 'horizontalLine',
-        x: px - random(3, 8),
-        y: py,
-        length: random(5, 15),
-        weight: random(0.2, 0.5),
-        color: baseColor
-      });
-    } else if (markType === 3) {
-      shapes.push({
-        type: 'verticalLine',
-        x: px,
-        y: py,
-        length: random(4, 12),
-        weight: random(0.2, 0.5),
-        color: baseColor
-      });
-    } else {
-      shapes.push({
-        type: 'square',
-        x: px,
-        y: py,
-        size: random(2, 5),
-        filled: random() < 0.3,
-        weight: random(0.2, 0.5),
-        color: baseColor
-      });
-    }
-  }
+  // Height: top and bottom vary independently, driven by volume
+  let topH = size * random(0.15, 1.6) * (0.3 + vol * 2.2);
+  let botH = size * random(0.1,  1.3) * (0.3 + vol * 1.8);
 
-  // Add center density
-  let centerDensity = floor(random(3, 8));
-  for (let c = 0; c < centerDensity; c++) {
-    shapes.push({
-      type: 'circle',
-      x: x + random(-size * 0.3, size * 0.3),
-      y: y + random(-size * 0.3, size * 0.3),
-      size: random(1, 3),
-      filled: true,
-      weight: 0.3,
-      color: baseColor
-    });
-  }
+  let noiseOff   = random(10000);
+  let jaggedness = random(0.6, 4.0);   // low = smooth waves, high = spiky bumps
+  let numPts     = floor(random(16, 32));
+
+  // Random left edge — strip won't always start from same position
+  let leftEdge = x - blobWidth * random(0.05, 0.95);
+
+  // Y-curve: the centre line of the blob undulates up/down along its length
+  // This creates the tapered / bulge character seen in the Oramics strips
+  let yCurveMag = size * random(0.0, 1.4);
+  let yCurveOff = random(10000);
+
+  // Occasional slight tilt
+  let tilt = random() < 0.3 ? random(-0.22, 0.22) : 0;
+
+  shapes.push({
+    type: 'organicFilledBlob',
+    x: leftEdge,
+    y: y,
+    width: blobWidth,
+    topHeight: topH,
+    botHeight: botH,
+    noiseOffset: noiseOff,
+    jaggedness: jaggedness,
+    numPoints: numPts,
+    color: baseColor,
+    yCurveMag: yCurveMag,
+    yCurveOff: yCurveOff,
+    tilt: tilt
+  });
+}
+
+// Organic ring — concentric torn-paper circles for loud/beat moments
+function addOrganicRing(x, y, radius, vol) {
+  let baseColor = getShapeColor(vol, 'mid', false, false, false, 0.5);
+  shapes.push({
+    type: 'organicRing',
+    x: x,
+    y: y,
+    radius: radius,
+    thickness: random(5, 22) * (0.4 + vol * 1.6),
+    noiseOffset: random(10000),
+    numPoints: floor(random(24, 48)),
+    color: baseColor
+  });
 }
 
 // NEW: Add irregular scattered field of elements
@@ -3050,6 +3039,89 @@ function drawSingleShape(shape, mirrored) {
           rect(x - shape.width/2, shape.y, shape.width, shape.height);
         }
         break;
+
+      case 'organicFilledBlob': {
+        // Filled horizontal blob strip — Oramics waveform shapes with Y-curve + tilt
+        if (shape.x !== undefined && shape.y !== undefined && shape.width) {
+          let bw        = shape.width;
+          let nPts      = shape.numPoints || 16;
+          let nOff      = shape.noiseOffset || 0;
+          let jagg      = shape.jaggedness || 2;
+          let topH      = shape.topHeight || 20;
+          let botH      = shape.botHeight || 15;
+          let yCurveMag = shape.yCurveMag || 0;
+          let yCurveOff = shape.yCurveOff || 5000;
+          let tilt      = shape.tilt || 0;
+
+          let bxStart = mirrored ? getMirroredX(shape.x + bw) : shape.x;
+          let dir     = mirrored ? -1 : 1;
+
+          fill(shape.color || 255);
+          noStroke();
+
+          push();
+          // Tilt around the blob's horizontal centre
+          let blobCX = bxStart + dir * bw * 0.5;
+          translate(blobCX, shape.y);
+          rotate(tilt);
+          translate(-blobCX, -shape.y);
+
+          beginShape();
+          // Top edge — with drifting Y centre + per-point noise height
+          for (let i = 0; i <= nPts; i++) {
+            let t       = i / nPts;
+            let px      = bxStart + dir * t * bw;
+            let yCenter = shape.y + (noise(yCurveOff + t * 1.8) - 0.5) * 2.0 * yCurveMag;
+            let localT  = topH * (0.3 + noise(nOff + t * jagg) * 1.4);
+            curveVertex(px, yCenter - localT);
+          }
+          // Bottom edge — right to left
+          for (let i = nPts; i >= 0; i--) {
+            let t       = i / nPts;
+            let px      = bxStart + dir * t * bw;
+            let yCenter = shape.y + (noise(yCurveOff + t * 1.8) - 0.5) * 2.0 * yCurveMag;
+            let localB  = botH * (0.3 + noise(nOff + 300 + t * jagg) * 1.4);
+            curveVertex(px, yCenter + localB);
+          }
+          endShape(CLOSE);
+          pop();
+        }
+        break;
+      }
+
+      case 'organicRing': {
+        // Torn-paper concentric ring — outer filled shape with inner black hole
+        if (shape.x !== undefined && shape.y !== undefined && shape.radius) {
+          let cx    = mirrored ? getMirroredX(shape.x) : shape.x;
+          let nPts  = shape.numPoints || 32;
+          let nOff  = shape.noiseOffset || 0;
+          let r     = shape.radius;
+          let thick = shape.thickness || 10;
+
+          // Outer organic shape
+          fill(shape.color || 255);
+          noStroke();
+          beginShape();
+          for (let i = 0; i <= nPts; i++) {
+            let ang    = (i / nPts) * TWO_PI;
+            let outerR = r + thick * 0.5 + noise(nOff + i * 0.28) * thick;
+            curveVertex(cx + cos(ang) * outerR, shape.y + sin(ang) * outerR);
+          }
+          endShape(CLOSE);
+
+          // Inner hole punched out with black
+          fill(0);
+          noStroke();
+          beginShape();
+          for (let i = 0; i <= nPts; i++) {
+            let ang    = (i / nPts) * TWO_PI;
+            let innerR = max(2, r - thick * 0.3 + noise(nOff + 500 + i * 0.28) * thick * 0.6);
+            curveVertex(cx + cos(ang) * innerR, shape.y + sin(ang) * innerR);
+          }
+          endShape(CLOSE);
+        }
+        break;
+      }
     }
 }
 

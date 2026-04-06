@@ -1,0 +1,33 @@
+THERMAL PRINTER NOTES — April 2026
+====================================
+
+CHOSEN PRINTER: Rongta RP425
+- Amazon ASIN: B0FSKN56ZN
+- Price: ~$30
+- Output: 4x6 inch adhesive labels
+- Connection to use: USB (NOT Bluetooth — it's Classic BT, won't work from browser)
+
+HOW IT WILL WORK:
+1. Visitor presses a key on the webpage
+2. html2canvas takes a screenshot of the page
+3. Browser sends image to a tiny Node.js server running in background on the Mac
+4. Server converts image to PDF and sends to printer via the lp command
+5. 4x6 label prints out silently — no dialog boxes, no interaction needed
+
+SETUP WHEN PRINTER ARRIVES:
+1. Download Mac driver from: rongtaglobal.com (RTLabelPrinterMacDriver.pkg)
+2. Install driver — printer will appear in System Preferences > Printers & Scanners
+3. Plug in via USB
+4. I'll write the Node.js server file + browser print code at that point
+
+WHY NOT BLUETOOTH FROM BROWSER:
+Web Bluetooth only works with BLE (Bluetooth Low Energy).
+The RP425 uses Classic Bluetooth — completely different protocol.
+Almost all big label printers use Classic BT. USB is the right path.
+
+OTHER PRINTERS RESEARCHED (smaller, BLE-compatible):
+- Niimbot B3S: 80mm adhesive labels, ~$55, works directly from browser via BLE
+- GOOJPRT PT-210: 58mm receipt paper, ~$35, ESC/POS over BLE
+- Phomemo M02: 53mm stickers, ~$29, BLE but proprietary protocol + subscription app
+
+Decided: Rongta RP425 because 4x6 is much more dramatic for an installation.

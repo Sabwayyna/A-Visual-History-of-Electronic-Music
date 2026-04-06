@@ -19,10 +19,12 @@
             font-style: italic;
         }
 
+        :root { --m: 4vw; }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
-            background: #0d0d0d;
+            background: #050505;
             color: #fff;
             font-family: "LinotypeUnivers", sans-serif;
             font-weight: 400;
@@ -30,194 +32,225 @@
             overflow: hidden;
         }
 
-        /* ── Back button — fixed top left ── */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ── Shared grid — identical to homepage song-row / site-footer ── */
+        .text-row,
+        #site-footer {
+            display: grid;
+            grid-template-columns: 2.8em 40% 1fr;
+            column-gap: var(--m);
+            width: calc(100vw - 2 * var(--m));
+            align-items: baseline;
+        }
+
+        /* ── Scrollable section — same as list-section ── */
+        #scrollCol {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 0;
+            padding: var(--m) 0 0;
+            width: calc(100vw - 2 * var(--m));
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;
+        }
+        #scrollCol::-webkit-scrollbar { display: none; }
+
+        /* ── Type scale — exact match to homepage ── */
+        .song-year,
+        .song-artist,
+        .song-title,
+        .text-row p {
+            font-size: clamp(16px, 3.5vw, 64px);
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+            font-weight: 400;
+        }
+
+        /* Title row — same col positions as homepage song rows */
+        .song-artist {
+            text-transform: uppercase;
+            padding-left: 1.5em;
+            color: #fff;
+        }
+
+        .song-title {
+            text-transform: uppercase;
+            text-align: right;
+            color: #fff;
+        }
+
+        .song-year {
+            color: rgba(255, 255, 255, 0.18);
+        }
+
+        /* Body paragraphs — start at same left edge as artist column */
+        .text-row p {
+            grid-column: 2 / 4;
+            padding-left: 1.5em;
+            color: rgba(255, 255, 255, 0.6);
+            padding-bottom: 0.85em;
+        }
+
+        /* ── Footer — same as homepage + extra top breathing room ── */
+        #site-footer {
+            margin: var(--m) 0 var(--m);
+        }
+
+        #site-footer span,
+        #site-footer a {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            color: rgba(255, 255, 255, 0.38);
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        #site-footer .footer-title { padding-left: calc(1.5 * clamp(16px, 3.5vw, 64px)); }
+        #site-footer .footer-credit { text-align: left; padding-left: 4em; }
+        #site-footer a:hover { color: #fff; }
+
+        /* ── Ohm canvas — same position as homepage ── */
+        #shape-img {
+            position: fixed;
+            left: 50%;
+            top: 54%;
+            transform: translate(-50%, -50%);
+            height: 92vh;
+            width: 92vh;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.1;
+        }
+
+        #viz-canvas {
+            position: fixed;
+            left: 50%;
+            top: 54%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0.45;
+        }
+
+        /* Keep text above canvases */
+        #scrollCol { position: relative; z-index: 5; }
+        #site-footer { position: relative; z-index: 5; }
+
+        /* ── Back link ── */
         #backLink {
             position: fixed;
             top: 28px;
             left: 32px;
             font-size: 26px;
-            font-family: "Helvetica Neue", Arial, sans-serif;
+            font-family: "LinotypeUnivers", sans-serif;
             color: rgba(255, 255, 255, 0.4);
             text-decoration: none;
             z-index: 100;
-            transition: color 0.3s ease, text-shadow 0.3s ease;
+            transition: color 0.3s ease;
             line-height: 1;
             user-select: none;
         }
-        #backLink:hover {
-            color: rgba(255, 255, 255, 0.85);
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
-        }
+        #backLink:hover { color: rgba(255, 255, 255, 0.85); }
 
-        /* ── Static credit — fixed bottom right ── */
-        .credit {
-            position: fixed;
-            right: 32px;
-            bottom: 28px;
-            display: flex;
-            flex-direction: column;
-            gap: 0.35em;
-            z-index: 100;
-        }
-        .credit-link {
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            gap: 0.35em;
-        }
-        .credit-link span {
-            font-size: 10px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.28);
-            display: block;
-            transition: color 0.3s ease;
-        }
-        .credit-link:hover span {
-            color: rgba(255, 255, 255, 0.75);
-        }
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+            :root { --m: 5vw; }
 
-        /* ── Scrollable left column ── */
-        #scrollCol {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 68vw;
-            height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: calc(4vw + 60px) 4vw 8vh 32px;
-            scrollbar-width: none;
-        }
-        #scrollCol::-webkit-scrollbar { display: none; }
-
-        /* ── Shared type scale ── */
-        .title,
-        .body-text p {
-            font-size: clamp(16px, 3.5vw, 64px);
-            letter-spacing: -0.02em;
-            line-height: 1.15;
-        }
-
-        .title {
-            text-transform: uppercase;
-            color: #fff;
-            margin-bottom: 0.9em;
-        }
-
-        .body-text {
-            display: flex;
-            flex-direction: column;
-            gap: 0.85em;
-        }
-
-        .body-text p {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        /* ── Dancing blob ── */
-        #blobWrap {
-            position: fixed;
-            width: 220px;
-            height: 220px;
-            z-index: 50;
-            pointer-events: none;
-        }
-        #blobDeform {
-            width: 100%;
-            height: 100%;
-            transform-origin: center center;
-        }
-        .blob {
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.92);
-            animation: morph 3.2s ease-in-out infinite, bob 2.1s ease-in-out infinite, spin 7s linear infinite;
-            pointer-events: all;
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
-        }
-
-        @keyframes morph {
-            0%   { border-radius: 60% 40% 55% 45% / 50% 60% 40% 55%; }
-            15%  { border-radius: 35% 65% 40% 60% / 65% 35% 60% 40%; }
-            30%  { border-radius: 70% 30% 65% 35% / 40% 70% 30% 65%; }
-            45%  { border-radius: 42% 58% 30% 70% / 55% 45% 65% 35%; }
-            60%  { border-radius: 55% 45% 70% 30% / 35% 60% 45% 70%; }
-            75%  { border-radius: 30% 70% 45% 55% / 70% 30% 55% 45%; }
-            100% { border-radius: 60% 40% 55% 45% / 50% 60% 40% 55%; }
-        }
-
-        @keyframes bob {
-            0%, 100% { transform: translateY(0)   scaleX(1)    scaleY(1); }
-            20%       { transform: translateY(-28px) scaleX(0.93) scaleY(1.07); }
-            40%       { transform: translateY(-14px) scaleX(1.06) scaleY(0.95); }
-            60%       { transform: translateY(-36px) scaleX(0.96) scaleY(1.04); }
-            80%       { transform: translateY(-8px)  scaleX(1.04) scaleY(0.97); }
-        }
-
-        @keyframes spin {
-            0%   { rotate: 0deg; }
-            100% { rotate: 360deg; }
-        }
-
-        /* ── Mobile responsive ── */
-        @media (max-width: 700px) {
-            /* Full-width scroll column — blob is hidden on narrow screens */
-            #scrollCol {
-                width: 100vw;
-                padding: calc(3vw + 56px) 7vw 10vh 7vw;
+            .text-row,
+            #site-footer {
+                grid-template-columns: 3.2em 1fr;
             }
 
-            .title,
-            .body-text p {
-                font-size: clamp(15px, 4.5vw, 28px);
+            .song-artist { grid-column: 1 / 2; padding-left: 0; font-size: clamp(13px, 4.5vw, 20px); }
+            .song-title  { display: none; }
+            .song-year   { display: none; }
+
+            .text-row p {
+                grid-column: 1 / 3;
+                padding-left: 0;
+                font-size: clamp(13px, 4.5vw, 20px);
             }
 
-            /* Hide blob — it overlaps text on narrow screens and has no hover interaction on touch */
-            #blobWrap { display: none; }
-
-            /* Shift credit away from edge */
-            .credit {
-                right: 20px;
-                bottom: 20px;
-            }
+            #site-footer .footer-title { display: none; }
+            #site-footer .footer-credit { text-align: right; padding-left: 0; }
         }
 
-        /* ── Cursor ── */
         * {
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
         }
+        /* static fine grain */
+        body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.055; background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>"); background-repeat: repeat; background-size: 160px; }
     </style>
 </head>
 <body>
 
+    <canvas id="shape-img"></canvas>
+    <canvas id="viz-canvas"></canvas>
+
     <a href="index.html" id="backLink">&#937;</a>
 
-    <div id="blobWrap"><div id="blobDeform"><div class="blob"></div></div></div>
-
-    <div class="credit">
-        <a href="https://sabrina.cargo.site" target="_blank" class="credit-link">
-            <span>Sabrina Wu</span>
-            <span>Parsons School of Design</span>
-            <span>Communication Design &rsquo;26</span>
-        </a>
-    </div>
-
     <div id="scrollCol">
-        <h1 class="title">A Visual History<br>of Electronic Music</h1>
 
-        <div class="body-text">
+        <div class="text-row">
+            <span class="song-year">01</span>
             <p>What does sound look like? That is the question this project is trying to answer.</p>
+        </div>
+
+        <div class="text-row">
+            <span class="song-year">02</span>
             <p>Throughout the twentieth century, music was radically reimagined. In 1930s Paris, Pierre Schaeffer, a telecommunications engineer with a deep curiosity about sound, cut and rearranged reels of tape to create strange new loops. As a key figure in musique concrete, he helped begin a sonic shift that still shapes music today. What he was doing sounds almost obvious now, but at the time it was genuinely strange: treating recorded noise as a musical material, something to be sculpted rather than simply captured.</p>
+        </div>
+
+        <div class="text-row">
+            <span class="song-year">03</span>
             <p>This project traces that evolution. Eleven pieces, spanning 1932 to 2025, each one marking a different moment in a larger story about what music can be when it no longer needs a traditional instrument to exist. The range is intentional: from early electroacoustic experiments in European studios to Acid House breaking open on Chicago dance floors, from Daphne Oram drawing sound directly onto film strips to Oneohtrix Point Never building drifting synthesizer worlds in a bedroom.</p>
-            <p>Freed from traditional instruments, electronic music can take on almost any form. It can be patient and ambient, like Brian Eno's slowly accumulating tones in Music for Airports. It can be precise and almost architectural, like Autechre's interlocking grid rhythms. It can be abrasive and clinical, like Ryoji Ikeda treating data streams as composition. Each artist was working with a different question, and each one found a genuinely different answer.</p>
+        </div>
+
+        <div class="text-row">
+            <span class="song-year">04</span>
+            <p>Freed from traditional instruments, electronic music can take on almost any form. It can be patient and ambient, like Brian Eno&rsquo;s slowly accumulating tones in Music for Airports. It can be precise and almost architectural, like Autechre&rsquo;s interlocking grid rhythms. It can be abrasive and clinical, like Ryoji Ikeda treating data streams as composition. Each artist was working with a different question, and each one found a genuinely different answer.</p>
+        </div>
+
+        <div class="text-row">
+            <span class="song-year">05</span>
             <p>Through a series of real-time interactive visualizers, I try to make those ideas visible. Each one is built specifically around a single piece: its structure, its texture, its feeling and pacing. Some are flat and geometric. Others are spatial and immersive. Some respond to rhythm and pulse directly, others drift and accumulate over time. The goal was always for each image to feel like it could only belong to that one piece of music, and no other.</p>
+        </div>
+
+        <div class="text-row">
+            <span class="song-year">06</span>
             <p>Each visualizer reacts to the music as it plays, translating frequency, amplitude, and rhythm into moving image. Sound, once built from tape loops and waveform generators and mathematical functions, becomes something you can actually see. That translation is not meant to explain the music or illustrate it. It is meant to sit alongside it, to give a shape to something that usually exists only in time and air.</p>
+        </div>
+
+        <div class="text-row">
+            <span class="song-year">07</span>
             <p>Everything here was built from scratch in pure code. No templates, no frameworks, no pre-built tools. Each visualization is a custom piece of software written specifically for its song, working directly with audio data to generate form in real time. The whole project lives as a single website. There is no app, no installation. You move through a timeline and the history unfolds as you go, one piece at a time, each with its own visual language.</p>
-            <p>The intention was always to make something that felt authored rather than assembled. Every choice, what to include, how to visualize it, what order to move through, is part of building a specific argument about what this music is and why it still matters.</p>
+        </div>
+
+        <div class="text-row">
+            <span class="song-year">08</span>
+            <p>The intention was always to make something that felt authored rather than assembled. Every choice&mdash;what to include, how to visualize it, what order to move through&mdash;is part of building a specific argument about what this music is and why it still matters.</p>
+        </div>
+
+        <div class="text-row">
+            <span class="song-year">09</span>
             <p>The question that started all of this was a simple one. What does sound look like? I am still not entirely sure there is one answer. But I think that is exactly the right kind of question to spend a thesis on.</p>
         </div>
+
     </div>
+
+    <footer id="site-footer">
+        <a href="index.html">&#8592;</a>
+        <span class="footer-title">A Visual History of Electronic Music</span>
+        <a href="https://sabrina.cargo.site" target="_blank" class="footer-credit">Sabrina Wu &middot; Parsons CD &rsquo;26</a>
+    </footer>
 
     <script>
         /* ── Auto-scroll ── */
@@ -244,101 +277,206 @@
         col.addEventListener('wheel', onUserScroll, { passive: true });
         col.addEventListener('touchstart', onUserScroll, { passive: true });
         setTimeout(() => requestAnimationFrame(scrollStep), 800);
-
-        /* ── Soft press blob ── */
-        const wrap   = document.getElementById('blobWrap');
-        const deform = document.getElementById('blobDeform');
-        const blobEl = wrap.querySelector('.blob');
-
-        const SIZE = 220;
-        const R    = SIZE / 2;  // blob radius
-
-        // fixed home position — right side, vertically centered
-        const homeX = () => window.innerWidth  - 380;
-        const homeY = () => window.innerHeight / 2 - R;
-
-        let px = homeX(), py = homeY();
-        let mx = -9999, my = -9999;
-
-        // deformation state (interpolated each frame)
-        let curDepth  = 0;   // 0 = no press, 1 = fully pressed
-        let curAngle  = 0;   // direction of press in radians
-        let popScale  = 1;   // extra scale for click pop
-
-        // gentle breathing position offset
-        let t = 0;
-
-        function positionWrap() {
-            wrap.style.left = px + 'px';
-            wrap.style.top  = py + 'px';
-        }
-        positionWrap();
-
-        document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-
-        // click: gentle elastic pop — inflate then settle
-        blobEl.addEventListener('click', () => {
-            popScale = 1.12;
-        });
-
-        function lerp(a, b, t) { return a + (b - a) * t; }
-
-        function blobStep() {
-            t += 0.008;
-
-            // lazy breathing drift — blob hovers gently in place
-            const hx = homeX() + Math.sin(t * 0.55) * 8;
-            const hy = homeY() + Math.sin(t * 0.38 + 1.1) * 6;
-            px = lerp(px, hx, 0.012);
-            py = lerp(py, hy, 0.012);
-            positionWrap();
-
-            // cursor relative to blob center
-            const cx = px + R;
-            const cy = py + R;
-            const dx = mx - cx;
-            const dy = my - cy;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            // how deeply cursor is inside blob (0 at edge, 1 at center)
-            const pressZone = R + 30; // a little beyond edge feels soft
-            const targetDepth = dist < pressZone
-                ? Math.max(0, 1 - dist / pressZone)
-                : 0;
-
-            const targetAngle = Math.atan2(dy, dx);
-
-            // smooth interpolation — slow in, slow out
-            curDepth = lerp(curDepth, targetDepth, 0.06);
-            // angle: only lerp when pressing to avoid snap
-            if (curDepth > 0.02) {
-                // lerp angle on the short arc
-                let da = targetAngle - curAngle;
-                if (da >  Math.PI) da -= Math.PI * 2;
-                if (da < -Math.PI) da += Math.PI * 2;
-                curAngle += da * 0.08;
-            }
-
-            // pop settles back to 1
-            popScale = lerp(popScale, 1, 0.09);
-
-            // build deform transform:
-            // rotate to press axis → compress in that direction → expand perpendicular → rotate back
-            const deg    = curAngle * 180 / Math.PI;
-            const squish = 1 - curDepth * 0.10;   // compress along press axis
-            const bulge  = 1 + curDepth * 0.05;   // expand perpendicular
-            const ps     = popScale;
-
-            deform.style.transform =
-                `scale(${ps}) rotate(${deg}deg) scaleX(${squish}) scaleY(${bulge}) rotate(${-deg}deg)`;
-
-            requestAnimationFrame(blobStep);
-        }
-        requestAnimationFrame(blobStep);
     </script>
 
     <script>
-    /* ── Film grain (static, fine) ── */
+    /* ── Ohm visualizer — slow looping modes with natural transitions ── */
+    (function () {
+        const shapeImg = document.getElementById('shape-img');
+        const canvas   = document.getElementById('viz-canvas');
+        const ctx      = canvas.getContext('2d');
+        const buf      = document.createElement('canvas');
+        const bc       = buf.getContext('2d');
+
+        let W = 0, H = 0, t = 0;
+
+        function drawOhm() {
+            const sc = shapeImg.getContext('2d');
+            sc.clearRect(0, 0, W, H);
+            const fs = H * 0.88;
+            sc.font = '400 ' + fs + 'px "LinotypeUnivers", sans-serif';
+            sc.textAlign = 'center'; sc.textBaseline = 'middle';
+            sc.fillStyle = '#fff';
+            sc.fillText('\u03A9', W / 2, H / 2);
+        }
+
+        function syncSize() {
+            const dpr  = window.devicePixelRatio || 1;
+            const rect = shapeImg.getBoundingClientRect();
+            W = Math.round(rect.width  * dpr);
+            H = Math.round(rect.height * dpr);
+            canvas.width  = buf.width  = W;
+            canvas.height = buf.height = H;
+            canvas.style.width  = rect.width  + 'px';
+            canvas.style.height = rect.height + 'px';
+            shapeImg.width = W; shapeImg.height = H;
+            bc.clearRect(0, 0, W, H);
+            drawOhm();
+        }
+        syncSize();
+        window.addEventListener('resize', syncSize);
+
+        // ── Gradient rectangle helper ──────────────────────────────────────────
+        function hBar(y, h, alpha) {
+            // Horizontal bar: gradient fades at left and right edges
+            const g = ctx.createLinearGradient(0, 0, W, 0);
+            g.addColorStop(0,    `rgba(255,255,255,0)`);
+            g.addColorStop(0.15, `rgba(255,255,255,${alpha})`);
+            g.addColorStop(0.85, `rgba(255,255,255,${alpha})`);
+            g.addColorStop(1,    `rgba(255,255,255,0)`);
+            ctx.fillStyle = g;
+            ctx.fillRect(0, y - h / 2, W, h);
+        }
+
+        function vBar(x, w, alpha) {
+            // Vertical bar: gradient fades at top and bottom edges
+            const g = ctx.createLinearGradient(0, 0, 0, H);
+            g.addColorStop(0,    `rgba(255,255,255,0)`);
+            g.addColorStop(0.15, `rgba(255,255,255,${alpha})`);
+            g.addColorStop(0.85, `rgba(255,255,255,${alpha})`);
+            g.addColorStop(1,    `rgba(255,255,255,0)`);
+            ctx.fillStyle = g;
+            ctx.fillRect(x - w / 2, 0, w, H);
+        }
+
+        // ── Modes ─────────────────────────────────────────────────────────────
+
+        // 1. Horizontal drift — thick bars slowly floating vertically
+        function mHBars() {
+            ctx.fillStyle = 'rgba(0,0,0,0.07)';
+            ctx.fillRect(0, 0, W, H);
+            const bars = [
+                { yBase: 0.25, speed: 0.004, amp: 0.12, h: 0.22, alpha: 0.85 },
+                { yBase: 0.55, speed: 0.003, amp: 0.10, h: 0.30, alpha: 0.60 },
+                { yBase: 0.78, speed: 0.005, amp: 0.08, h: 0.16, alpha: 0.45 },
+            ];
+            bars.forEach(b => {
+                const y = H * (b.yBase + b.amp * Math.sin(t * b.speed));
+                hBar(y, H * b.h, b.alpha);
+            });
+        }
+
+        // 2. Vertical columns — thick bars pulsing in width
+        function mVBars() {
+            ctx.fillStyle = 'rgba(0,0,0,0.07)';
+            ctx.fillRect(0, 0, W, H);
+            const cols = [
+                { xBase: 0.25, speed: 0.005, wBase: 0.28, wAmp: 0.10, alpha: 0.80 },
+                { xBase: 0.60, speed: 0.004, wBase: 0.22, wAmp: 0.08, alpha: 0.55 },
+                { xBase: 0.80, speed: 0.006, wBase: 0.16, wAmp: 0.06, alpha: 0.40 },
+            ];
+            cols.forEach(c => {
+                const w = W * (c.wBase + c.wAmp * Math.sin(t * c.speed));
+                vBar(W * c.xBase, w, c.alpha);
+            });
+        }
+
+        // 3. Cross — one thick horizontal + one thick vertical bar slowly drifting
+        function mCross() {
+            ctx.fillStyle = 'rgba(0,0,0,0.07)';
+            ctx.fillRect(0, 0, W, H);
+            const hy = H * (0.5 + 0.15 * Math.sin(t * 0.004));
+            const vx = W * (0.5 + 0.15 * Math.sin(t * 0.005 + 1.2));
+            hBar(hy, H * 0.28, 0.80);
+            vBar(vx, W * 0.26, 0.65);
+            // Thinner echo bars
+            hBar(H * (0.3  + 0.08 * Math.sin(t * 0.006)),      H * 0.12, 0.35);
+            vBar(W * (0.25 + 0.06 * Math.sin(t * 0.007 + 2.0)), W * 0.10, 0.30);
+        }
+
+        // 4. Stack — several horizontal bars layered and shifting at different speeds
+        function mStack() {
+            ctx.fillStyle = 'rgba(0,0,0,0.07)';
+            ctx.fillRect(0, 0, W, H);
+            const layers = [
+                { yBase: 0.20, speed: 0.003, amp: 0.14, h: 0.35, alpha: 0.75 },
+                { yBase: 0.50, speed: 0.005, amp: 0.10, h: 0.25, alpha: 0.55 },
+                { yBase: 0.72, speed: 0.004, amp: 0.12, h: 0.18, alpha: 0.40 },
+                { yBase: 0.40, speed: 0.006, amp: 0.08, h: 0.10, alpha: 0.30 },
+            ];
+            layers.forEach(l => {
+                const y = H * (l.yBase + l.amp * Math.sin(t * l.speed));
+                hBar(y, H * l.h, l.alpha);
+            });
+        }
+
+        // 5. Sweep — one very wide vertical bar slowly crossing the space
+        function mSweep() {
+            ctx.fillStyle = 'rgba(0,0,0,0.07)';
+            ctx.fillRect(0, 0, W, H);
+            // Primary sweep bar
+            const x1 = W * (0.5 + 0.45 * Math.sin(t * 0.004));
+            vBar(x1, W * 0.40, 0.85);
+            // Secondary bar moving opposite
+            const x2 = W * (0.5 - 0.35 * Math.sin(t * 0.005 + 0.8));
+            vBar(x2, W * 0.22, 0.45);
+            // Slow horizontal accent
+            const hy = H * (0.5 + 0.20 * Math.sin(t * 0.003));
+            hBar(hy, H * 0.12, 0.35);
+        }
+
+        const MODES = [mHBars, mVBars, mCross, mStack, mSweep];
+
+        // ── Transition state machine ───────────────────────────────────────────
+        const HOLD = 420;   // ~7 s at 60 fps
+        const FADE = 60;    // ~1 s
+        let modeIdx = 0;
+        let state   = 'show';   // 'show' | 'out' | 'in'
+        let stateT  = 0;
+
+        function advanceState() {
+            stateT++;
+            if (state === 'show' && stateT >= HOLD) {
+                state = 'out'; stateT = 0;
+            } else if (state === 'out' && stateT >= FADE) {
+                modeIdx = (modeIdx + 1) % MODES.length;
+                bc.clearRect(0, 0, W, H);
+                rings = [];
+                state = 'in'; stateT = 0;
+            } else if (state === 'in' && stateT >= FADE) {
+                state = 'show'; stateT = 0;
+            }
+        }
+
+        function fadeAlpha() {
+            if (state === 'out') return stateT / FADE;
+            if (state === 'in')  return 1 - stateT / FADE;
+            return 0;
+        }
+
+        // ── Main loop ─────────────────────────────────────────────────────────
+        function loop() {
+            t++;
+            ctx.clearRect(0, 0, W, H);
+
+            if (W > 0) {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, W, H);
+
+                MODES[modeIdx]();
+
+                // Smooth fade overlay between modes
+                const fa = fadeAlpha();
+                if (fa > 0) {
+                    ctx.fillStyle = `rgba(0,0,0,${fa})`;
+                    ctx.fillRect(0, 0, W, H);
+                }
+
+                // Clip everything to the Ω shape
+                ctx.globalCompositeOperation = 'destination-in';
+                ctx.drawImage(shapeImg, 0, 0, W, H);
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
+            advanceState();
+            requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+    })();
+    </script>
+
+    <script>
+    /* ── Film grain ── */
     (function(){
         var c=document.createElement('canvas');
         c.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;opacity:0.055;';
