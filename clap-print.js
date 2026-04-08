@@ -23,8 +23,10 @@
         transform:      'translate(-50%, -50%)',
         fontFamily:     'LinotypeUnivers, sans-serif',
         fontSize:       '13px',
+        fontWeight:     '700',
         letterSpacing:  '0.08em',
         color:          '#fff',
+        textShadow:     '0 0 8px rgba(255,255,255,0.8)',
         background:     'transparent',
         pointerEvents:  'none',
         zIndex:         '99999',
@@ -117,7 +119,7 @@
       // Black background, white visuals (original)
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, out.width, out.height);
-      ctx.filter = 'contrast(1.8) brightness(1.4)';
+      ctx.filter = 'contrast(2.5) brightness(2.4) saturate(1.5)';
     }
 
     for (const c of canvases) {
@@ -140,24 +142,37 @@
 
     // Bottom left: "Artist — Song (italic), Year" using window.PRINT_LABEL
     const label = window.PRINT_LABEL;
+    const fontWeight = printMode === 'black' ? '700 ' : '';
     if (label && label.artist && label.song && label.year) {
       const prefix = label.artist + ' \u2014 ';
       const suffix = ', ' + label.year;
       ctx.textAlign = 'left';
-      ctx.font = `${fontSize}px LinotypeUnivers, sans-serif`;
+      ctx.font = `${fontWeight}${fontSize}px LinotypeUnivers, sans-serif`;
       ctx.fillText(prefix, pad, y);
       const prefixW = ctx.measureText(prefix).width;
-      ctx.font = `italic ${fontSize}px LinotypeUnivers, sans-serif`;
+      ctx.font = `italic ${fontWeight}${fontSize}px LinotypeUnivers, sans-serif`;
       ctx.fillText(label.song, pad + prefixW, y);
       const songW = ctx.measureText(label.song).width;
-      ctx.font = `${fontSize}px LinotypeUnivers, sans-serif`;
+      ctx.font = `${fontWeight}${fontSize}px LinotypeUnivers, sans-serif`;
       ctx.fillText(suffix, pad + prefixW + songW, y);
     }
 
     // Bottom right: website
     ctx.textAlign = 'right';
-    ctx.font = `${fontSize}px LinotypeUnivers, sans-serif`;
+    ctx.font = `${fontWeight}${fontSize}px LinotypeUnivers, sans-serif`;
     ctx.fillText('sabrinawu.me', out.width - pad, y);
+
+    // Debug preview — shows what will be sent to printer
+    const preview = document.createElement('img');
+    preview.src = out.toDataURL();
+    Object.assign(preview.style, {
+      position: 'fixed', top: '10px', left: '10px',
+      width: '320px', height: 'auto',
+      border: '2px solid red', zIndex: '999999',
+      pointerEvents: 'none'
+    });
+    document.body.appendChild(preview);
+    setTimeout(() => preview.remove(), 6000);
 
     out.toBlob(blob => {
       if (!blob) { console.warn('[print] toBlob failed'); return; }
