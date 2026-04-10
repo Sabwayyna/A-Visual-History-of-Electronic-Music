@@ -381,10 +381,13 @@
     const beat = () => t % 22  === 0;
     const sBeat= () => t % 66  === 0;
 
+    // ── Spiegel tower state (4 columns, heights from bottom) ─────────────────
+    const spTowers = { h: [0, 0, 0, 0], last: -1 };
+
     // ── Main loop ─────────────────────────────────────────────────────────────
     function loop() {
         t++;
-        if (currentMode !== prevMode) { bc.clearRect(0, 0, W, H); prevMode = currentMode; }
+        if (currentMode !== prevMode) { bc.clearRect(0, 0, W, H); prevMode = currentMode; spTowers.last = -1; }
         ctx.clearRect(0, 0, W, H);
 
         if (currentMode !== -1 && imgReady && W > 0) {
@@ -460,32 +463,49 @@
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 2 · Daphne Oram — Oramics spiral drawn on film ────────────────────────
+    // ── 2 · Daphne Oram — procedural score marks drawn left → right ──────────
     function mOram(v) {
-        const TOTAL = 1200, PER = 22, PAUSE = 8;
+        const TOTAL = 120, PER = 2, PAUSE = 50;
         const frames = Math.ceil(TOTAL / PER);
         const cycle  = t % (frames + PAUSE);
         if (cycle === 0) bc.clearRect(0, 0, W, H);
         if (cycle >= frames) { ctx.drawImage(buf, 0, 0); return; }
-        const cx = W / 2, cy = H / 2, maxR = Math.min(W, H) * 0.46;
         for (let j = 0; j < PER; j++) {
             const step = cycle * PER + j;
             if (step >= TOTAL) break;
-            const prog   = step / TOTAL;
-            const angle  = prog * Math.PI * 2 * 10;
-            const radius = prog * maxR;
-            const thick  = Math.max(2, Math.min(W, H) * 0.016 * (0.65 + 0.6 * v));
-            const noise  = 0.5 + 0.5 * Math.sin(angle * 4.5);
-            const bump   = noise > 0.3 ? Math.pow(noise, 0.75) * thick * 4 : 0;
-            bc.beginPath();
-            bc.arc(cx + Math.cos(angle) * (radius + bump), cy + Math.sin(angle) * (radius + bump), thick, 0, Math.PI * 2);
-            bc.fillStyle = `rgba(255,255,255,${0.85 + 0.15 * v})`;
-            bc.fill();
+            const prog = step / TOTAL;
+            // x advances left to right like a score being drawn
+            const x = prog * W * 0.92 + W * 0.04;
+            // y follows a slow organic curve with variation
+            const y = H * (0.15 + 0.70 * (0.5 + 0.4 * Math.sin(prog * Math.PI * 4.2 + v * 1.5)
+                                               + 0.1 * Math.sin(prog * Math.PI * 11)));
+            const alpha = 0.65 + 0.35 * v;
+            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+            bc.fillStyle   = `rgba(255,255,255,${alpha})`;
+            bc.lineWidth   = Math.max(1, Math.min(W, H) * 0.009);
+            const type = (step * 7) % 5 | 0;
+            if (type === 0) {                // arc stroke
+                const r = rn(H * 0.025, H * 0.09);
+                bc.beginPath(); bc.arc(x, y, r, rn(0, Math.PI), rn(Math.PI, Math.PI * 2)); bc.stroke();
+            } else if (type === 1) {         // vertical stroke
+                const len = rn(H * 0.04, H * 0.13);
+                bc.beginPath(); bc.moveTo(x, y - len * 0.5); bc.lineTo(x, y + len * 0.5); bc.stroke();
+            } else if (type === 2) {         // filled dot
+                const r = rn(2, Math.min(W, H) * 0.02);
+                bc.beginPath(); bc.arc(x, y, r, 0, Math.PI * 2); bc.fill();
+            } else if (type === 3) {         // diagonal dash
+                const len = rn(W * 0.015, W * 0.07);
+                const tilt = rn(-H * 0.025, H * 0.025);
+                bc.beginPath(); bc.moveTo(x, y); bc.lineTo(x + len, y + tilt); bc.stroke();
+            } else {                         // small rect
+                const sw = rn(3, W * 0.018), sh = rn(H * 0.012, H * 0.065);
+                bc.strokeRect(x - sw * 0.5, y - sh * 0.5, sw, sh);
+            }
         }
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 3 · Delia Derbyshire — oscilloscope sine layers ───────────────────────
+    // ── 3 · Delia Derbyshire — oscilloscope sine layers + rings ─────────────
     function mDerbyshire(v) {
         ctx.fillStyle = 'rgba(0,0,0,0.05)';
         ctx.fillRect(0, 0, W, H);
@@ -506,6 +526,22 @@
             }
             ctx.stroke();
         }
+        // Oscilloscope rings — slow pulsing concentric circles
+        const cx = W * 0.5, cy = H * 0.5;
+        const ringDefs = [
+            { r: 0.30, sp: 0.007, a: 0.20 },
+            { r: 0.44, sp: 0.005, a: 0.13 },
+            { r: 0.19, sp: 0.011, a: 0.25 },
+            { r: 0.55, sp: 0.003, a: 0.08 },
+        ];
+        ringDefs.forEach(rd => {
+            const pulse = 0.55 + 0.45 * Math.sin(t * rd.sp);
+            ctx.beginPath();
+            ctx.arc(cx, cy, Math.min(W, H) * rd.r * pulse, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255,255,255,${rd.a * (0.5 + v * 0.5)})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
     }
 
     // ── 4 · Brian Eno — slow accumulating horizon lines ───────────────────────
@@ -532,45 +568,40 @@
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 5 · Laurie Spiegel — algorithmic wave network ─────────────────────────
+    // ── 5 · Laurie Spiegel — 4 towers of stacking blocks (like the visualizer) ─
     function mSpiegel(v, b) {
-        bc.fillStyle = 'rgba(0,0,0,0.005)';
+        // Reset tower heights when entering this mode
+        if (spTowers.last !== 5) {
+            spTowers.h = [H * 0.95, H * 0.95, H * 0.95, H * 0.95];
+            spTowers.last = 5;
+        }
+        bc.fillStyle = 'rgba(0,0,0,0.004)';
         bc.fillRect(0, 0, W, H);
-        const always = ri(3, 6);
-        for (let i = 0; i < always; i++) {
-            const yBase = rn(H * 0.03, H * 0.97), amp = rn(10, 55) * (0.4 + v);
-            const freq  = rn(0.008, 0.055);
-            bc.strokeStyle = `rgba(255,255,255,${rn(0.4, 0.85)})`;
-            bc.lineWidth = rn(0.5, 2.5);
-            bc.beginPath();
-            for (let x = 0; x <= W; x++) {
-                const y = yBase + Math.sin(x * freq + t * 0.012) * amp;
-                x === 0 ? bc.moveTo(x, y) : bc.lineTo(x, y);
-            }
-            bc.stroke();
+        // 4 column x-positions mirroring the 3D towers at ±d
+        const colX = [W * 0.20, W * 0.38, W * 0.62, W * 0.80];
+        // On beat: grow one or two towers with a fresh block
+        const nBlocks = b ? ri(1, 3) : (Math.random() < 0.35 ? 1 : 0);
+        for (let k = 0; k < nBlocks; k++) {
+            const i  = ri(0, 4);
+            const bw = rn(W * 0.055, W * 0.14) * (0.45 + v * 0.7);
+            const bh = rn(H * 0.012, H * 0.055) * (0.5 + v * 0.75);
+            bc.fillStyle = `rgba(255,255,255,${rn(0.72, 1.0)})`;
+            bc.fillRect(colX[i] - bw * 0.5, spTowers.h[i] - bh, bw, bh);
+            // Thin edge outline for depth
+            bc.strokeStyle = `rgba(255,255,255,${rn(0.4, 0.7)})`;
+            bc.lineWidth = 0.5;
+            bc.strokeRect(colX[i] - bw * 0.5, spTowers.h[i] - bh, bw, bh);
+            spTowers.h[i] = Math.max(H * 0.04, spTowers.h[i] - bh);
+            // Reset tower that has grown too high so it cycles
+            if (spTowers.h[i] < H * 0.12) spTowers.h[i] = H * 0.95;
         }
-        if (b) {
-            const n = ri(3, 7);
-            for (let i = 0; i < n; i++) {
-                const yBase = rn(H * 0.03, H * 0.97), amp = rn(20, 70) * (0.5 + v);
-                const freq  = rn(0.008, 0.055);
-                bc.strokeStyle = `rgba(255,255,255,${rn(0.7, 1.0)})`;
-                bc.lineWidth = rn(1, 3);
-                bc.beginPath();
-                for (let x = 0; x <= W; x++) {
-                    const y = yBase + Math.sin(x * freq + t * 0.012) * amp;
-                    x === 0 ? bc.moveTo(x, y) : bc.lineTo(x, y);
-                }
-                bc.stroke();
-            }
-            const nr = ri(2, 5);
-            for (let i = 0; i < nr; i++) {
-                const gs = rn(10, 60);
-                bc.strokeStyle = `rgba(255,255,255,${rn(0.4, 0.8)})`;
-                bc.lineWidth = rn(0.8, 2);
-                bc.strokeRect(rn(0, W - gs), rn(0, H - gs), gs, gs);
-            }
-        }
+        // Mirrored shadow blocks below centre (like the 3D reflected shadows)
+        const shadow = bc;
+        shadow.fillStyle = 'rgba(255,255,255,0.04)';
+        colX.forEach((cx, i) => {
+            const used = H * 0.95 - spTowers.h[i];
+            if (used > 0) shadow.fillRect(cx - W * 0.07, H * 0.95, W * 0.14, used * 0.3);
+        });
         ctx.drawImage(buf, 0, 0);
     }
 
@@ -606,37 +637,44 @@
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 7 · Nikolai Voinov — geometric paper-cut shapes ───────────────────────
+    // ── 7 · Nikolai Voinov — optical film scan + drawn waveforms ─────────────
     function mVoinov(v, b, sb) {
-        bc.fillStyle = 'rgba(0,0,0,0.007)';
+        bc.fillStyle = 'rgba(0,0,0,0.010)';
         bc.fillRect(0, 0, W, H);
-        const n = sb ? ri(8, 16) : (b ? ri(5, 10) : ri(3, 6));
+        // Quantised horizontal bands — like optical film strip rows
+        const numBands = 10;
+        const bandH    = H / numBands;
+        const n = sb ? ri(6, 12) : (b ? ri(3, 7) : ri(1, 4));
         for (let i = 0; i < n; i++) {
-            const x     = rn(W * 0.02, W * 0.98);
-            const y     = rn(H * 0.02, H * 0.98);
-            const size  = rn(30, sb ? 180 : 110) * (0.5 + v * 0.6);
-            const alpha = rn(0.65, 1.0);
-            const fill  = Math.random() < 0.6;
-            bc.fillStyle   = `rgba(255,255,255,${alpha})`;
-            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
-            bc.lineWidth   = rn(1.5, 3);
-            const type = ri(0, 3);
-            bc.beginPath();
-            if (type === 0) {
-                bc.moveTo(x, y - size);
-                bc.lineTo(x + size * 0.866, y + size * 0.5);
-                bc.lineTo(x - size * 0.866, y + size * 0.5);
-                bc.closePath();
-            } else if (type === 1) {
-                bc.moveTo(x, y);
-                bc.lineTo(x + size, y);
-                bc.lineTo(x, y - size);
-                bc.closePath();
-            } else {
-                const rw = size * rn(0.5, 2.5), rh = size * rn(0.3, 1.2);
-                bc.rect(x - rw / 2, y - rh / 2, rw, rh);
+            const band = ri(0, numBands);
+            const cy   = (band + 0.5) * bandH;
+            // Scanning horizontal line (the optical waveform track)
+            const len   = rn(W * 0.18, W * 0.88);
+            const xOff  = rn(0, W - len);
+            const thick = rn(1, 3.5) * (0.5 + v * 0.8);
+            bc.fillStyle = `rgba(255,255,255,${rn(0.55, 0.95)})`;
+            bc.fillRect(xOff, cy - thick * 0.5, len, thick);
+            // Drawn paper-sound shape within the band (Voinov drew shapes on film)
+            if (Math.random() < 0.45) {
+                const mx   = rn(W * 0.08, W * 0.92);
+                const ms   = rn(5, 20) * (0.5 + v * 0.6);
+                const a    = rn(0.55, 0.92);
+                bc.strokeStyle = `rgba(255,255,255,${a})`;
+                bc.fillStyle   = `rgba(255,255,255,${a})`;
+                bc.lineWidth   = rn(1, 2.5);
+                bc.beginPath();
+                if (Math.random() < 0.5) {         // triangle
+                    bc.moveTo(mx, cy - ms);
+                    bc.lineTo(mx + ms * 0.866, cy + ms * 0.5);
+                    bc.lineTo(mx - ms * 0.866, cy + ms * 0.5);
+                    bc.closePath(); bc.stroke();
+                } else {                            // square/rect
+                    const rw = ms * rn(0.6, 2.0), rh = ms * rn(0.4, 1.0);
+                    Math.random() < 0.5
+                        ? (bc.strokeRect(mx - rw * 0.5, cy - rh * 0.5, rw, rh))
+                        : (bc.fillRect(mx - rw * 0.5, cy - rh * 0.5, rw, rh));
+                }
             }
-            fill ? bc.fill() : bc.stroke();
         }
         ctx.drawImage(buf, 0, 0);
     }
@@ -746,31 +784,48 @@
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 11 · Rashad Becker — spectrogram frequency layers ─────────────────────
+    // ── 11 · Rashad Becker — void particles + wireframe city blocks ───────────
     function mBecker(v, b) {
-        bc.fillStyle = 'rgba(0,0,0,0.009)';
+        bc.fillStyle = 'rgba(0,0,0,0.007)';
         bc.fillRect(0, 0, W, H);
-        const n = b ? ri(12, 24) : ri(6, 14);
-        for (let k = 0; k < n; k++) {
-            const y    = rn(0, H);
-            const segs = ri(4, 18);
-            bc.strokeStyle = `rgba(255,255,255,${rn(0.4, 0.95)})`;
-            bc.lineWidth   = rn(0.5, 2.5);
-            let x = rn(0, W * 0.3);
-            for (let s = 0; s < segs; s++) {
-                const len = rn(8, 100);
-                bc.beginPath();
-                bc.moveTo(x, y); bc.lineTo(x + len, y);
-                bc.stroke();
-                x += len + rn(1, 18);
-                if (x > W) break;
+        // Sparse drifting particles (the particle system from the visualizer)
+        const np = ri(4, 10);
+        for (let i = 0; i < np; i++) {
+            const ps = rn(0.5, 2.8);
+            bc.fillStyle = `rgba(255,255,255,${rn(0.35, 0.90)})`;
+            bc.fillRect(rn(0, W), rn(0, H), ps, ps);
+        }
+        // Wireframe building boxes (city environment from Three.js scene)
+        if (b) {
+            const nb = ri(2, 5);
+            for (let i = 0; i < nb; i++) {
+                const bw = rn(W * 0.04, W * 0.18);
+                const bh = rn(H * 0.06, H * 0.28) * (0.4 + v * 0.8);
+                const bx = rn(W * 0.04, W * 0.92 - bw);
+                const by = rn(H * 0.08, H * 0.88 - bh);
+                bc.strokeStyle = `rgba(255,255,255,${rn(0.40, 0.85)})`;
+                bc.lineWidth   = rn(0.5, 1.5);
+                bc.strokeRect(bx, by, bw, bh);
+                // Occasional inner detail lines (wireframe edges)
+                if (Math.random() < 0.5) {
+                    bc.beginPath();
+                    bc.moveTo(bx, by + bh * 0.5); bc.lineTo(bx + bw, by + bh * 0.5);
+                    bc.strokeStyle = `rgba(255,255,255,${rn(0.15, 0.35)})`;
+                    bc.stroke();
+                }
             }
         }
-        const nv = ri(2, 5);
-        for (let i = 0; i < nv; i++) {
-            const sx = rn(0, W), sy = rn(0, H), sh = rn(8, 50);
-            bc.strokeStyle = `rgba(255,255,255,${rn(0.45, 0.9)})`; bc.lineWidth = rn(0.5, 2);
-            bc.beginPath(); bc.moveTo(sx, sy); bc.lineTo(sx, sy + sh); bc.stroke();
+        // Occasional ghost cluster (shader void effect)
+        if (Math.random() < 0.08) {
+            const gn = ri(12, 28);
+            const gx = rn(W * 0.1, W * 0.9), gy = rn(H * 0.1, H * 0.9);
+            for (let i = 0; i < gn; i++) {
+                const r = rn(2, 22);
+                const a = rn(0, Math.PI * 2);
+                const ps = rn(0.5, 2);
+                bc.fillStyle = `rgba(255,255,255,${rn(0.3, 0.7)})`;
+                bc.fillRect(gx + Math.cos(a) * r, gy + Math.sin(a) * r, ps, ps);
+            }
         }
         ctx.drawImage(buf, 0, 0);
     }
