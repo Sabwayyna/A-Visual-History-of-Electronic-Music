@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Four Aspects - Daphne Oram (1960)</title>
     <link rel="icon" href="../favicon/favicon.svg" type="image/svg+xml"><link rel="icon" href="../favicon/favicon.ico" sizes="any">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
     <style>
         @font-face {
             font-family: "LinotypeUnivers";
@@ -21,18 +19,48 @@
             box-sizing: border-box;
         }
 
-        body {
+        body, html {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background: #000000;
+            background: #030303;
             font-family: "LinotypeUnivers", sans-serif;
             font-weight: 400;
             font-size: 14px;
+            height: 100vh;
+            width: 100vw;
         }
 
-        #fileInput {
-            display: none;
+        #score-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            z-index: 0;
+        }
+
+        /* ── Start overlay ── */
+        #startOverlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            cursor: pointer;
+            transition: opacity 0.8s ease;
+        }
+        #startOverlay span {
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.45);
+        }
+        #startOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
 
         #controlsBtn {
@@ -87,9 +115,7 @@
             pointer-events: auto;
         }
 
-        #controlsPanel .title {
-            display: none;
-        }
+        #controlsPanel .title { display: none; }
 
         #controlsPanel .control-item {
             display: flex;
@@ -106,48 +132,27 @@
             letter-spacing: 0.1em;
         }
 
-        #saveConfirmation {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #ffffff;
-            border: 3px solid #000000;
-            padding: 20px 40px;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 6px 6px 0px #000000;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-        }
-
-        #saveConfirmation.show {
-            opacity: 1;
-        }
+        #saveConfirmation { display: none; }
 
         #speedIndicator {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #ffffff;
-            border: 3px solid #000000;
-            padding: 20px 40px;
-            font-size: 14px;
-            font-weight: 700;
-            box-shadow: 6px 6px 0px #000000;
+            background: #000;
+            padding: 12px 24px;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
             z-index: 1000;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s ease;
-            letter-spacing: 2px;
+            transition: opacity 0.3s ease;
         }
-
-        #speedIndicator.show {
-            opacity: 1;
-        }
+        #speedIndicator.show { opacity: 1; }
 
         #backLink {
             position: fixed;
@@ -163,16 +168,10 @@
             line-height: 1;
             user-select: none;
         }
-
         #backLink:hover {
             color: rgba(255, 255, 255, 0.85);
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
         }
-
-
-
-
-
 
         #song-header {
             position: fixed;
@@ -187,48 +186,26 @@
             text-transform: uppercase;
             white-space: nowrap;
             z-index: 9999;
-            pointer-events: none;
-        }
-
-        /* ── Info Panel ── */
-        #song-header {
             cursor: pointer;
             pointer-events: auto;
             transition: color 0.15s ease;
         }
-
-        #song-header:hover {
-            color: rgba(255, 255, 255, 1.0);
-        }
-
-        #song-header:active {
-            color: rgba(255, 255, 255, 0.25);
-        }
-
-        #song-header.open {
-            color: rgba(255, 255, 255, 1.0);
-        }
+        #song-header:hover  { color: rgba(255, 255, 255, 1.0); }
+        #song-header:active { color: rgba(255, 255, 255, 0.25); }
+        #song-header.open   { color: rgba(255, 255, 255, 1.0); }
 
         #info-panel {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.76);
             z-index: 9998;
             transform: translateY(-100%);
             transition: transform 0.38s cubic-bezier(0.77, 0, 0.175, 1);
             overflow-y: auto;
         }
+        #info-panel.open { transform: translateY(0); }
 
-        #info-panel.open {
-            transform: translateY(0);
-        }
-
-        #info-panel-inner {
-            padding: 2vh 7vw 12vh;
-        }
+        #info-panel-inner { padding: 2vh 7vw 12vh; }
 
         .ip-close-btn {
             position: sticky;
@@ -246,10 +223,7 @@
             transition: color 0.2s;
             user-select: none;
         }
-
-        .ip-close-btn:hover {
-            color: rgba(255, 255, 255, 0.72);
-        }
+        .ip-close-btn:hover { color: rgba(255, 255, 255, 0.72); }
 
         .ip-meta {
             display: flex;
@@ -259,7 +233,6 @@
             row-gap: 1vh;
             margin-bottom: 4vh;
         }
-
         .ip-year {
             font-family: "LinotypeUnivers", sans-serif;
             font-size: 2.4vw;
@@ -270,7 +243,6 @@
             text-transform: uppercase;
             order: 2;
         }
-
         .ip-title {
             font-family: "LinotypeUnivers", sans-serif;
             font-size: 2.4vw;
@@ -284,7 +256,6 @@
             order: 1;
             margin-bottom: 2vh;
         }
-
         .ip-artist {
             font-family: "LinotypeUnivers", sans-serif;
             font-size: 2.4vw;
@@ -295,10 +266,6 @@
             text-transform: uppercase;
             order: 3;
         }
-
-        .ip-text {
-        }
-
         .ip-text p {
             font-family: "LinotypeUnivers", sans-serif;
             font-size: 2.4vw;
@@ -308,10 +275,7 @@
             color: rgba(255, 255, 255, 0.78);
             margin-bottom: 2.5vh;
         }
-
-        .ip-text p:last-child {
-            margin-bottom: 0;
-        }
+        .ip-text p:last-child { margin-bottom: 0; }
 
         .ip-images-grid {
             display: grid;
@@ -319,13 +283,8 @@
             gap: 0.5vw;
             margin-bottom: 4vh;
         }
-        .ip-images-grid.cols-1 {
-            grid-template-columns: 1fr;
-            max-width: 48vw;
-        }
-        .ip-images-grid.cols-3 {
-            grid-template-columns: 1fr 1fr 1fr;
-        }
+        .ip-images-grid.cols-1 { grid-template-columns: 1fr; max-width: 48vw; }
+        .ip-images-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
         .ip-images-grid img {
             width: 100%;
             aspect-ratio: 4 / 3;
@@ -334,11 +293,7 @@
             filter: grayscale(100%);
             opacity: 0.72;
         }
-        .ip-images-grid.cols-1 img {
-            aspect-ratio: auto;
-            max-height: 45vh;
-            object-fit: contain;
-        }
+        .ip-images-grid.cols-1 img { aspect-ratio: auto; max-height: 45vh; object-fit: contain; }
 
         #nav-prev, #nav-next {
             position: fixed;
@@ -369,9 +324,7 @@
             background: rgba(255,255,255,0.85);
             filter: drop-shadow(0 0 6px rgba(255,255,255,0.5));
         }
-        #nav-prev:active::before, #nav-next:active::before {
-            background: rgba(255,255,255,1);
-        }
+        #nav-prev:active::before, #nav-next:active::before { background: rgba(255,255,255,1); }
         @keyframes navPulse {
             0%   { transform: scale(1);   background: rgba(255,255,255,0.3); }
             35%  { transform: scale(1.4); background: rgba(255,255,255,0.9); }
@@ -380,20 +333,12 @@
         #nav-prev.nav-tapped::before, #nav-next.nav-tapped::before {
             animation: navPulse 0.35s ease-out forwards;
         }
-    
-        /* ── Responsive: info panel & header ── */
-        .ip-year, .ip-title, .ip-artist, .ip-text p {
-            font-size: clamp(14px, 2.4vw, 44px);
-        }
-        .ip-close-btn { font-size: clamp(10px, 0.85vw, 14px); }
 
+        /* ── Responsive ── */
+        .ip-year, .ip-title, .ip-artist, .ip-text p { font-size: clamp(14px, 2.4vw, 44px); }
+        .ip-close-btn { font-size: clamp(10px, 0.85vw, 14px); }
         @media (max-width: 600px) {
-            #song-header {
-                max-width: calc(100vw - 130px);
-                overflow: hidden;
-                text-overflow: ellipsis;
-                font-size: 10px;
-            }
+            #song-header { max-width: calc(100vw - 130px); overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
         }
         @media (max-width: 1280px) {
             .ip-year, .ip-title, .ip-artist, .ip-text p { font-size: clamp(14px, 2.8vw, 36px); }
@@ -417,11 +362,19 @@
         * {
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
         }
-        /* static fine grain */
-        body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.055; background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>"); background-repeat: repeat; background-size: 160px; }
+        body::after {
+            content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.055;
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>");
+            background-repeat: repeat; background-size: 160px;
+        }
     </style>
 </head>
 <body>
+
+    <canvas id="score-canvas"></canvas>
+
+    <div id="startOverlay"><span>Tap to play</span></div>
+
     <div id="song-header">1960  -  Four Aspects  -  Daphne Oram</div>
     <div id="info-panel">
         <div id="info-panel-inner">
@@ -437,413 +390,390 @@
             </div>
             <div class="ip-text">
                 <p>Oram built the Oramics machine in her own studio: shapes drawn by hand on 35mm film strips would scan and control pitch, duration, and timbre. Sound as drawn notation. Four Aspects was among the first pieces realised through this method.</p>
-                <p>Blobs spiral outward from the centre as the piece progresses. Each mark responds to amplitude, wider when louder and absent in silence. Organic, asymmetric, hand-drawn in character. An attempt to render the sound the way Oram rendered scores.</p>
+                <p>Shapes emerge across stave lines as the piece progresses. Each mark responds to frequency bands — bass curves bulge downward, mid frequencies roll and wave, treble spikes upward in jagged peaks. Organic, asymmetric, procedurally drawn. An attempt to render the sound the way Oram rendered scores.</p>
             </div>
         </div>
-    </div>    <input type="file" id="fileInput" accept="audio/*" />
+    </div>
 
     <a href="../index.html" id="backLink">&#937;</a>
     <a href="karlheinz-stockhausen-studio-i-1953.html" id="nav-prev">&#9664;</a>
     <a href="delia-derbyshire-doctor-who-theme-1963.html" id="nav-next">&#9654;</a>
 
-    <div id="controlsBtn">
-        <span class="info-icon">i</span>
-    </div>
+    <div id="controlsBtn"><span class="info-icon">i</span></div>
     <div id="controlsPanel">
         <div class="title">Controls</div>
-        <div class="control-item">
-            <span class="key">SPACE</span>
-            <span>Play / Pause</span>
-        </div>
-        <div class="control-item">
-            <span class="key">&larr; &rarr;</span>
-            <span>Speed</span>
-        </div>
-        <div class="control-item">
-            <span class="key">S</span>
-            <span>Save Frame</span>
-        </div>
-        <div class="control-item">
-            <span class="key">C</span>
-            <span>Clear Canvas</span>
-        </div>
-        <div class="control-item">
-            <span class="key">H</span>
-            <span>Hide UI</span>
-        </div>
+        <div class="control-item"><span class="key">SPACE</span><span>Play / Pause</span></div>
+        <div class="control-item"><span class="key">&rarr;</span><span>Speed up</span></div>
+        <div class="control-item"><span class="key">&larr;</span><span>Slow down</span></div>
+        <div class="control-item"><span class="key">C</span><span>Clear canvas</span></div>
+        <div class="control-item"><span class="key">H</span><span>Hide UI</span></div>
     </div>
 
     <div id="saveConfirmation">FRAME SAVED</div>
     <div id="speedIndicator">1.0x</div>
 
-
-
     <script>
+    // ── Visualization: Generative Procedural Score (Daphne Oram — Four Aspects) ──
+    const canvas = document.getElementById('score-canvas');
+    const ctx    = canvas.getContext('2d');
 
-// Four Aspects  -  organic spiral worm visualizer
-// Song progress sweeps a spiral from centre outward; each mark is a fat,
-// tapered worm-shape inspired by the hand-drawn Oramics film strips.
-const AUTO_LOAD_AUDIO = '../Musique/04 - Daphne Oram - Four Aspects.mp3';
-const _customAudio = sessionStorage.getItem('customAudio') || null;
-if (_customAudio) sessionStorage.removeItem('customAudio');
+    const AUDIO_PATH = sessionStorage.getItem('customAudio') || '../Musique/04 - Daphne Oram - Four Aspects.mp3';
+    if (sessionStorage.getItem('customAudio')) sessionStorage.removeItem('customAudio');
 
-var song, fft, amp;
-var started = false;
-var grainBuffer, blobBuffer;
-var showUI = true;
-var playbackSpeed = 1.0;
-var frameCounter = 0;
+    let audioCtx, analyser, audioEl, dataArray;
+    let isPlaying    = false;
+    let audioStarted = false;
+    let lastTime     = 0;
+    let playbackSpeed = 1.0;
+    let showUI       = true;
 
-// ── geometry ──────────────────────────────────────────────────────────────────
-var gcx, gcy, outerR;
+    // ── Layout ──
+    const MARGIN_X  = 60;
+    const STAVE_GAP = 160;
+    const LINE_GAP  = 8;
+    let BASE_PPS    = 90; // pixels per second at 1x speed
+    let PIXELS_PER_SECOND = BASE_PPS;
 
-// ── spiral state ──────────────────────────────────────────────────────────────
-var lastTotalAngle = -1;
-var numRevolutions = 6;
-var NUM_STEPS_PER_REV = 72;    // steps per full ring
-var DRAW_STEP  = 0.0873;       // TWO_PI / 72 — set in setup
-var ARC_SPAN   = 0.480;        // DRAW_STEP * 5.5 — wide worm overlap
-var SILENCE_THRESHOLD = 0.010;
-var viewScale   = 2.4;
-var smoothedVol = 0;
+    let width, height;
+    let staveStartY   = 0; // absolute Y of the first stave row (never changes after init)
+    let cursorX       = MARGIN_X;
+    let currentStaveY = 0; // absolute Y of the row being written (grows indefinitely)
+    let scrollY         = 0; // current smooth viewport offset (pixels scrolled down)
+    let targetScrollY   = 0;
+    let lastManualScroll = 0; // timestamp of last user scroll — pauses auto-follow
+    const MANUAL_PAUSE  = 3500; // ms to pause auto-follow after manual scroll
+    let elements        = [];
 
-function preload() {
-  song = loadSound(_customAudio || AUTO_LOAD_AUDIO,
-    function() { console.log("Song loaded"); },
-    function(e) { console.error("Error:", e); }
-  );
-}
+    const bands = [
+        { name: 'bass',    start: 1,  end: 6,   threshold: 200, minThreshold: 150, type: 'bass',    offset:  35 },
+        { name: 'lowmid',  start: 6,  end: 15,  threshold: 170, minThreshold: 120, type: 'lowmid',  offset:  15 },
+        { name: 'highmid', start: 20, end: 50,  threshold: 140, minThreshold: 90,  type: 'highmid', offset: -10 },
+        { name: 'treble',  start: 80, end: 150, threshold: 110, minThreshold: 60,  type: 'treble',  offset: -30 },
+    ];
 
-// ── geometry init ─────────────────────────────────────────────────────────────
-function initGeometry() {
-  gcx    = width  / 2;
-  gcy    = height / 2;
-  outerR = min(width, height) * 0.43;
-}
-
-// ── grain buffer ──────────────────────────────────────────────────────────────
-function buildGrainBuffer() {
-  if (grainBuffer) grainBuffer.remove();
-  grainBuffer = createGraphics(512, 512);
-  grainBuffer.loadPixels();
-  for (var i = 0; i < grainBuffer.pixels.length; i += 4) {
-    var v = random(0, 255);
-    grainBuffer.pixels[i]     = v;
-    grainBuffer.pixels[i + 1] = v;
-    grainBuffer.pixels[i + 2] = v;
-    grainBuffer.pixels[i + 3] = floor(random(18, 40));
-  }
-  grainBuffer.updatePixels();
-}
-
-// ── p5 lifecycle ──────────────────────────────────────────────────────────────
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  fft = new p5.FFT(0.8, 1024);
-  amp = new p5.Amplitude(0.8);
-
-  initGeometry();
-  DRAW_STEP = (Math.PI * 2) / NUM_STEPS_PER_REV;
-  ARC_SPAN  = DRAW_STEP * 5.5;
-
-  blobBuffer = createGraphics(windowWidth, windowHeight);
-  blobBuffer.clear();
-  buildGrainBuffer();
-}
-
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  initGeometry();
-  resetBlobBuffer();
-}
-
-function resetBlobBuffer() {
-  if (blobBuffer) blobBuffer.remove();
-  blobBuffer = createGraphics(windowWidth, windowHeight);
-  blobBuffer.clear();
-  viewScale   = 2.4;
-  smoothedVol = 0;
-  if (song && song.isLoaded() && song.duration && song.duration() > 0) {
-    lastTotalAngle = (song.currentTime() / song.duration()) * Math.PI * 2 * numRevolutions;
-  } else {
-    lastTotalAngle = -1;
-  }
-}
-
-function draw() {
-  background(0);
-
-  // Zoom out slowly as the spiral grows outward
-  if (started && song && song.isLoaded()) {
-    var dur = song.duration ? song.duration() : 0;
-    if (dur > 0) {
-      var songFrac    = constrain(song.currentTime() / dur, 0, 1);
-      var targetScale = map(songFrac, 0, 0.88, 2.4, 1.0, true);
-      viewScale = lerp(viewScale, targetScale, 0.018);
+    function resize() {
+        width  = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width  = width  * window.devicePixelRatio;
+        canvas.height = height * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        // First stave starts at ~15% from top so the score feels centered
+        // when it begins, with room to breathe above.
+        staveStartY = Math.round(height * 0.18);
+        if (currentStaveY === 0) currentStaveY = staveStartY;
     }
-  }
+    window.addEventListener('resize', resize);
+    resize();
 
-  push();
-  translate(width / 2, height / 2);
-  scale(viewScale);
-  translate(-width / 2, -height / 2);
-  image(blobBuffer, 0, 0);
-  pop();
+    // ── Procedural shape generator ──
+    function generateRandomShape(type) {
+        const w = 30 + Math.random() * 60;
+        let points = [], isSmooth = true, startY = 0;
 
-  if (started && song && song.isPlaying()) {
-    updateSpiral();
-  }
-
-  drawGrain();
-}
-
-// ── spiral drawing ────────────────────────────────────────────────────────────
-function updateSpiral() {
-  var dur = song.duration();
-  if (!dur || dur <= 0) return;
-
-  var fraction   = song.currentTime() / dur;
-  var totalAngle = fraction * Math.PI * 2 * numRevolutions;
-
-  if (lastTotalAngle < 0) lastTotalAngle = totalAngle;
-  if (totalAngle <= lastTotalAngle) return;
-
-  var vol = amp.getLevel();
-  // Faster smoothing — shapes react more fluidly to the audio
-  smoothedVol = lerp(smoothedVol, vol, 0.18);
-  var effVol  = smoothedVol * 0.55 + vol * 0.45;
-
-  var S             = min(width, height);
-  var totalAngleMax = numRevolutions * Math.PI * 2;
-
-  var steps = 0;
-  while (lastTotalAngle < totalAngle && steps < 7) {
-    var t          = lastTotalAngle;
-    var revolution = Math.floor(t / (Math.PI * 2));
-    if (revolution >= numRevolutions) break;
-
-    // Silence → leave a visible gap
-    if (effVol < SILENCE_THRESHOLD) {
-      lastTotalAngle += DRAW_STEP;
-      steps++;
-      continue;
-    }
-
-    var angleOnRing = (t % (Math.PI * 2)) - Math.PI / 2;
-    var spiralFrac  = t / totalAngleMax;
-    var ringR = map(spiralFrac, 0, 1, S * 0.012, outerR * 0.96);
-
-    // Fat worm thickness — much more presence than before
-    var thick = map(effVol, SILENCE_THRESHOLD, 0.45, S * 0.014, S * 0.058, true);
-    thick = Math.max(thick, S * 0.010);
-
-    var alpha     = floor(map(effVol, SILENCE_THRESHOLD, 0.4, 160, 252, true));
-    var noiseBase = revolution * 37.3;
-
-    drawWorm(angleOnRing, ringR, thick, noiseBase, alpha, revolution);
-
-    lastTotalAngle += DRAW_STEP;
-    steps++;
-  }
-}
-
-// ── draw one worm-blob ────────────────────────────────────────────────────────
-// Each mark is shaped like one of Oram's hand-drawn Oramics film strips:
-//   • Tapers to a rounded point at both ends  (sin(t·π) envelope)
-//   • Belly bulges organically along the body  (Perlin noise, arc-parameterised)
-//   • Inner edge gently dips, giving a plump, convex silhouette
-//   • curveVertex → smooth Catmull-Rom spline, no jagged vertices
-function drawWorm(angle, ringR, thickness, noiseBase, alpha, revolution) {
-  var g = blobBuffer;
-  var N = 22;  // spine sample count — enough for smooth curves
-
-  // Pre-compute outer and inner edge points
-  var ox = [], oy = [], ix = [], iy = [];
-
-  for (var i = 0; i <= N; i++) {
-    var t  = i / N;                               // 0 → 1 along the worm
-    var a  = angle + (t - 0.5) * ARC_SPAN;
-    var ca = Math.cos(a);
-    var sa = Math.sin(a);
-
-    // Taper envelope: 0 at both tips, full belly in the middle
-    var taper = Math.pow(Math.sin(t * Math.PI), 0.60);
-
-    // Noise parameterised along the arc + slow time drift so each new worm
-    // looks slightly different from the one before it (no frozen texture)
-    var n1 = noise(noiseBase + t * 7.0, frameCount * 0.00035 + revolution * 1.9);
-    var n2 = noise(noiseBase + 55 + t * 5.5, frameCount * 0.00025 + revolution * 2.4);
-
-    // Outer edge: taper × noise-modulated bulge
-    var bulge   = 0.55 + n1 * 0.90;              // 0.55 – 1.45 range
-    var oR      = ringR + taper * thickness * bulge;
-
-    // Inner edge: subtle inward dip — stays plump, not hollow
-    var dip     = 0.06 + n2 * 0.22;
-    var iR      = Math.max(ringR - taper * thickness * dip, 2);
-
-    ox.push(gcx + ca * oR);
-    oy.push(gcy + sa * oR);
-    ix.push(gcx + ca * iR);
-    iy.push(gcy + sa * iR);
-  }
-
-  g.push();
-  g.noStroke();
-  g.fill(255, alpha);
-  g.beginShape();
-
-  // Outer edge — forward pass
-  // First point repeated as phantom control point for curveVertex
-  g.curveVertex(ox[0], oy[0]);
-  for (var i = 0; i <= N; i++) g.curveVertex(ox[i], oy[i]);
-  g.curveVertex(ox[N], oy[N]);
-
-  // Inner edge — backward pass
-  g.curveVertex(ix[N], iy[N]);
-  for (var i = N; i >= 0; i--) g.curveVertex(ix[i], iy[i]);
-  g.curveVertex(ix[0], iy[0]);
-
-  g.endShape(CLOSE);
-  g.pop();
-}
-
-function drawGrain() {
-  push();
-  tint(255, 32);
-  for (var gx = 0; gx < width; gx += 512) {
-    for (var gy = 0; gy < height; gy += 512) {
-      image(grainBuffer, gx, gy);
-    }
-  }
-  pop();
-}
-
-// ── input ─────────────────────────────────────────────────────────────────────
-function mousePressed() {
-  if (!started && song && song.isLoaded()) {
-    userStartAudio();
-    song.play();
-    song.rate(playbackSpeed);
-    started = true;
-    frameCounter = 0;
-  }
-}
-
-function keyPressed() {
-  if (key === ' ') {
-    if (song && song.isLoaded()) {
-      if (!started) {
-        userStartAudio(); song.play(); song.rate(playbackSpeed);
-        started = true; frameCounter = 0;
-      } else if (song.isPlaying()) { song.pause(); }
-      else { song.play(); }
-    }
-    return false;
-  }
-  if (key === 'h' || key === 'H') {
-    showUI = !showUI;
-    var els = [document.getElementById('controlsBtn'), document.getElementById('controlsPanel'),
-               document.getElementById('backLink'), document.querySelector('.bottom-nav')];
-    for (var i = 0; i < els.length; i++) { if (els[i]) els[i].style.display = showUI ? '' : 'none'; }
-  }
-  if (key === 's' || key === 'S') {
-    var ts = year() + '' + nf(month(),2) + nf(day(),2) + '_' + nf(hour(),2) + nf(minute(),2) + nf(second(),2);
-    saveCanvas('four-aspects_' + ts, 'png');
-    var c = document.getElementById('saveConfirmation');
-    if (c) { c.classList.add('show'); setTimeout(function(){ c.classList.remove('show'); }, 2000); }
-  }
-  if (key === 'c' || key === 'C') {
-    resetBlobBuffer();
-  }
-  if (keyCode === RIGHT_ARROW) {
-    playbackSpeed = Math.min(playbackSpeed + 1.0, 10.0);
-    if (song && song.isLoaded()) song.rate(playbackSpeed);
-    var si = document.getElementById('speedIndicator');
-    si.textContent = playbackSpeed.toFixed(1) + 'x'; si.classList.add('show');
-    setTimeout(function(){ si.classList.remove('show'); }, 1500);
-  }
-  if (keyCode === LEFT_ARROW) {
-    playbackSpeed = Math.max(playbackSpeed - 1.0, 1.0);
-    if (song && song.isLoaded()) song.rate(playbackSpeed);
-    var si = document.getElementById('speedIndicator');
-    si.textContent = playbackSpeed.toFixed(1) + 'x'; si.classList.add('show');
-    setTimeout(function(){ si.classList.remove('show'); }, 1500);
-  }
-}
-
-    </script>
-
-    <script>
-    // Auto-start handler
-    (function() {
-      function tryAutoPlay() {
-        if (typeof song !== 'undefined' && song && song.isLoaded()) {
-          var audioCtx = getAudioContext();
-          if (audioCtx.state === 'suspended') return;
-          userStartAudio().then(function() {
-            if (!started) {
-              song.play(); song.rate(playbackSpeed);
-              started = true; frameCounter = 0;
-              console.log('Auto-play started');
+        if (type === 'treble') {
+            isSmooth = false;
+            const count = Math.floor(Math.random() * 5) + 4;
+            points.push({ x: 0, y: Math.random() * -3 });
+            for (let i = 1; i < count; i++) {
+                points.push({ x: (w / count) * i + (Math.random() * 6 - 3), y: -(Math.random() * 20 + 5) });
             }
-          });
-        } else { setTimeout(tryAutoPlay, 200); }
-      }
-      setTimeout(tryAutoPlay, 500);
-      function resumeAndPlay() {
-        var audioCtx = getAudioContext();
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume().then(function() {
-            if (typeof song !== 'undefined' && song && song.isLoaded() && !started) {
-              song.play(); song.rate(playbackSpeed);
-              started = true; frameCounter = 0;
-              console.log('Playback started after user gesture');
+            points.push({ x: w, y: Math.random() * -3 });
+        } else if (type === 'highmid') {
+            const count = Math.floor(Math.random() * 3) + 3;
+            points.push({ x: 0, y: 0 });
+            for (let i = 1; i < count; i++) {
+                points.push({ x: (w / count) * i, y: -(Math.random() * 25 + 10) });
             }
-          });
+            points.push({ x: w, y: 0 });
+        } else if (type === 'lowmid') {
+            startY = -5;
+            const count = Math.floor(Math.random() * 4) + 3;
+            points.push({ x: 0, y: startY });
+            for (let i = 1; i < count; i++) {
+                points.push({ x: (w / count) * i, y: (Math.random() * 30) - 20 });
+            }
+            points.push({ x: w, y: startY });
+        } else if (type === 'bass') {
+            startY = -5;
+            const count = Math.floor(Math.random() * 2) + 2;
+            points.push({ x: 0, y: startY });
+            for (let i = 1; i < count; i++) {
+                points.push({ x: (w / count) * i, y: Math.random() * 40 + 15 });
+            }
+            points.push({ x: w, y: startY });
         }
-      }
-      document.addEventListener('click', resumeAndPlay, { once: true });
-      document.addEventListener('keydown', resumeAndPlay, { once: true });
-    })();
+        return { w, points, isSmooth, startY };
+    }
+
+    // ── Procedural renderer ──
+    function drawProceduralShape(shape, x, y, scale) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.beginPath();
+        const pts = shape.points;
+        ctx.moveTo(0, shape.startY);
+        if (!shape.isSmooth) {
+            for (let i = 0; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        } else {
+            ctx.lineTo(pts[0].x, pts[0].y);
+            for (let i = 0; i < pts.length - 1; i++) {
+                const xc = (pts[i].x + pts[i + 1].x) / 2;
+                const yc = (pts[i].y + pts[i + 1].y) / 2;
+                ctx.quadraticCurveTo(pts[i].x, pts[i].y, xc, yc);
+            }
+            ctx.quadraticCurveTo(pts[pts.length - 1].x, pts[pts.length - 1].y,
+                                 pts[pts.length - 1].x, pts[pts.length - 1].y);
+        }
+        ctx.lineTo(shape.w, shape.startY);
+        ctx.lineTo(0, shape.startY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function getAverageVolume(array, start, end) {
+        let sum = 0;
+        for (let i = start; i < end; i++) sum += array[i];
+        return sum / (end - start);
+    }
+
+    // Draw stave lines for whichever rows are currently visible in the viewport
+    function drawStaves() {
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth   = 1;
+        // First row whose top edge is at or just above the visible area
+        const firstRow = Math.floor((scrollY - staveStartY) / STAVE_GAP);
+        const startRow = Math.max(0, firstRow - 1);
+        const endRow   = startRow + Math.ceil(height / STAVE_GAP) + 2;
+        for (let s = startRow; s <= endRow; s++) {
+            const rowAbsY = staveStartY + s * STAVE_GAP;
+            const rowScreenY = rowAbsY - scrollY;
+            for (let i = 0; i < 5; i++) {
+                const y = rowScreenY + i * LINE_GAP;
+                ctx.beginPath();
+                ctx.moveTo(MARGIN_X, y);
+                ctx.lineTo(width - MARGIN_X, y);
+                ctx.stroke();
+            }
+        }
+    }
+
+    function clearCanvas() {
+        elements      = [];
+        cursorX       = MARGIN_X;
+        currentStaveY = staveStartY;
+        scrollY       = 0;
+        targetScrollY = 0;
+    }
+
+    // ── Manual scroll (wheel + touch) ──
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        targetScrollY = Math.max(0, targetScrollY + e.deltaY);
+        lastManualScroll = Date.now();
+    }, { passive: false });
+
+    let touchStartY = null;
+    canvas.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    canvas.addEventListener('touchmove', (e) => {
+        if (touchStartY === null) return;
+        const dy = touchStartY - e.touches[0].clientY;
+        touchStartY = e.touches[0].clientY;
+        targetScrollY = Math.max(0, targetScrollY + dy);
+        lastManualScroll = Date.now();
+    }, { passive: true });
+    canvas.addEventListener('touchend', () => { touchStartY = null; });
+
+    // ── Main animation loop ──
+    function animate() {
+        if (!isPlaying) return;
+
+        const currentTime = audioCtx.currentTime;
+        const dt = currentTime - lastTime;
+        lastTime = currentTime;
+
+        // Advance writing cursor
+        cursorX += PIXELS_PER_SECOND * dt;
+        if (cursorX > width - MARGIN_X) {
+            cursorX = MARGIN_X;
+            currentStaveY += STAVE_GAP; // move to next row — grows indefinitely
+        }
+
+        // Auto-follow: keep writing row at ~28% from top, but yield to manual scroll
+        if (Date.now() - lastManualScroll > MANUAL_PAUSE) {
+            targetScrollY = Math.max(0, currentStaveY - height * 0.28);
+        }
+        scrollY += (targetScrollY - scrollY) * 0.04; // smooth lerp
+
+        // Cull elements that have scrolled far above the visible area
+        if (elements.length > 8000) {
+            elements = elements.filter(el => el.y >= scrollY - height);
+        }
+
+        // Audio reactivity
+        analyser.getByteFrequencyData(dataArray);
+        bands.forEach(band => {
+            const avg = getAverageVolume(dataArray, band.start, band.end);
+            if (avg > band.threshold) {
+                const shapeData = generateRandomShape(band.type);
+                const scale     = Math.min(0.5 + (avg - band.minThreshold) / 100, 1.5);
+                elements.push({ data: shapeData, x: cursorX, y: currentStaveY + band.offset, scale });
+                band.threshold = Math.min(avg + 40, 255);
+            } else {
+                band.threshold = Math.max(band.threshold - 1.5, band.minThreshold);
+            }
+        });
+
+        // Draw — all coordinates are offset by -scrollY so viewport scrolls down
+        ctx.clearRect(0, 0, width, height);
+        drawStaves();
+
+        elements.forEach(el => {
+            const screenY = el.y - scrollY;
+            if (screenY > -100 && screenY < height + 100) { // only draw visible
+                drawProceduralShape(el.data, el.x, screenY, el.scale);
+            }
+        });
+
+        // Playhead at screen-space Y
+        const playheadY = currentStaveY - scrollY;
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.fillRect(cursorX, playheadY - 20, 1, 4 * LINE_GAP + 40);
+
+        requestAnimationFrame(animate);
+    }
+
+    // ── Audio init ──
+    async function initAudio() {
+        if (audioStarted) return;
+        audioStarted = true;
+
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        audioEl = new Audio(AUDIO_PATH);
+        audioEl.crossOrigin = 'anonymous';
+        const source = audioCtx.createMediaElementSource(audioEl);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+
+        try {
+            await audioEl.play();
+        } catch (e) {
+            // Autoplay blocked — wait for user gesture (handled by overlay)
+            audioStarted = false;
+            return;
+        }
+        isPlaying = true;
+        lastTime  = audioCtx.currentTime;
+        requestAnimationFrame(animate);
+    }
+
+    // ── Start overlay ──
+    const startOverlay = document.getElementById('startOverlay');
+    startOverlay.addEventListener('click', async () => {
+        if (audioStarted && audioCtx) {
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            return;
+        }
+        audioStarted = true;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        audioEl = new Audio(AUDIO_PATH);
+        audioEl.crossOrigin = 'anonymous';
+        const source = audioCtx.createMediaElementSource(audioEl);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+
+        await audioEl.play();
+        isPlaying = true;
+        lastTime  = audioCtx.currentTime;
+        startOverlay.classList.add('hidden');
+        requestAnimationFrame(animate);
+    });
+
+    // Try auto-start (works if browser allows autoplay)
+    window.addEventListener('load', () => initAudio().then(() => {
+        if (isPlaying) startOverlay.classList.add('hidden');
+    }).catch(() => {}));
+
+    // ── Keyboard controls ──
+    document.addEventListener('keydown', function(e) {
+        // Don't steal arrow keys when info panel is open
+        if (document.getElementById('info-panel').classList.contains('open')) return;
+
+        if (e.key === ' ') {
+            e.preventDefault();
+            if (!audioStarted) { startOverlay.click(); return; }
+            if (audioEl.paused) { audioCtx.resume(); audioEl.play(); isPlaying = true; lastTime = audioCtx.currentTime; requestAnimationFrame(animate); }
+            else { audioEl.pause(); isPlaying = false; }
+        }
+
+        if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            playbackSpeed = Math.min(playbackSpeed + 1.0, 10.0);
+            if (audioEl) audioEl.playbackRate = playbackSpeed;
+            PIXELS_PER_SECOND = BASE_PPS * playbackSpeed;
+            const si = document.getElementById('speedIndicator');
+            si.textContent = playbackSpeed.toFixed(1) + 'x';
+            si.classList.add('show');
+            setTimeout(() => si.classList.remove('show'), 1500);
+        }
+
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            playbackSpeed = Math.max(playbackSpeed - 1.0, 1.0);
+            if (audioEl) audioEl.playbackRate = playbackSpeed;
+            PIXELS_PER_SECOND = BASE_PPS * playbackSpeed;
+            const si = document.getElementById('speedIndicator');
+            si.textContent = playbackSpeed.toFixed(1) + 'x';
+            si.classList.add('show');
+            setTimeout(() => si.classList.remove('show'), 1500);
+        }
+
+        if (e.key === 'c' || e.key === 'C') clearCanvas();
+
+        if (e.key === 'h' || e.key === 'H') {
+            showUI = !showUI;
+            ['controlsBtn', 'controlsPanel', 'backLink', 'song-header'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.visibility = showUI ? '' : 'hidden';
+            });
+            document.querySelectorAll('#nav-prev, #nav-next').forEach(el => {
+                el.style.visibility = showUI ? '' : 'hidden';
+            });
+        }
+    });
     </script>
 
-
     <script>
+    // ── Info panel toggle ──
     (function() {
         var header = document.getElementById('song-header');
         var panel  = document.getElementById('info-panel');
         if (!header || !panel) return;
-
-        function closePanel() {
-            panel.classList.remove('open');
-            header.classList.remove('open');
-        }
-
-        header.addEventListener('click', function() {
-            panel.classList.toggle('open');
-            header.classList.toggle('open');
-        });
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closePanel();
-        });
-
+        function closePanel() { panel.classList.remove('open'); header.classList.remove('open'); }
+        header.addEventListener('click', function() { panel.classList.toggle('open'); header.classList.toggle('open'); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closePanel(); });
         var closeBtn = panel.querySelector('.ip-close-btn');
         if (closeBtn) closeBtn.addEventListener('click', closePanel);
-
-        panel.addEventListener('click', function(e) {
-            if (e.target === panel) closePanel();
-        });
-
+        panel.addEventListener('click', function(e) { if (e.target === panel) closePanel(); });
         document.addEventListener('click', function(e) {
             if (!panel.classList.contains('open')) return;
-            if (!panel.contains(e.target) && e.target !== header) {
-                closePanel();
-            }
+            if (!panel.contains(e.target) && e.target !== header) closePanel();
         });
     })();
     </script>
+
     <script>window.PRINT_LABEL = { artist: 'Daphne Oram', song: 'Four Aspects', year: '1960' };</script>
     <script src="../clap-print.js"></script>
 </body>

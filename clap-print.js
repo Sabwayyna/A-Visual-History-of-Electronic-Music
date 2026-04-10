@@ -56,28 +56,55 @@
     recognition.continuous     = true;
     recognition.interimResults = false;
     recognition.lang           = 'en-US';
+    recognition.maxAlternatives = 5;
+
+    // Bias the recognizer toward the three command words
+    const SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList;
+    if (SpeechGrammarList) {
+      const grammar = '#JSGF V1.0; grammar commands; public <command> = black | white | now ;';
+      const list = new SpeechGrammarList();
+      list.addFromString(grammar, 1);
+      recognition.grammars = list;
+    }
+
+    // Words the ASR commonly returns instead of "black"
+    const BLACK_ALTS = ['black', 'blank', 'bloc', 'blacks', 'blake', 'blac', 'back'];
+
+    function matchesBlack(t) { return BLACK_ALTS.some(w => t.includes(w)); }
 
     recognition.onstart = () => console.log('[print] Listening — say "now" to print, "white" or "black" to set mode.');
 
     recognition.onresult = (event) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (!event.results[i].isFinal) continue;
-        const transcript = event.results[i][0].transcript.trim().toLowerCase();
-        console.log('[print] Heard:', transcript);
 
-        if (transcript.includes('white')) {
-          printMode = 'white';
-          console.log('[print] Mode set to white');
-          showNotification('print set to white');
-        } else if (transcript.includes('black')) {
-          printMode = 'black';
-          console.log('[print] Mode set to black');
-          showNotification('print set to black');
-        } else if (transcript.includes('now')) {
-          const now = Date.now();
-          if (now - lastPrint < COOLDOWN_MS) return;
-          lastPrint = now;
-          captureAndPrint();
+        // Collect all alternatives into one pool for matching
+        const alts = [];
+        for (let a = 0; a < event.results[i].length; a++) {
+          alts.push(event.results[i][a].transcript.trim().toLowerCase());
+        }
+        console.log('[print] Heard:', alts);
+
+        // Check every alternative — first match wins
+        let matched = false;
+        for (const transcript of alts) {
+          if (transcript.includes('white')) {
+            printMode = 'white';
+            console.log('[print] Mode set to white');
+            showNotification('print set to white');
+            matched = true; break;
+          } else if (matchesBlack(transcript)) {
+            printMode = 'black';
+            console.log('[print] Mode set to black');
+            showNotification('print set to black');
+            matched = true; break;
+          } else if (transcript.includes('now')) {
+            const now = Date.now();
+            if (now - lastPrint < COOLDOWN_MS) { matched = true; break; }
+            lastPrint = now;
+            captureAndPrint();
+            matched = true; break;
+          }
         }
       }
     };

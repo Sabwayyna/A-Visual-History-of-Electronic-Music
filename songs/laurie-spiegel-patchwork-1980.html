@@ -485,7 +485,7 @@
             { lo: 116, hi: 280 },
         ];
 
-        const BLOCK_COOLDOWN = 7;
+        const BLOCK_COOLDOWN = 3;
         const HEIGHT_RANGES  = [[3,8], [9,20], [20,46]];
         const WIDTH_RANGES   = [[3,6], [7,16], [16,32]];
         const FILL_COLORS    = [0xffffff, 0x3a3a3a, 0x000000];
@@ -558,7 +558,7 @@
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 2048;
-            analyser.smoothingTimeConstant = 0.6;
+            analyser.smoothingTimeConstant = 0.3;
             dataArray = new Uint8Array(analyser.frequencyBinCount);
 
             const _ca = sessionStorage.getItem('customAudio') || null;
@@ -675,14 +675,14 @@
                 towers.forEach((tower, i) => {
                     tower.cooldown = Math.max(0, tower.cooldown - 1);
                     const energy = bandEnergy(bands[i]);
-                    tower.smoothed = tower.smoothed * 0.92 + energy * 0.08;
+                    tower.smoothed = tower.smoothed * 0.80 + energy * 0.20;
 
                     const relHeight = tower.yPos / maxH;
-                    const threshold = Math.max(5, tower.smoothed * (0.85 + relHeight * 0.55));
+                    const threshold = Math.max(5, tower.smoothed * (0.70 + relHeight * 0.25));
 
                     if (energy > threshold && tower.cooldown === 0) {
                         spawnBlock(tower, energy, sizeScale);
-                        tower.cooldown = BLOCK_COOLDOWN + Math.round(relHeight * 14);
+                        tower.cooldown = BLOCK_COOLDOWN + Math.round(relHeight * 5);
                     }
                 });
 

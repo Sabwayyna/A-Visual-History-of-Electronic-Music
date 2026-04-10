@@ -183,6 +183,58 @@
             #site-footer .footer-credit { text-align: right; padding-left: 0; }
         }
 
+        /* ── Reflection easter egg ── */
+        #reflection-trigger {
+            font-style: italic;
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, pointer !important;
+            transition: opacity 0.3s ease;
+        }
+        #reflection-trigger:hover { opacity: 0.5; }
+
+        #reflection-overlay {
+            position: fixed;
+            inset: 0;
+            background: #050505;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+        #reflection-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #reflection-scroll {
+            width: 40%;
+            max-height: 80vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;
+        }
+        #reflection-scroll::-webkit-scrollbar { display: none; }
+
+        #reflection-body p {
+            font-size: clamp(10px, 1vw, 14px);
+            line-height: 1.7;
+            letter-spacing: 0.01em;
+            color: rgba(255,255,255,0.5);
+            text-align: left;
+            margin-bottom: 1.4em;
+        }
+
+        .refl-close {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.18);
+            margin-top: 1em;
+        }
+
         * {
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
         }
@@ -201,17 +253,17 @@
 
         <div class="text-row">
             <span class="song-year">01</span>
-            <p>What does sound look like? That is the question this project is trying to answer.</p>
+            <p>What does sound look like?</p>
         </div>
 
         <div class="text-row">
             <span class="song-year">02</span>
-            <p>Throughout the twentieth century, music was radically reimagined. In 1930s Paris, Pierre Schaeffer, a telecommunications engineer with a deep curiosity about sound, cut and rearranged reels of tape to create strange new loops. As a key figure in musique concrete, he helped begin a sonic shift that still shapes music today. What he was doing sounds almost obvious now, but at the time it was genuinely strange: treating recorded noise as a musical material, something to be sculpted rather than simply captured.</p>
+            <p>Throughout the twentieth century, music was radically reimagined. In 1930s Paris, Pierre Schaeffer, a telecommunications engineer with a deep curiosity about sound, cut and rearranged reels of tape to create strange new loops. As a key figure in musique concr&egrave;te, he helped begin a sonic shift that still shapes music today. What he was doing sounds almost obvious now, but at the time it was genuinely strange: treating recorded noise as a musical material, something to be sculpted rather than simply captured.</p>
         </div>
 
         <div class="text-row">
             <span class="song-year">03</span>
-            <p>This project traces that evolution. Eleven pieces, spanning 1932 to 2025, each one marking a different moment in a larger story about what music can be when it no longer needs a traditional instrument to exist. The range is intentional: from early electroacoustic experiments in European studios to Acid House breaking open on Chicago dance floors, from Daphne Oram drawing sound directly onto film strips to Oneohtrix Point Never building drifting synthesizer worlds in a bedroom.</p>
+            <p>This project traces that evolution. Eleven pieces, spanning 1932 to 2025, each one marking a different moment in a larger story about what music can be when it no longer needs a traditional instrument to exist. The range is intentional: from early electroacoustic experiments in Europe to Acid House on Chicago dance floors, from Daphne Oram drawing sound directly onto film strips to Oneohtrix Point Never building drifting synthesizer worlds in a bedroom.</p>
         </div>
 
         <div class="text-row">
@@ -221,29 +273,54 @@
 
         <div class="text-row">
             <span class="song-year">05</span>
-            <p>Through a series of real-time interactive visualizers, I try to make those ideas visible. Each one is built specifically around a single piece: its structure, its texture, its feeling and pacing. Some are flat and geometric. Others are spatial and immersive. Some respond to rhythm and pulse directly, others drift and accumulate over time. The goal was always for each image to feel like it could only belong to that one piece of music, and no other.</p>
+            <p>Through a series of real-time interactive visualizers, I try to make those ideas visible. Each one is built around a single piece: its structure, texture, feeling, and pacing. Some are flat and geometric. Others are spatial and immersive. The goal was for each image to feel like it could only belong to that one piece of music.</p>
         </div>
 
         <div class="text-row">
             <span class="song-year">06</span>
-            <p>Each visualizer reacts to the music as it plays, translating frequency, amplitude, and rhythm into moving image. Sound, once built from tape loops and waveform generators and mathematical functions, becomes something you can actually see. That translation is not meant to explain the music or illustrate it. It is meant to sit alongside it, to give a shape to something that usually exists only in time and air.</p>
+            <p>Each visualizer reacts to the music as it plays, translating frequency, amplitude, and rhythm into moving image. The visuals are generated live, not pre-made, so the page is constantly responding in real time. Sound, once built from tape loops, waveform generators, and mathematical systems, becomes something you can actually see.</p>
         </div>
 
         <div class="text-row">
             <span class="song-year">07</span>
-            <p>Everything here was built from scratch in pure code. No templates, no frameworks, no pre-built tools. Each visualization is a custom piece of software written specifically for its song, working directly with audio data to generate form in real time. The whole project lives as a single website. There is no app, no installation. You move through a timeline and the history unfolds as you go, one piece at a time, each with its own visual language.</p>
+            <p>Everything here lives on a webpage. The whole project is built in pure code and runs directly in the browser. That felt important to me: something immersive, reactive, and visual, but existing entirely online as a living system instead of a fixed image or video.</p>
         </div>
 
         <div class="text-row">
             <span class="song-year">08</span>
-            <p>The intention was always to make something that felt authored rather than assembled. Every choice&mdash;what to include, how to visualize it, what order to move through&mdash;is part of building a specific argument about what this music is and why it still matters.</p>
+            <p>The project is also interactive beyond just watching. You move through the timeline, control the pace, and in some cases capture a live moment and send it directly to print. It shifts between screen and physical output, between something temporary and something you can hold.</p>
         </div>
 
         <div class="text-row">
             <span class="song-year">09</span>
-            <p>The question that started all of this was a simple one. What does sound look like? I am still not entirely sure there is one answer. But I think that is exactly the right kind of question to spend a thesis on.</p>
+            <p>Because the project lives online, it can stay active. It is not just a sequence of finished visuals, but a system that keeps performing as long as the sound is playing. The webpage becomes an instrument too, holding the history, the motion, and the interaction all in one place.</p>
         </div>
 
+        <div class="text-row">
+            <span class="song-year">10</span>
+            <p>What interested me most was not just visualizing sound, but translating its behavior. Repetition, buildup, distortion, interruption, drift. These qualities shaped the visuals just as much as the songs themselves. The result is less about illustration and more about finding a visual logic for listening.</p>
+        </div>
+
+        <div class="text-row">
+            <span class="song-year">11</span>
+            <p>The question that started all of this was a simple one: What does sound look like? I am still not entirely sure there is one answer. But I think that is exactly what I have been trying to <em id="reflection-trigger">find out.</em></p>
+        </div>
+
+    </div>
+
+    <!-- Reflection overlay (easter egg) -->
+    <div id="reflection-overlay">
+        <div id="reflection-scroll">
+            <div id="reflection-body">
+                <p>I think this project made me realize how naturally drawn I am to music when I design. Not in an overly dramatic way, I just really love seeing visuals move with sound. There&rsquo;s something about rhythm, repetition, timing, distortion, all of that, that feels so alive once it becomes visual. At some point, the process stopped feeling like I was just building a website and started feeling more like I was following the logic of sound in a visual way.</p>
+                <p>What I kept thinking about while working was how strange and amazing the history of electronic music is. So many of the early processes felt physical, handmade, almost obsessive. Drawing sound, cutting tape, repeating fragments, layering noise, literally building music through touch and experiment. I think now we live with sound in such an easy way that it almost disappears. You open a laptop, open a program, press something, and sound happens. You can edit it endlessly, control it instantly, carry thousands of songs in your pocket, and it all feels normal. But looking back at where that came from made it feel less normal to me. It made it feel invented again.</p>
+                <p>I liked that a lot. That feeling of realizing sound was something people had to imagine into being. Not just music in the traditional sense, but new kinds of sound, new ways of listening, new ways of composing. It made me think about design like that too. Not just as styling something, but as building a system, testing a visual language, or trying to give form to something that doesn&rsquo;t naturally have one.</p>
+                <p>I worked on this project through sketches, digital design, research, and then coding the site itself. I chose songs that I was personally interested in, but also ones that felt important to the timeline and to the larger shift I was trying to show. Before this project, I honestly was not someone deeply familiar with electronic music or experimental sound. It&rsquo;s still not always the kind of music I would casually put on. But that almost made the process more interesting. I wasn&rsquo;t working from comfort or fandom. I was working from curiosity. And I think that let me look at the music more closely, almost visually first, emotionally second.</p>
+                <p>There&rsquo;s something about this genre that feels very raw to me. Sometimes even harsh, sometimes beautiful, sometimes distant, but always so intentional. And I think that stayed with me. The fact that so much of it comes from people pushing against what music was supposed to be, what an instrument was supposed to be, or what counted as sound at all. I wanted the project to carry a little bit of that spirit.</p>
+                <p>More than anything, this project reminded me that I can work in ways that are unfamiliar to me and still make something that feels personal. Maybe that is the part I will remember most.</p>
+                <div class="refl-close">click anywhere to close</div>
+            </div>
+        </div>
     </div>
 
     <footer id="site-footer">
@@ -472,6 +549,45 @@
             requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
+    })();
+    </script>
+
+    <script>
+    /* ── Reflection easter egg ── */
+    (function () {
+        const trigger    = document.getElementById('reflection-trigger');
+        const overlay    = document.getElementById('reflection-overlay');
+        const reflScroll = document.getElementById('reflection-scroll');
+
+        let reflAuto = false;
+        let reflRAF  = null;
+
+        function reflScrollStep() {
+            if (reflAuto) {
+                reflScroll.scrollTop += 0.4;
+                if (reflScroll.scrollTop + reflScroll.clientHeight >= reflScroll.scrollHeight - 2) reflAuto = false;
+            }
+            reflRAF = requestAnimationFrame(reflScrollStep);
+        }
+
+        trigger.addEventListener('click', function (e) {
+            e.stopPropagation();
+            reflScroll.scrollTop = 0;
+            overlay.classList.add('visible');
+            reflAuto = true;
+            if (!reflRAF) reflRAF = requestAnimationFrame(reflScrollStep);
+        });
+
+        overlay.addEventListener('click', function () {
+            overlay.classList.remove('visible');
+            reflAuto = false;
+            cancelAnimationFrame(reflRAF);
+            reflRAF = null;
+        });
+
+        // Pause auto-scroll on manual interaction inside overlay
+        reflScroll.addEventListener('wheel',      () => { reflAuto = false; }, { passive: true });
+        reflScroll.addEventListener('touchstart', () => { reflAuto = false; }, { passive: true });
     })();
     </script>
 
