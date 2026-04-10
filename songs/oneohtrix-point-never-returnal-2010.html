@@ -319,6 +319,7 @@
         #audio-element { display: none; }
         /* static fine grain */
         body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.055; background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>"); background-repeat: repeat; background-size: 160px; }
+
     </style>
 </head>
 <body>
@@ -394,6 +395,7 @@
 
         let smBass = 0, smMids = 0, smTreble = 0;
         let smBlowForce = 0, targetBlowForce = 0;
+        let autoSpeed = 0;
 
         let mouseX = 0, mouseY = 0;
         window.headX = 0; window.headY = 0;
@@ -491,7 +493,7 @@
         // ── Initialization ──
         function init() {
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x000000, 0.0001);
+            scene.fog = new THREE.FogExp2(0x000000, 0.000138);
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 30000);
 
@@ -580,16 +582,21 @@
                         vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
                         ${blowShaderLogic}
                         gl_Position = projectionMatrix * mvPosition;
-                        gl_PointSize = size * (300.0 / -mvPosition.z) * (1.0 + uBass * 8.0);
-                        vAlpha = smoothstep(8000.0, 1000.0, -mvPosition.z) * (1.0 + uBass * 1.5);
+                        float depth = -mvPosition.z;
+                        float nearFade = smoothstep(50.0, 250.0, depth);
+                        float farFade  = smoothstep(14000.0, 300.0, depth);
+                        float dofSize  = 1.0 + smoothstep(600.0, 50.0, depth) * 1.2;
+                        gl_PointSize = size * (360.0 / depth) * (1.0 + uBass * 8.0) * dofSize;
+                        vAlpha = nearFade * farFade * (2.2 + uBass * 3.5);
                     }
                 `,
                 fragmentShader: `
                     uniform float uReveal; varying float vAlpha;
                     void main() {
                         vec2 xy = gl_PointCoord.xy - vec2(0.5);
-                        if(length(xy) > 0.5) discard;
-                        gl_FragColor = vec4(1.0, 1.0, 1.0, (0.5 - length(xy)) * 2.0 * vAlpha * 0.9 * uReveal);
+                        float d2 = dot(xy, xy) * 4.0;
+                        float glow = exp(-d2 * 10.0) + exp(-d2 * 1.4) * 0.55;
+                        gl_FragColor = vec4(1.0, 1.0, 1.0, glow * vAlpha * 28.0 * uReveal);
                     }
                 `,
                 transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
@@ -600,19 +607,19 @@
 
         // ── 2. Main Nebula ──
         function createMainNebula() {
-            const particleCount = 70000;
+            const particleCount = 110000;
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
             const sizes     = new Float32Array(particleCount);
             const randomOffsets = new Float32Array(particleCount * 3);
-            const numClusters = 180; const clusters = [];
-            for (let i = 0; i < numClusters; i++) clusters.push({ x:(Math.random()-0.5)*14000, y:(Math.random()-0.5)*14000, z:(Math.random()-0.5)*LOOP_LENGTH });
+            const numClusters = 25; const clusters = [];
+            for (let i = 0; i < numClusters; i++) clusters.push({ x:(Math.random()-0.5)*9000, y:(Math.random()-0.5)*9000, z:(Math.random()-0.5)*LOOP_LENGTH });
             for (let i = 0; i < particleCount; i++) {
                 const cl = clusters[Math.floor(Math.random()*numClusters)];
-                const r  = Math.pow(Math.random(),3)*3500, theta = Math.acos(2*Math.random()-1), phi = Math.random()*Math.PI*2;
+                const r  = Math.pow(Math.random(),3)*650, theta = Math.acos(2*Math.random()-1), phi = Math.random()*Math.PI*2;
                 const x = cl.x + r*Math.sin(theta)*Math.cos(phi), y = cl.y + r*Math.sin(theta)*Math.sin(phi), z = cl.z + r*Math.cos(theta);
                 positions[i*3]=x; positions[i*3+1]=y; positions[i*3+2]=z;
-                sizes[i] = Math.random()*3.0 + 0.5;
+                sizes[i] = Math.random()*3.5 + 0.8;
                 const len = Math.sqrt(x*x+y*y+z*z)||1;
                 randomOffsets[i*3]=x/len*Math.random(); randomOffsets[i*3+1]=y/len*Math.random(); randomOffsets[i*3+2]=z/len*Math.random();
             }
@@ -651,15 +658,21 @@
                         pos+=randomOffset*snoise(noisePos)*(20.+uBass*150.);
                         vec4 mvPosition=modelViewMatrix*vec4(pos,1.); ${blowShaderLogic}
                         gl_Position=projectionMatrix*mvPosition;
-                        gl_PointSize=size*(2.+uTreble*3.5)*(300./-mvPosition.z);
-                        vAlpha=smoothstep(4000.,200.,length(pos.xy))*(0.6+uTreble*0.8); vBass=uBass;
+                        float depth = -mvPosition.z;
+                        float nearFade = smoothstep(40.0, 200.0, depth);
+                        float farFade  = smoothstep(10000.0, 150.0, depth);
+                        float dofSize  = 1.0 + smoothstep(500.0, 40.0, depth) * 1.0;
+                        gl_PointSize=size*(2.+uTreble*3.5)*(330./depth)*dofSize;
+                        vAlpha=nearFade*farFade*smoothstep(5000.,100.,length(pos.xy))*(1.2+uTreble*1.4); vBass=uBass;
                     }
                 `,
                 fragmentShader: `
                     uniform float uReveal; varying float vAlpha; varying float vBass;
                     void main() {
-                        vec2 xy=gl_PointCoord.xy-vec2(0.5); if(length(xy)>0.5) discard;
-                        gl_FragColor=vec4(vec3(1.),smoothstep(0.5,0.,length(xy))*vAlpha*(2.5+vBass*10.)*uReveal);
+                        vec2 xy = gl_PointCoord.xy - vec2(0.5);
+                        float d2 = dot(xy, xy) * 4.0;
+                        float glow = exp(-d2 * 8.0) + exp(-d2 * 1.0) * 0.65;
+                        gl_FragColor=vec4(vec3(1.), glow * vAlpha*(45.0+vBass*70.)*uReveal);
                     }
                 `,
                 blending: THREE.AdditiveBlending, depthWrite: false, transparent: true
@@ -687,15 +700,21 @@
                     void main() {
                         vec3 pos=position; float dz=pos.z-uCameraZ; dz=mod(dz+10000.,20000.)-10000.; pos.z=uCameraZ+dz;
                         vec4 mvPosition=modelViewMatrix*vec4(pos,1.); ${blowShaderLogic}
-                        gl_Position=projectionMatrix*mvPosition; gl_PointSize=4.*(300./-mvPosition.z);
-                        vAlpha=(sin(uTime*1.5+phase)+1.2)*0.5;
+                        float depth = -mvPosition.z;
+                        float nearFade = smoothstep(60.0, 280.0, depth);
+                        float farFade  = smoothstep(13000.0, 400.0, depth);
+                        float dofSize  = 1.0 + smoothstep(500.0, 50.0, depth) * 0.9;
+                        gl_Position=projectionMatrix*mvPosition; gl_PointSize=4.*(320./depth)*dofSize;
+                        vAlpha=(sin(uTime*1.5+phase)+1.2)*0.5*nearFade*farFade;
                     }
                 `,
                 fragmentShader: `
                     uniform float uReveal; varying float vAlpha;
                     void main() {
-                        vec2 xy=gl_PointCoord.xy-vec2(0.5); if(length(xy)>0.5) discard;
-                        gl_FragColor=vec4(vec3(1.),smoothstep(0.5,0.,length(xy))*vAlpha*2.*uReveal);
+                        vec2 xy = gl_PointCoord.xy - vec2(0.5);
+                        float d2 = dot(xy, xy) * 4.0;
+                        float glow = exp(-d2 * 8.0) + exp(-d2 * 1.0) * 0.6;
+                        gl_FragColor=vec4(vec3(1.), glow * vAlpha*32.0*uReveal);
                     }
                 `,
                 transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
@@ -747,14 +766,14 @@
                         gl_Position = projectionMatrix * mvPosition;
                         gl_PointSize = mix(2.5, 5.0, aIsHero) * (250.0 / -mvPosition.z);
                         vHero  = aIsHero;
-                        vAlpha = smoothstep(8000.0, 200.0, -mvPosition.z);
+                        vAlpha = smoothstep(12000.0, 80.0, -mvPosition.z);
                     }
                 `,
                 fragmentShader: `
                     uniform float uReveal; varying float vAlpha; varying float vHero;
                     void main() {
                         // square points — no circular discard; discard transparent pixels only
-                        float alpha = max(vHero, uReveal * 0.8) * vAlpha;
+                        float alpha = max(vHero * 8.0, uReveal * 7.0) * vAlpha * 8.0;
                         if (alpha < 0.01) discard;
                         gl_FragColor = vec4(1.0, 1.0, 1.0, alpha);
                     }
@@ -772,7 +791,7 @@
 
         // ── 5. Circle Eye (ShaderMaterial — dilation on GPU, no CPU loop) ──
         function createCircleEye(zOffset) {
-            const eyeCount   = 22000;
+            const eyeCount   = 65000;
             const geometry   = new THREE.BufferGeometry();
             const positions  = new Float32Array(eyeCount * 3);
             const brightness = new Float32Array(eyeCount);
@@ -780,17 +799,30 @@
             for (let i = 0; i < eyeCount; i++) {
                 let x, y, z=0, c=1.0;
                 const type = Math.random();
-                if (type < 0.15) {
+                if (type < 0.12) {
+                    // outer arc — give it real z-depth so it curves in 3D
                     x=(Math.random()-0.5)*4500;
                     const arcY=Math.sin(Math.acos(Math.max(-1,Math.min(1,x/2250))))*900;
-                    y=Math.random()>0.5?arcY:-arcY; y+=(Math.random()-0.5)*60; z=(Math.random()-0.5)*100;
-                } else if (type < 0.85) {
+                    y=Math.random()>0.5?arcY:-arcY; y+=(Math.random()-0.5)*60;
+                    z=(Math.random()-0.5)*600; // deep spread
+                    c=1.0;
+                } else if (type < 0.82) {
+                    // ring — spherical scatter so it has volume, not a disk
                     const angle=Math.random()*Math.PI*2, radius=250+Math.random()*600;
-                    x=Math.cos(angle)*radius; y=Math.sin(angle)*radius; z=(Math.random()-0.5)*200;
-                    c=0.5+mathSmoothstep(250,850,radius)*1.0;
+                    const zSpread = Math.sqrt(Math.max(0, 1 - Math.pow(radius/900,2))) * 500;
+                    x=Math.cos(angle)*radius; y=Math.sin(angle)*radius;
+                    z=(Math.random()-0.5)*2.0*zSpread + (Math.random()-0.5)*300;
+                    c=0.7+mathSmoothstep(250,850,radius)*1.0;
+                } else if (type < 0.92) {
+                    // core — volumetric sphere
+                    const theta=Math.acos(2*Math.random()-1), phi=Math.random()*Math.PI*2, r=Math.random()*220;
+                    x=r*Math.sin(theta)*Math.cos(phi); y=r*Math.sin(theta)*Math.sin(phi); z=r*Math.cos(theta);
+                    c=1.0;
                 } else {
-                    const angle=Math.random()*Math.PI*2, radius=Math.random()*200;
-                    x=Math.cos(angle)*radius; y=Math.sin(angle)*radius; z=-100+(Math.random()-0.5)*300; c=0.4;
+                    // star corona — scattered, deep z
+                    const angle=Math.random()*Math.PI*2, radius=1000+Math.pow(Math.random(),2)*2000;
+                    x=Math.cos(angle)*radius; y=Math.sin(angle)*radius; z=(Math.random()-0.5)*900;
+                    c=Math.random()*0.8+0.4;
                 }
                 positions[i*3]=x; positions[i*3+1]=y; positions[i*3+2]=z;
                 brightness[i]=c;
@@ -821,18 +853,22 @@
                             mvPosition.xy += pushDir * uBlowForce * 3500.0 * depthStr;
                             mvPosition.z  -= uBlowForce * 6000.0 * depthStr;
                         }
+                        float depthEye = -mvPosition.z;
+                        float dofEye   = 1.0 + smoothstep(600.0, 30.0, depthEye) * 0.9;
+                        float nearFade = smoothstep(7000.0, 300.0, depthEye); // visible from far, fully clear up close
                         gl_Position = projectionMatrix * mvPosition;
-                        gl_PointSize = 3.5 * (300.0 / -mvPosition.z);
-                        vBright = brightness;
+                        gl_PointSize = 3.5 * (320.0 / depthEye) * dofEye;
+                        vBright = brightness * nearFade;
                     }
                 `,
                 fragmentShader: `
                     uniform float uReveal; uniform float uTreble; varying float vBright;
                     void main() {
                         vec2 xy = gl_PointCoord.xy - vec2(0.5);
-                        if(length(xy) > 0.5) discard;
-                        float opacity = (0.85 + uTreble * 0.8) * uReveal;
-                        gl_FragColor = vec4(1.0, 1.0, 1.0, vBright * opacity);
+                        float d2 = dot(xy, xy) * 4.0;
+                        float glow = exp(-d2 * 8.0) + exp(-d2 * 1.2) * 0.6;
+                        float opacity = (22.0 + uTreble * 16.0) * uReveal;
+                        gl_FragColor = vec4(1.0, 1.0, 1.0, glow * vBright * opacity);
                     }
                 `,
                 transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
@@ -845,13 +881,13 @@
 
         // ── 6. Volumetric Eye ──
         function createVolumetricEye(zOffset) {
-            const particleCount = 80000;
+            const particleCount = 140000;
             const geometry = new THREE.BufferGeometry();
             const positions   = new Float32Array(particleCount*3);
             const angles      = new Float32Array(particleCount);
             const radii       = new Float32Array(particleCount);
             const thicknesses = new Float32Array(particleCount);
-            const numStrands = 800, pps = Math.floor(particleCount/numStrands); let i = 0;
+            const numStrands = 1400, pps = Math.floor(particleCount/numStrands); let i = 0;
             for (let s = 0; s < numStrands; s++) {
                 let ba = (s/numStrands)*Math.PI*2 + (Math.random()-0.5)*0.03;
                 for (let p = 0; p < pps; p++) {
@@ -898,14 +934,17 @@
                         if(distToMouse<35.) pos+=normalize(pos-uMouse3D)*tearForce;
                         vec4 mvPosition=modelViewMatrix*vec4(pos,1.); ${blowShaderLogic}
                         vDepth=-mvPosition.z; vAlpha=smoothstep(1.,.6,aRadius);
-                        gl_Position=projectionMatrix*mvPosition; gl_PointSize=(2.5+(uTreble*4.))*(200./vDepth);
+                        float dofVol = 1.0 + smoothstep(500.0, 20.0, vDepth) * 0.8;
+                        gl_Position=projectionMatrix*mvPosition; gl_PointSize=(2.5+(uTreble*4.))*(220./vDepth)*dofVol;
                     }
                 `,
                 fragmentShader: `
                     uniform float uReveal; varying float vAlpha; varying float vDepth;
                     void main() {
-                        vec2 coord=2.*gl_PointCoord-1.; if(dot(coord,coord)>1.) discard;
-                        gl_FragColor=vec4(vec3(1.),smoothstep(1.,.1,dot(coord,coord))*vAlpha*smoothstep(4000.,30.,vDepth)*2.2*uReveal);
+                        vec2 xy = gl_PointCoord.xy - vec2(0.5);
+                        float d2 = dot(xy, xy) * 4.0;
+                        float glow = exp(-d2 * 8.0) + exp(-d2 * 1.2) * 0.6;
+                        gl_FragColor=vec4(vec3(1.), glow * vAlpha*smoothstep(4000.,30.,vDepth)*38.0*uReveal);
                     }
                 `,
                 uniforms: eyeUniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
@@ -976,7 +1015,8 @@
 
             if (hasInteracted) {
                 revealProgress  += (1.0 - revealProgress) * 0.0015;
-                targetScrollZ   -= 0.5 * revealProgress;
+                autoSpeed       += (14.0 - autoSpeed) * 0.00045; // slow ramp: near 0 → ~14 over ~90s
+                targetScrollZ   -= autoSpeed * revealProgress;
                 globalCubeRotY  += (0.0005 + smBass*0.005) * revealProgress;
                 globalCubeRotZ  += (0.0002 + smMids*0.003) * revealProgress;
             }
@@ -1016,6 +1056,8 @@
             if (circleEyeSystem) {
                 if (camera.position.z < circleEyeSystem.position.z-5000) circleEyeSystem.position.z-=LOOP_LENGTH;
                 else if (camera.position.z > circleEyeSystem.position.z+LOOP_LENGTH-5000) circleEyeSystem.position.z+=LOOP_LENGTH;
+                circleEyeSystem.rotation.x = 0.38; // ~22° tilt — reads as 3D
+                circleEyeSystem.rotation.y = Math.sin(time * 0.03) * 0.15; // gentle wobble
                 circleEyeSystem.rotation.z = time*0.05;
                 circleEyeSystem.material.uniforms.uBlowForce.value = smBlowForce;
                 circleEyeSystem.material.uniforms.uDilate.value    = 1.0 + smBass * 0.4;
