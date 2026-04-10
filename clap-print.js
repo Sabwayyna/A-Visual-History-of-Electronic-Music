@@ -100,8 +100,14 @@
       return s.display !== 'none' && s.visibility !== 'hidden' && c.width > 0 && c.height > 0;
     });
 
-    if (canvases.length === 0) {
-      console.warn('[print] No canvases found.');
+    // Also collect visible video elements (for pages like Doctor Who Theme)
+    const videos = Array.from(document.querySelectorAll('video')).filter(v => {
+      const s = window.getComputedStyle(v);
+      return s.display !== 'none' && s.visibility !== 'hidden' && v.videoWidth > 0;
+    });
+
+    if (canvases.length === 0 && videos.length === 0) {
+      console.warn('[print] No canvases or videos found.');
       return;
     }
 
@@ -116,10 +122,19 @@
       ctx.fillRect(0, 0, out.width, out.height);
       ctx.filter = 'invert(1) contrast(1.8)';
     } else {
-      // Black background, white visuals (original)
+      // Black background — lighten heavy fills so print reads more white than black
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, out.width, out.height);
-      ctx.filter = 'contrast(2.5) brightness(2.4) saturate(1.5)';
+      ctx.filter = 'contrast(1.4) brightness(3.2) saturate(1.2)';
+    }
+
+    for (const v of videos) {
+      const rect = v.getBoundingClientRect();
+      try {
+        ctx.drawImage(v, rect.left, rect.top, rect.width, rect.height);
+      } catch (e) {
+        console.warn('[print] Skipping tainted video:', e);
+      }
     }
 
     for (const c of canvases) {
@@ -132,35 +147,100 @@
     }
     ctx.filter = 'none';
 
-    // Imprint: bottom corners in project font
-    const pad      = Math.round(out.height * 0.055);
-    const fontSize = Math.round(out.height * 0.022);
-    const textColor = printMode === 'white' ? '#000' : '#fff';
-    ctx.fillStyle    = textColor;
+    // ── OPN-specific star bloom pass (print only, does not affect live view) ──
+    const isOPN = window.PRINT_LABEL && window.PRINT_LABEL.artist === 'OPN';
+    if (isOPN) {
+      if (printMode === 'black') {
+        // screen blend only adds light — tiny white star dots bloom outward
+        // without darkening anything. Multiple passes: tight+bright → wide+soft.
+        const passes = [
+          { blur: 0.5, brightness: 18 },
+          { blur: 2,   brightness: 15 },
+          { blur: 5,   brightness: 12 },
+          { blur: 10,  brightness: 9  },
+          { blur: 20,  brightness: 7  },
+          { blur: 40,  brightness: 5  },
+          { blur: 70,  brightness: 3  },
+        ];
+        ctx.globalCompositeOperation = 'screen';
+        for (const c of canvases) {
+          const rect = c.getBoundingClientRect();
+          try {
+            for (const p of passes) {
+              ctx.filter = `blur(${p.blur}px) brightness(${p.brightness})`;
+              ctx.drawImage(c, rect.left, rect.top, rect.width, rect.height);
+            }
+          } catch (e) { /* skip */ }
+        }
+      } else {
+        // White mode: output is white bg + tiny black star dots (already inverted).
+        // For each blur level, bake invert+blur+contrast into an offscreen canvas,
+        // then stamp it onto the output repeatedly with multiply — each stamp
+        // compounds the darkening so halos build up into strong visible marks.
+        const bloomLevels = [
+          { blur: 0.5, contrast: 25, repeat: 12 },
+          { blur: 2,   contrast: 20, repeat: 10 },
+          { blur: 6,   contrast: 16, repeat: 8  },
+          { blur: 14,  contrast: 12, repeat: 7  },
+          { blur: 30,  contrast: 8,  repeat: 6  },
+          { blur: 60,  contrast: 5,  repeat: 5  },
+        ];
+        ctx.globalCompositeOperation = 'multiply';
+        for (const c of canvases) {
+          const rect = c.getBoundingClientRect();
+          try {
+            for (const lv of bloomLevels) {
+              const tmp  = document.createElement('canvas');
+              tmp.width  = out.width;
+              tmp.height = out.height;
+              const tctx = tmp.getContext('2d');
+              tctx.filter = `invert(1) blur(${lv.blur}px) contrast(${lv.contrast})`;
+              tctx.drawImage(c, rect.left, rect.top, rect.width, rect.height);
+              tctx.filter = 'none';
+              for (let i = 0; i < lv.repeat; i++) ctx.drawImage(tmp, 0, 0);
+            }
+          } catch (e) { /* skip */ }
+        }
+      }
+      ctx.filter = 'none';
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // ── Imprint: bottom corners ───────────────────────────────────────────────
+    // 'difference' blend: text inverts whatever is beneath — always legible on
+    // any background, black, white, or mixed, with no manual colour decisions.
+    const pad       = Math.round(out.height * 0.055);
+    const isBlack   = printMode === 'black';
+    const fontSize  = Math.round(out.height * (isBlack ? 0.032 : 0.024));
+    const fontWeight = isBlack ? '900' : '700';
+    const tracking  = isBlack ? '0.13em' : '0.04em';
+
+    ctx.globalCompositeOperation = 'difference';
+    ctx.fillStyle    = '#ffffff';
     ctx.textBaseline = 'bottom';
+    ctx.letterSpacing = tracking;
     const y = out.height - pad;
 
-    // Bottom left: "Artist — Song (italic), Year" using window.PRINT_LABEL
+    function drawLabel(text, x, align, italic) {
+      ctx.textAlign = align;
+      ctx.font = `${italic ? 'italic ' : ''}${fontWeight} ${fontSize}px LinotypeUnivers, sans-serif`;
+      ctx.fillText(text, x, y);
+      return ctx.measureText(text).width;
+    }
+
     const label = window.PRINT_LABEL;
-    const fontWeight = printMode === 'black' ? '700 ' : '';
     if (label && label.artist && label.song && label.year) {
       const prefix = label.artist + ' \u2014 ';
       const suffix = ', ' + label.year;
-      ctx.textAlign = 'left';
-      ctx.font = `${fontWeight}${fontSize}px LinotypeUnivers, sans-serif`;
-      ctx.fillText(prefix, pad, y);
-      const prefixW = ctx.measureText(prefix).width;
-      ctx.font = `italic ${fontWeight}${fontSize}px LinotypeUnivers, sans-serif`;
-      ctx.fillText(label.song, pad + prefixW, y);
-      const songW = ctx.measureText(label.song).width;
-      ctx.font = `${fontWeight}${fontSize}px LinotypeUnivers, sans-serif`;
-      ctx.fillText(suffix, pad + prefixW + songW, y);
+      let x = pad;
+      x += drawLabel(prefix, x, 'left', false);
+      x += drawLabel(label.song, x, 'left', true);
+      drawLabel(suffix, x, 'left', false);
     }
+    drawLabel('sabrinawu.me', out.width - pad, 'right', false);
 
-    // Bottom right: website
-    ctx.textAlign = 'right';
-    ctx.font = `${fontWeight}${fontSize}px LinotypeUnivers, sans-serif`;
-    ctx.fillText('sabrinawu.me', out.width - pad, y);
+    ctx.letterSpacing = '0px';
+    ctx.globalCompositeOperation = 'source-over';
 
     // Debug preview — shows what will be sent to printer
     const preview = document.createElement('img');

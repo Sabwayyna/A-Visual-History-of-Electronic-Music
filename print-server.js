@@ -1,13 +1,83 @@
 // print-server.js
 // Run with: node print-server.js
-// Listens on http://localhost:3001/print
-// Accepts a PNG image blob via POST, resizes to 4×6 label, prints via lp
+// Port 3001 → POST /print   (receives PNG, resizes, prints)
+// Port 8080 → static files  (serve thesis from localhost so Chrome allows mic)
+// Open: http://localhost:8080/index.html  (or 8081 if 8080 is taken)
 
 const http     = require('http');
 const { execFile } = require('child_process');
 const fs       = require('fs');
 const os       = require('os');
 const path     = require('path');
+
+// ── STATIC FILE SERVER (port 8080) ────────────────────────────────────────────
+const STATIC_PORT = 8081;
+const STATIC_ROOT = __dirname; // serve from the same folder as this script
+
+const MIME = {
+  '.html': 'text/html',
+  '.js':   'application/javascript',
+  '.css':  'text/css',
+  '.json': 'application/json',
+  '.png':  'image/png',
+  '.jpg':  'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif':  'image/gif',
+  '.svg':  'image/svg+xml',
+  '.mp3':  'audio/mpeg',
+  '.mp4':  'video/mp4',
+  '.otf':  'font/otf',
+  '.ttf':  'font/ttf',
+  '.woff': 'font/woff',
+  '.woff2':'font/woff2',
+  '.ico':  'image/x-icon',
+};
+
+const staticServer = http.createServer((req, res) => {
+  let urlPath = req.url.split('?')[0];
+  if (urlPath === '/') urlPath = '/index.html';
+  const filePath = path.join(STATIC_ROOT, urlPath);
+
+  if (!filePath.startsWith(STATIC_ROOT)) {
+    res.writeHead(403); res.end('Forbidden'); return;
+  }
+
+  fs.stat(filePath, (err, stat) => {
+    if (err) { res.writeHead(404); res.end('Not found'); return; }
+
+    const ext      = path.extname(filePath).toLowerCase();
+    const mime     = MIME[ext] || 'application/octet-stream';
+    const total    = stat.size;
+    const rangeHdr = req.headers['range'];
+
+    if (rangeHdr) {
+      // Partial content — required for audio/video streaming
+      const [startStr, endStr] = rangeHdr.replace('bytes=', '').split('-');
+      const start = parseInt(startStr, 10);
+      const end   = endStr ? parseInt(endStr, 10) : total - 1;
+      const chunkSize = end - start + 1;
+      res.writeHead(206, {
+        'Content-Range':  `bytes ${start}-${end}/${total}`,
+        'Accept-Ranges':  'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type':   mime,
+      });
+      fs.createReadStream(filePath, { start, end }).pipe(res);
+    } else {
+      res.writeHead(200, {
+        'Content-Length': total,
+        'Content-Type':   mime,
+        'Accept-Ranges':  'bytes',
+      });
+      fs.createReadStream(filePath).pipe(res);
+    }
+  });
+});
+
+staticServer.listen(STATIC_PORT, () => {
+  console.log(`Static server  → http://localhost:${STATIC_PORT}/index.html`);
+  console.log(`Song pages     → http://localhost:${STATIC_PORT}/songs/<name>.html`);
+});
 
 const PORT    = 3001;
 const PRINTER = '_RP425_ZPL_203DPI_';

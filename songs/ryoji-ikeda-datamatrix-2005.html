@@ -55,7 +55,7 @@
 
         .video-grain {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOTknIG51bU9jdGF2ZXM9JzUnIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbm9pc2VGaWx0ZXIpJy8+PC9zdmc+');
+            background: url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzEuODUnIG51bU9jdGF2ZXM9JzYnIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbm9pc2VGaWx0ZXIpJy8+PC9zdmc+');
             opacity: 0.4; mix-blend-mode: overlay;
         }
 
@@ -63,7 +63,7 @@
         #grain-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 50;
-            background: url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuOTknIG51bU9jdGF2ZXM9JzUnIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbm9pc2VGaWx0ZXIpJy8+PC9zdmc+');
+            background: url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZUZpbHRlcic+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzEuODUnIG51bU9jdGF2ZXM9JzYnIHN0aXRjaFRpbGVzPSdzdGl0Y2gnLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyBmaWx0ZXI9J3VybCgjbm9pc2VGaWx0ZXIpJy8+PC9zdmc+');
             opacity: 0.22;
             mix-blend-mode: overlay;
             animation: jitter 0.15s steps(2) infinite;
@@ -323,7 +323,7 @@
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
         }
         /* static fine grain */
-        body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.055; background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>"); background-repeat: repeat; background-size: 160px; }
+        body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.055; background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.85' numOctaves='6' stitchTiles='stitch'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>"); background-repeat: repeat; background-size: 80px; }
     </style>
 </head>
 <body>
@@ -403,12 +403,19 @@
         let frame = 0;
 
         // ── Audio reactivity ───────────────────────────────────────────────────
-        let smBass = 0, smEnergy = 0;
+        let smBass = 0, smMid = 0, smEnergy = 0;
         let rawBass = 0, prevRawBass = 0, beatPulse = 0;
-        let baseSpeed = 0.8;   // camera forward speed — varies with music
+        let rawMid = 0,  prevRawMid  = 0, accentPulse = 0;
+        let beatCooldown = 0;
+        let shockwave = 0, prevEnergy = 0;
+        let silenceGate = 0;
+        let baseSpeed = 0.8;
+        let camLight = null;
         let gradientTex = null;
 
         let curX = 0, curY = 75, curZ = 200, targetZ = 200;
+        let userShadowMesh = null;
+        let softShadowTex  = null;
         let mouseX = 0, mouseY = 0;
         let targetFOV = 60, curFOV = 60;
 
@@ -526,6 +533,19 @@
             return tex;
         }
 
+        // ── Soft shadow texture (blurred radial gradient) ─────────────────────
+        function makeSoftShadowTex() {
+            const c = document.createElement('canvas');
+            c.width = c.height = 128;
+            const ctx = c.getContext('2d');
+            const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+            g.addColorStop(0,    'rgba(0,0,0,0.18)');
+            g.addColorStop(0.45, 'rgba(0,0,0,0.07)');
+            g.addColorStop(1,    'rgba(0,0,0,0)');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, 128, 128);
+            return new THREE.CanvasTexture(c);
+        }
+
         // ── Noise texture ──────────────────────────────────────────────────────
         function generateNoiseTexture() {
             const size = 256;
@@ -544,23 +564,27 @@
         function init3D() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x020202);
-            scene.fog = new THREE.Fog(0x020202, 100, 2500);
+            scene.fog = new THREE.Fog(0x020202, 200, 7000);
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 6000);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             // Insert canvas before all fixed UI so fixed elements stay on top
             document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
-            noiseTex    = generateNoiseTexture();
-            gradientTex = makeGradientTexture();
+            noiseTex       = generateNoiseTexture();
+            gradientTex    = makeGradientTexture();
+            softShadowTex  = makeSoftShadowTex();
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-            const dir = new THREE.DirectionalLight(0xffffff, 2);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+            const dir = new THREE.DirectionalLight(0xffffff, 1.5);
             dir.position.set(100, 400, 100);
             scene.add(dir);
+            // Camera-following point light — creates depth/shadow illusion
+            camLight = new THREE.PointLight(0xffffff, 3.5, 1100);
+            scene.add(camLight);
 
             // Ground plane
             const groundGeo = new THREE.PlaneGeometry(30000, 30000);
@@ -574,11 +598,70 @@
             ground.name = 'ground';
             scene.add(ground);
 
-            const grid = new THREE.GridHelper(30000, 200, 0xffffff, 0x222222);
+            // ── Main floor grid (follows camera — appears infinite) ────────────
+            const grid = new THREE.GridHelper(30000, 300, 0xffffff, 0x1a1a1a);
             grid.position.y = 0.5;
             grid.material.transparent = true;
-            grid.material.opacity = 0.2;
+            grid.material.opacity = 0.22;
+            grid.name = 'mainGrid';
             scene.add(grid);
+
+            // ── Extra thin horizontal grid layers at height ───────────────────
+            const skyGrid1 = new THREE.GridHelper(30000, 150, 0x111111, 0x111111);
+            skyGrid1.position.y = 120;
+            skyGrid1.material.transparent = true;
+            skyGrid1.material.opacity = 0.10;
+            skyGrid1.name = 'skyGrid1';
+            scene.add(skyGrid1);
+
+            const skyGrid2 = new THREE.GridHelper(30000, 80, 0x0a0a0a, 0x0a0a0a);
+            skyGrid2.position.y = 380;
+            skyGrid2.material.transparent = true;
+            skyGrid2.material.opacity = 0.07;
+            skyGrid2.name = 'skyGrid2';
+            scene.add(skyGrid2);
+
+            // ── Vertical line field (follows camera — appears infinite) ────────
+            (function buildVertLines() {
+                const spacing = 480, count = 22, half = count / 2;
+                const positions = [];
+                for (let ix = 0; ix < count; ix++) {
+                    for (let iz = 0; iz < count; iz++) {
+                        const x = (ix - half) * spacing;
+                        const z = (iz - half) * spacing;
+                        const h = 80 + (Math.sin(ix * 1.3 + iz * 0.9) * 0.5 + 0.5) * 520;
+                        positions.push(x, 0, z,  x, h, z);
+                    }
+                }
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                const mat = new THREE.LineBasicMaterial({ color: 0x2a2a2a, transparent: true, opacity: 0.35 });
+                const vLines = new THREE.LineSegments(geo, mat);
+                vLines.name = 'vertLines';
+                scene.add(vLines);
+            })();
+
+            // ── User shadow — cold-toned radial blob on floor ─────────────────
+            (function buildUserShadow() {
+                const canvas = document.createElement('canvas');
+                canvas.width = canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+                grad.addColorStop(0,    'rgba(80, 120, 255, 0.65)');
+                grad.addColorStop(0.35, 'rgba(55,  90, 220, 0.35)');
+                grad.addColorStop(0.7,  'rgba(30,  55, 170, 0.12)');
+                grad.addColorStop(1,    'rgba(10,  30, 120, 0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 256, 256);
+                const tex = new THREE.CanvasTexture(canvas);
+                const geo = new THREE.PlaneGeometry(480, 300);
+                const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+                userShadowMesh = new THREE.Mesh(geo, mat);
+                userShadowMesh.rotation.x = -Math.PI / 2;
+                userShadowMesh.position.y = 1.2;
+                userShadowMesh.name = 'userShadow';
+                scene.add(userShadowMesh);
+            })();
 
             window.addEventListener('mousemove', (e) => {
                 mouseX = (e.clientX / window.innerWidth) - 0.5;
@@ -602,111 +685,181 @@
 
         // ── Shape spawning ────────────────────────────────────────────────────
         function createStab() {
+            // Silence gate — suppress spawning when music is quiet
+            if (silenceGate < 0.12 && beatPulse < 0.3 && shockwave < 0.2 && accentPulse < 0.3) return;
+
             const spawnZ = curZ - 600;
             const pick   = arr => arr[Math.floor(Math.random() * arr.length)];
+            const rand   = (lo, hi) => lo + Math.random() * (hi - lo);
 
-            const bass   = dataArray ? binAvg(dataArray, 1, 6)    : 0;
-            const mid    = dataArray ? binAvg(dataArray, 7, 40)   : 0;
-            const treble = dataArray ? binAvg(dataArray, 41, 150) : 0;
+            const bass   = dataArray ? binAvg(dataArray, 1,   6)   : 0;
+            const mid    = dataArray ? binAvg(dataArray, 7,   40)  : 0;
+            const treble = dataArray ? binAvg(dataArray, 41, 150)  : 0;
 
             const isBass   = bass   > 28;
             const isMid    = mid    > 20;
             const isTreble = treble > 15;
 
-            // On beat: varied burst — slabs are now one option among many
-            if (beatPulse > 0.45) {
-                const burstCount = 1 + Math.floor(beatPulse * 3);
-                const beatPool = ['needle', 'box', 'ring', 'bar', 'dot', 'tri', 'slab'];
-                for (let k = 0; k < burstCount; k++) {
-                    const t = pick(beatPool);
-                    if (t === 'slab' || t === 'bar') {
-                        spawnShape(t,
-                            160 + Math.random()*500, t === 'bar' ? 2 : 12 + beatPulse*18,
-                            (Math.random()-0.5)*1800, 2, spawnZ - k*80, true);
-                    } else if (t === 'needle') {
-                        spawnShape('needle', 1.5 + beatPulse*2, 2800 + beatPulse*2200,
-                            (Math.random()-0.5)*900, 0, spawnZ - k*60, false);
-                    } else if (t === 'box') {
-                        spawnShape('box',
-                            28 + Math.random()*70, 28 + Math.random()*70,
-                            (Math.random()-0.5)*1400, 20 + Math.random()*120, spawnZ - k*90, false);
-                    } else if (t === 'ring') {
-                        spawnShape('ring',
-                            35 + Math.random()*90, 0,
-                            (Math.random()-0.5)*1200, 40 + Math.random()*140, spawnZ - k*80, false);
-                    } else if (t === 'dot') {
-                        spawnShape('dot',
-                            6 + Math.random()*14, 0,
-                            (Math.random()-0.5)*1400, 20 + Math.random()*180, spawnZ - k*60, false);
-                    } else if (t === 'tri') {
-                        spawnShape('tri',
-                            22 + Math.random()*50, 0,
-                            (Math.random()-0.5)*1200, 30 + Math.random()*150, spawnZ - k*75, false);
+            // ── SHOCKWAVE: sudden energy surge → monolith burst ───────────────
+            if (shockwave > 0.45) {
+                const count = 2 + Math.floor(shockwave * 5);
+                for (let k = 0; k < count; k++) {
+                    if (Math.random() < 0.5) {
+                        // Oversized monolith slab
+                        spawnShape('slab', rand(700, 2200), rand(60, 250),
+                            rand(-2200, 2200), rand(2, 180), spawnZ - k*140, true);
+                    } else {
+                        spawnShape(pick(['bar','ring','box']), rand(80,500), rand(80,500),
+                            rand(-2000, 2000), rand(10, 220), spawnZ - k*100, false);
                     }
                 }
             }
 
-            // Bass: flat ground shapes — slab now shares pool with bar + ring
+            // ── BEAT: strong synchronized burst, size driven by pulse strength ─
+            if (beatPulse > 0.45) {
+                const burstCount = 1 + Math.floor(beatPulse * 4);
+                const beatPool = ['needle', 'box', 'ring', 'bar', 'dot', 'tri', 'slab', 'hline', 'vline'];
+                for (let k = 0; k < burstCount; k++) {
+                    const t = pick(beatPool);
+                    // Size tier: 20% micro, 15% giant, rest normal
+                    const tier = Math.random();
+                    const sm = tier < 0.20 ? rand(0.04, 0.12) :
+                               tier < 0.35 ? rand(3.5, 7.0)   : 1.0;
+                    if (t === 'slab' || t === 'bar') {
+                        spawnShape(t,
+                            rand(160, 660) * sm,
+                            t === 'bar' ? 2 : rand(12, 12 + beatPulse*18) * sm,
+                            rand(-1800, 1800), 2, spawnZ - k*80, true);
+                    } else if (t === 'needle') {
+                        spawnShape('needle', rand(1, 3) * sm,
+                            rand(2800, 2800 + beatPulse*2200) * sm,
+                            rand(-900, 900), 0, spawnZ - k*60, false);
+                    } else if (t === 'box') {
+                        const s = rand(28, 98) * sm;
+                        spawnShape('box', s, s, rand(-1400, 1400), rand(20, 140), spawnZ - k*90, false);
+                    } else if (t === 'ring') {
+                        spawnShape('ring', rand(35, 125) * sm, 0,
+                            rand(-1200, 1200), rand(40, 180), spawnZ - k*80, false);
+                    } else if (t === 'dot') {
+                        const dotCount = Math.floor(rand(3, 4 + beatPulse * 7));
+                        for (let d = 0; d < dotCount; d++) {
+                            const ds = Math.random() < 0.18 ? rand(28, 80) : rand(1, 11);
+                            spawnShape('dot', ds, 0, rand(-1800, 1800), rand(8, 210), spawnZ - d*38, false);
+                        }
+                    } else if (t === 'tri') {
+                        spawnShape('tri', rand(22, 72) * sm, 0,
+                            rand(-1200, 1200), rand(30, 165), spawnZ - k*75, false);
+                    } else if (t === 'hline') {
+                        if (Math.random() < 0.7) spawnShape('hline', rand(300, 300 + beatPulse*1400) * sm, rand(1.5, 3),
+                            rand(-1600, 1600), rand(20, 280), spawnZ - k*70, false);
+                    } else if (t === 'vline') {
+                        if (Math.random() < 0.7) spawnShape('vline', rand(1.5, 3), rand(80, 80 + beatPulse*500) * sm,
+                            rand(-1600, 1600), rand(20, 250), spawnZ - k*70, false);
+                    }
+                }
+            }
+
+            // ── LINES: dedicated line bursts on strong beats ──────────────────
+            if (beatPulse > 0.6) {
+                const lCount = 1 + Math.floor(beatPulse * 2);
+                for (let k = 0; k < lCount; k++) {
+                    if (Math.random() < 0.5) {
+                        spawnShape('hline', rand(400, 400 + beatPulse*2000), rand(1.5, 2.5),
+                            rand(-2000, 2000), rand(10, 320), spawnZ - k*55, false);
+                    } else {
+                        spawnShape('vline', rand(1.5, 2.5), rand(100, 100 + beatPulse*700),
+                            rand(-2000, 2000), rand(10, 200), spawnZ - k*55, false);
+                    }
+                }
+            }
+
+            // ── ACCENT: mid transient → precise geometric accent ──────────────
+            if (accentPulse > 0.35) {
+                const t = pick(['ring', 'frame', 'box', 'tri', 'dot', 'needle']);
+                const micro = Math.random() < 0.30;
+                const as = micro ? rand(1, 7) : rand(30, 30 + accentPulse * 90);
+                spawnShape(t, as, as, rand(-1400, 1400), rand(15, 190), spawnZ, false);
+                if (Math.random() < 0.45)
+                    spawnShape('needle', rand(0.8, 2.5), rand(1200, 1200 + accentPulse*2200),
+                        rand(-1000, 1000), 0, spawnZ - 45, false);
+            }
+
+            // ── BASS: heavy ground forms, occasionally giant ───────────────────
             if (isBass) {
                 const t = pick(['slab', 'bar', 'ring', 'box']);
+                const giant = Math.random() < 0.25;
                 if (t === 'slab') {
-                    spawnShape('slab', 220 + Math.random()*420, 12,
-                        (Math.random()-0.5)*1400, 2, spawnZ, true);
+                    spawnShape('slab', rand(220, 640) * (giant ? 3.5 : 1),
+                        giant ? rand(35, 55) : 12,
+                        rand(-1400, 1400), 2, spawnZ, true);
                 } else if (t === 'bar') {
-                    spawnShape('bar', 300 + Math.random()*500, 2,
-                        (Math.random()-0.5)*1400, 2, spawnZ, true);
+                    spawnShape('bar', rand(300, 800) * (giant ? 2.2 : 1), 2,
+                        rand(-1400, 1400), 2, spawnZ, true);
                 } else if (t === 'ring') {
-                    spawnShape('ring', 45 + Math.random()*110, 0,
-                        (Math.random()-0.5)*1200, 35 + Math.random()*100, spawnZ, false);
+                    spawnShape('ring', rand(45, 155), 0, rand(-1200, 1200), rand(35, 135), spawnZ, false);
                 } else {
-                    spawnShape('box', 35 + Math.random()*90, 35 + Math.random()*90,
-                        (Math.random()-0.5)*1200, 25 + Math.random()*110, spawnZ, false);
+                    const s = rand(35, 125);
+                    spawnShape('box', s, s, rand(-1200, 1200), rand(25, 135), spawnZ, false);
                 }
             }
 
-            // Treble: thin bright shapes
+            // ── TREBLE: tiny sparkle + occasional oversized thin shapes ─────────
             if (isTreble) {
-                const t = pick(['needle', 'bar', 'tri', 'dot', 'ring']);
+                const t = pick(['needle', 'bar', 'tri', 'dot', 'ring', 'hline', 'vline']);
+                const micro = Math.random() < 0.35;
                 if (t === 'needle') {
-                    spawnShape('needle', 1.5, 3200 + treble*10,
-                        (Math.random()-0.5)*1200, 0, spawnZ, false);
+                    spawnShape('needle', micro ? rand(0.4, 1.2) : 1.5,
+                        micro ? rand(80, 300) : rand(3200, 3200 + treble*10),
+                        rand(-1200, 1200), 0, spawnZ, false);
                 } else if (t === 'bar') {
-                    spawnShape('bar', 250 + treble*3.5, 2,
-                        (Math.random()-0.5)*1200, Math.random()*180, spawnZ, false);
+                    spawnShape('bar', micro ? rand(3, 18) : rand(250, 250 + treble*3.5), 2,
+                        rand(-1200, 1200), Math.random()*180, spawnZ, false);
                 } else if (t === 'tri') {
-                    spawnShape('tri', 12 + treble*0.25, 0,
-                        (Math.random()-0.5)*1200, 25 + Math.random()*150, spawnZ, false);
+                    spawnShape('tri', micro ? rand(1, 5) : rand(12, 12 + treble*0.25), 0,
+                        rand(-1200, 1200), rand(25, 165), spawnZ, false);
                 } else if (t === 'dot') {
-                    spawnShape('dot', 4 + treble*0.12, 0,
-                        (Math.random()-0.5)*1200, 15 + Math.random()*190, spawnZ, false);
+                    const dc = 2 + Math.floor(Math.random() * 6);
+                    for (let d = 0; d < dc; d++) {
+                        const ds = micro ? rand(0.4, 2.5) : rand(3, 3 + treble*0.12);
+                        spawnShape('dot', ds, 0, rand(-1400, 1400), rand(12, 200), spawnZ - d*22, false);
+                    }
+                } else if (t === 'hline') {
+                    if (Math.random() < 0.7) spawnShape('hline', micro ? rand(20, 80) : rand(200, 200 + treble*8), rand(1.2, 2.2),
+                        rand(-1400, 1400), rand(15, 260), spawnZ, false);
+                } else if (t === 'vline') {
+                    if (Math.random() < 0.7) spawnShape('vline', rand(1.2, 2.2), micro ? rand(12, 45) : rand(60, 60 + treble*4),
+                        rand(-1400, 1400), rand(15, 200), spawnZ, false);
                 } else {
-                    spawnShape('ring', 25 + treble*0.5, 0,
-                        (Math.random()-0.5)*1200, 30 + Math.random()*160, spawnZ, false);
+                    spawnShape('ring', micro ? rand(3, 14) : rand(25, 25 + treble*0.5), 0,
+                        rand(-1200, 1200), rand(30, 170), spawnZ, false);
                 }
             }
 
-            // Mid: varied geometric objects every other frame
+            // ── MID: geometric accents every other frame ──────────────────────
             if (isMid && frame % 2 === 0) {
-                const t = pick(['frame', 'block', 'ring', 'dot', 'tri', 'box']);
+                const t = pick(['frame', 'block', 'ring', 'dot', 'tri', 'box', 'hline', 'vline']);
                 if (t === 'frame') {
                     spawnShape('frame', 65 + mid*0.55, 65 + mid*0.55,
-                        (Math.random()-0.5)*1000, 90 + Math.random()*160, spawnZ, false);
+                        rand(-1000, 1000), rand(90, 250), spawnZ, false);
                 } else if (t === 'block') {
                     spawnShape('block', 45 + mid*0.38, 45 + mid*0.38,
-                        (Math.random()-0.5)*1000, 45 + Math.random()*110, spawnZ, false);
+                        rand(-1000, 1000), rand(45, 155), spawnZ, false);
                 } else if (t === 'ring') {
-                    spawnShape('ring', 40 + mid*0.45, 0,
-                        (Math.random()-0.5)*1000, 65 + Math.random()*150, spawnZ, false);
+                    spawnShape('ring', 40 + mid*0.45, 0, rand(-1000, 1000), rand(65, 215), spawnZ, false);
                 } else if (t === 'dot') {
-                    for (let i = 0; i < 3; i++)
-                        spawnShape('dot', 3 + Math.random()*7, 0,
-                            (Math.random()-0.5)*1000, 45 + Math.random()*170, spawnZ - i*35, false);
+                    for (let i = 0; i < 4; i++)
+                        spawnShape('dot', rand(2, 9), 0, rand(-1000, 1000), rand(40, 180), spawnZ - i*35, false);
                 } else if (t === 'tri') {
-                    spawnShape('tri', 28 + mid*0.45, 0,
-                        (Math.random()-0.5)*1000, 55 + Math.random()*140, spawnZ, false);
+                    spawnShape('tri', 28 + mid*0.45, 0, rand(-1000, 1000), rand(55, 195), spawnZ, false);
+                } else if (t === 'hline') {
+                    if (Math.random() < 0.7) spawnShape('hline', rand(150, 150 + mid*5), rand(1.5, 2.5),
+                        rand(-1200, 1200), rand(40, 220), spawnZ, false);
+                } else if (t === 'vline') {
+                    if (Math.random() < 0.7) spawnShape('vline', rand(1.5, 2.5), rand(50, 50 + mid*3.5),
+                        rand(-1200, 1200), rand(30, 180), spawnZ, false);
                 } else {
-                    spawnShape('box', 22 + mid*0.35, 22 + mid*0.35,
-                        (Math.random()-0.5)*1000, 50 + Math.random()*130, spawnZ, false);
+                    const s = 22 + mid*0.35;
+                    spawnShape('box', s, s, rand(-1000, 1000), rand(45, 160), spawnZ, false);
                 }
             }
         }
@@ -747,8 +900,8 @@
                 mesh.rotation.x = -Math.PI / 2;  // lay flat facing camera
 
             } else if (style === 'bar') {
-                // Ultra-thin horizontal stripe
-                const geo = new THREE.PlaneGeometry(w, Math.max(1.5, h));
+                // Infinite horizontal stripe — extends beyond fog
+                const geo = new THREE.PlaneGeometry(18000, Math.max(1.5, h));
                 mesh = new THREE.Mesh(geo, stdMat());
 
             } else if (style === 'frame') {
@@ -757,24 +910,100 @@
                 mesh = new THREE.Mesh(geo, stdMat());
                 mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat()));
 
+            } else if (style === 'hline') {
+                // Infinite horizontal line — extends beyond fog
+                const geo = new THREE.PlaneGeometry(18000, Math.max(1.2, h || 1.8));
+                mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+                    color: 0xffffff, transparent: true, opacity: 0.75, side: THREE.DoubleSide
+                }));
+            } else if (style === 'vline') {
+                // Infinite vertical line — extends beyond fog
+                const geo = new THREE.PlaneGeometry(Math.max(1.2, w || 1.8), 18000);
+                mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+                    color: 0xffffff, transparent: true, opacity: 0.75, side: THREE.DoubleSide
+                }));
+            } else if (style === 'needle') {
+                // Infinite needle — tall thin plane extending beyond fog
+                const geo = new THREE.PlaneGeometry(Math.max(1.5, w), 18000);
+                mesh = new THREE.Mesh(geo, stdMat());
+                mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat()));
+            } else if (style === 'slab') {
+                // Infinite slab — wide thin plane extending beyond fog
+                const geo = new THREE.PlaneGeometry(18000, Math.max(1.5, h));
+                mesh = new THREE.Mesh(geo, stdMat());
+                mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat()));
             } else {
-                // slab / needle / block — flat planes
+                // block — flat planes
                 const geo = new THREE.PlaneGeometry(w, h);
                 mesh = new THREE.Mesh(geo, stdMat());
                 mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat()));
             }
 
             mesh.position.set(x, y, z);
-            if (isFlat && style !== 'tri') mesh.rotation.x = -Math.PI / 2;
+
+            // ── Varied orientations per shape type ────────────────────────────
+            const τ = Math.PI * 2;
+            if (style === 'needle') {
+                mesh.rotation.x = (Math.random()-0.5) * Math.PI * 0.9;
+                mesh.rotation.y = Math.random() * τ;
+                mesh.rotation.z = (Math.random()-0.5) * Math.PI * 0.7;
+            } else if (style === 'ring' || style === 'frame') {
+                mesh.rotation.x = Math.random() * Math.PI;
+                mesh.rotation.y = Math.random() * Math.PI;
+                mesh.rotation.z = Math.random() * Math.PI;
+            } else if (style === 'box' || style === 'block') {
+                mesh.rotation.set(Math.random()*τ, Math.random()*τ, Math.random()*τ);
+            } else if (style === 'tri') {
+                mesh.rotation.x = -Math.PI / 2 + (Math.random()-0.5) * 1.4;
+                mesh.rotation.y = Math.random() * τ;
+                mesh.rotation.z = Math.random() * τ;
+            } else if (style === 'dot') {
+                // spheres — no meaningful rotation
+            } else if (style === 'hline') {
+                // Horizontal line — faces camera with slight tilt variation
+                mesh.rotation.y = (Math.random()-0.5) * Math.PI * 0.5;
+                mesh.rotation.z = (Math.random()-0.5) * 0.3;
+            } else if (style === 'vline') {
+                // Vertical line — faces camera, slight lean
+                mesh.rotation.y = (Math.random()-0.5) * Math.PI * 0.5;
+                mesh.rotation.x = (Math.random()-0.5) * 0.25;
+            } else {
+                // slab / bar / block — mostly flat but with angular drift
+                mesh.rotation.x = -Math.PI / 2 + (Math.random()-0.5) * 1.1;
+                mesh.rotation.y = (Math.random()-0.5) * Math.PI * 0.7;
+                mesh.rotation.z = Math.random() * τ;
+            }
+
             mesh.scale.set(0, 0, 0);
             scene.add(mesh);
-            elements.push({ mesh, impact: 1.6 });
+
+            // ── Floor shadow — soft blurred disc under elevated shapes ──────────
+            let shadowMesh = null;
+            if (y > 12 && softShadowTex) {
+                const shadowR = Math.max(12, Math.max(w, h || w) * 0.85);
+                const sGeo = new THREE.PlaneGeometry(shadowR * 2, shadowR * 2);
+                const sMat = new THREE.MeshBasicMaterial({
+                    map: softShadowTex, transparent: true, opacity: 0.9, depthWrite: false
+                });
+                shadowMesh = new THREE.Mesh(sGeo, sMat);
+                shadowMesh.rotation.x = -Math.PI / 2;
+                shadowMesh.position.set(x, 0.8, z);
+                shadowMesh.scale.set(0, 0, 0);
+                scene.add(shadowMesh);
+            }
+
+            elements.push({ mesh, shadowMesh, impact: 1.6 });
 
             if (elements.length > 1500) {
                 const old = elements.shift();
                 scene.remove(old.mesh);
                 if (old.mesh.geometry) old.mesh.geometry.dispose();
                 if (old.mesh.material) old.mesh.material.dispose();
+                if (old.shadowMesh) {
+                    scene.remove(old.shadowMesh);
+                    old.shadowMesh.geometry.dispose();
+                    old.shadowMesh.material.dispose();
+                }
             }
         }
 
@@ -794,18 +1023,44 @@
             const treble = dataArray ? binAvg(dataArray, 41, 150)  : 0;
             const energy = (bass + mid + treble) / (255 * 3);
 
-            // ── Beat detection ─────────────────────────────────────────────────
-            const rawNorm = bass / 255;
-            rawBass  += (rawNorm - rawBass) * 0.30;
-            smBass   += (rawNorm - smBass)  * 0.08;
-            smEnergy += (energy  - smEnergy) * 0.06;
+            // ── Beat & accent detection ────────────────────────────────────────
+            const rawNorm    = bass / 255;
+            const rawMidNorm = mid  / 255;
+
+            rawBass  += (rawNorm    - rawBass)  * 0.30;
+            rawMid   += (rawMidNorm - rawMid)   * 0.25;
+            smBass   += (rawNorm    - smBass)   * 0.08;
+            smMid    += (rawMidNorm - smMid)    * 0.07;
+            smEnergy += (energy     - smEnergy) * 0.06;
 
             const bassRise = rawBass - prevRawBass;
-            if (bassRise > 0.055 && rawBass > 0.10) {
-                beatPulse = Math.min(1.0, rawBass * 1.6);
+            const midRise  = rawMid  - prevRawMid;
+
+            // Bass kick — cooldown prevents chattering on sustained bass
+            if (beatCooldown > 0) beatCooldown--;
+            if (bassRise > 0.055 && rawBass > 0.10 && beatCooldown === 0) {
+                beatPulse    = Math.min(1.0, rawBass * 1.6);
+                beatCooldown = 7;
             }
-            beatPulse    *= 0.86;
-            prevRawBass   = rawBass;
+            beatPulse *= 0.86;
+
+            // Mid transient accent
+            if (midRise > 0.038 && rawMid > 0.10) {
+                accentPulse = Math.min(1.0, rawMid * 1.9);
+            }
+            accentPulse *= 0.82;
+
+            // Energy surge → shockwave
+            const energyDelta = smEnergy - prevEnergy;
+            if (energyDelta > 0.042) shockwave = Math.min(1.0, energyDelta * 14.0);
+            shockwave *= 0.88;
+
+            // Silence gate — shapes only spawn when music has energy
+            silenceGate = Math.min(1.0, Math.max(0, (smEnergy - 0.035) / 0.07));
+
+            prevRawBass = rawBass;
+            prevRawMid  = rawMid;
+            prevEnergy  = smEnergy;
 
             // ── Variable camera speed — rushes on beat, drifts in silence ─────
             const speedTarget = 0.6 + smEnergy * 5.0 + beatPulse * 9.0;
@@ -826,20 +1081,54 @@
             camera.rotation.x += ((-mouseY * 0.28 + 0.15) - camera.rotation.x) * 0.022;
             camera.rotation.z += ((-mouseX * 0.28) - camera.rotation.z) * 0.022;
 
+            // Move camera light — creates moving shadow/depth on nearby shapes
+            if (camLight) {
+                camLight.position.set(curX + mouseX * 120, curY + 70, curZ + 160);
+                camLight.intensity = 3.0 + beatPulse * 4.5 + smBass * 1.5;
+            }
+
+            // ── Keep infinite-looking line grids centered on camera ───────────
+            const mainGrid = scene.getObjectByName('mainGrid');
+            if (mainGrid) mainGrid.position.z = Math.round(curZ / 100) * 100;
+            const skyGrid1 = scene.getObjectByName('skyGrid1');
+            if (skyGrid1) skyGrid1.position.z = Math.round(curZ / 200) * 200;
+            const skyGrid2 = scene.getObjectByName('skyGrid2');
+            if (skyGrid2) skyGrid2.position.z = Math.round(curZ / 375) * 375;
+            const vertLines = scene.getObjectByName('vertLines');
+            if (vertLines) {
+                vertLines.position.x = Math.round(curX / 480) * 480;
+                vertLines.position.z = Math.round(curZ / 480) * 480;
+            }
+
+            // ── User cold shadow follows camera ───────────────────────────────
+            if (userShadowMesh) {
+                userShadowMesh.position.x = curX + mouseX * 30;
+                userShadowMesh.position.z = curZ + 90;
+                const heightScale = Math.max(0.4, 1.2 - curY / 350);
+                userShadowMesh.scale.set(heightScale * 1.4, 1, heightScale);
+                userShadowMesh.material.opacity = 0.62 * heightScale + beatPulse * 0.18;
+            }
+
             createStab();
 
-            // ── Update elements: scale pop + emissive flash on beat ───────────
+            // ── Update elements: scale pop + shadow + depth-based emissive ─────
             const targetEmissive = 0.12 + beatPulse * 1.2 + smBass * 0.4;
             for (const e of elements) {
                 if (e.impact > 1.0) {
                     e.impact -= 0.09;
                     e.mesh.scale.set(e.impact, e.impact, e.impact);
+                    if (e.shadowMesh) e.shadowMesh.scale.set(e.impact * 0.9, e.impact * 0.9, e.impact * 0.9);
                 } else {
                     e.mesh.scale.set(1, 1, 1);
+                    if (e.shadowMesh) e.shadowMesh.scale.set(1, 1, 1);
                 }
                 if (e.mesh.material && e.mesh.material.emissiveIntensity !== undefined) {
+                    const dz = e.mesh.position.z - curZ;
+                    const depthBoost = (dz < 0)
+                        ? Math.max(0, 1.0 + dz / 800) * 0.45
+                        : Math.max(0, 1.0 - dz / 300) * 0.15;
                     e.mesh.material.emissiveIntensity +=
-                        (targetEmissive - e.mesh.material.emissiveIntensity) * 0.12;
+                        (targetEmissive + depthBoost - e.mesh.material.emissiveIntensity) * 0.12;
                 }
             }
 

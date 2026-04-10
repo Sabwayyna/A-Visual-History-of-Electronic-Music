@@ -497,7 +497,7 @@
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 30000);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
             document.getElementById('canvas-container').appendChild(renderer.domElement);

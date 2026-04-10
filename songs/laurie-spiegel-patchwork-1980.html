@@ -499,7 +499,7 @@
         }
 
         // Shared materials — created once in initScene, reused by every block
-        let blockMaterials, edgeMaterial;
+        let blockMaterials, edgeMaterial, shadowMaterial;
 
         // Grain texture for blocks — created once, shared across all materials
         let noiseTexture;
@@ -537,6 +537,13 @@
 
             block.position.set(tower.posX, tower.yPos + h / 2, tower.posZ);
             scene.add(block);
+
+            // Mirrored shadow — reflected below y=0
+            const shadowGeo  = new THREE.BoxGeometry(w, h, depth);
+            const shadowMesh = new THREE.Mesh(shadowGeo, shadowMaterial);
+            shadowMesh.position.set(tower.posX, -(tower.yPos + h / 2), tower.posZ);
+            scene.add(shadowMesh);
+
             tower.yPos += h;
             tower.blockCount++;
             if (tower.yPos > towerHeight) towerHeight = tower.yPos;
@@ -580,10 +587,10 @@
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
             // Closer overhead start — tiny z offset avoids OrbitControls gimbal lock at exactly 90°
-            camera.position.set(0, 55, 0.01);
+            camera.position.set(0, 40, 90);
             camera.lookAt(0, 0, 0);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
             renderer.setClearColor(0x000000, 1);
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
@@ -608,6 +615,7 @@
             noiseTexture = createNoiseTexture();
             blockMaterials = FILL_COLORS.map(c => new THREE.MeshLambertMaterial({ color: c, map: noiseTexture }));
             edgeMaterial   = new THREE.LineBasicMaterial({ color: 0xffffff });
+            shadowMaterial = new THREE.MeshBasicMaterial({ color: 0x1a1a1a, transparent: true, opacity: 0.38 });
             // Pre-warm: force shader compile before any block appears
             const _warmGeo = new THREE.BoxGeometry(1, 1, 1);
             blockMaterials.forEach(m => { const _m = new THREE.Mesh(_warmGeo, m); renderer.compile(scene, camera); _m.geometry.dispose(); });
@@ -618,6 +626,8 @@
             controls.dampingFactor = 0.06;
             controls.minDistance   = 5;
             controls.maxDistance   = 2000;
+            controls.enablePan     = true;
+            controls.screenSpacePanning = true; // pan moves camera up/down, not toward target
             controls.target.set(0, 0, 0);
             controls.update();
 
@@ -687,14 +697,6 @@
                 }
             }
 
-            // Always drift upward with the towers — user can still orbit/zoom freely
-            if (towerHeight > 0) {
-                const prevY  = controls.target.y;
-                const nextY  = prevY + (towerHeight - prevY) * 0.06;
-                const deltaY = nextY - prevY;
-                controls.target.y  = nextY;
-                camera.position.y += deltaY;
-            }
 
 
             // Background: pure black up close, creeps toward dark gray as you zoom out
