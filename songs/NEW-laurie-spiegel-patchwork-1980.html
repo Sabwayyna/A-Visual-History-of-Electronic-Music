@@ -15,6 +15,7 @@
             transition: opacity 1s;
         }
     </style>
+    <link rel="stylesheet" href="ui.css">
 </head>
 <body>
 
@@ -214,13 +215,27 @@
         renderer.render(scene, camera);
     }
 
-    document.getElementById('overlay').addEventListener('click', () => {
+    function startPatchwork() {
         if (isStarted) return;
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         isStarted = true;
         document.getElementById('overlay').style.opacity = '0';
         setTimeout(() => document.getElementById('overlay').remove(), 1000);
         init();
+    }
+
+    // Try auto-start immediately; fall back to first pointer/key gesture
+    window.addEventListener('load', function() {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'running') {
+            ctx.close();
+            startPatchwork();
+        } else {
+            ctx.close();
+            ['pointerdown', 'keydown'].forEach(function(evt) {
+                document.addEventListener(evt, startPatchwork, { once: true });
+            });
+        }
     });
 
     window.addEventListener('resize', () => {

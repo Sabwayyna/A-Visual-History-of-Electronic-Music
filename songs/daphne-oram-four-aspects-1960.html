@@ -368,6 +368,7 @@
             background-repeat: repeat; background-size: 160px;
         }
     </style>
+    <link rel="stylesheet" href="ui.css">
 </head>
 <body>
 
@@ -677,7 +678,7 @@
 
     // ── Start overlay ──
     const startOverlay = document.getElementById('startOverlay');
-    startOverlay.addEventListener('click', async () => {
+    ['click', 'pointerdown'].forEach(evt => startOverlay.addEventListener(evt, async () => {
         if (audioStarted && audioCtx) {
             if (audioCtx.state === 'suspended') await audioCtx.resume();
             return;
@@ -699,12 +700,17 @@
         lastTime  = audioCtx.currentTime;
         startOverlay.classList.add('hidden');
         requestAnimationFrame(animate);
-    });
+    }, { once: true }));
 
     // Try auto-start (works if browser allows autoplay)
     window.addEventListener('load', () => initAudio().then(() => {
         if (isPlaying) startOverlay.classList.add('hidden');
-    }).catch(() => {}));
+    }).catch(() => {
+        // Autoplay blocked — start on first pointer gesture anywhere
+        ['pointerdown', 'keydown'].forEach(evt =>
+            document.addEventListener(evt, () => { if (!isPlaying) startOverlay.click(); }, { once: true })
+        );
+    }));
 
     // ── Keyboard controls ──
     document.addEventListener('keydown', function(e) {

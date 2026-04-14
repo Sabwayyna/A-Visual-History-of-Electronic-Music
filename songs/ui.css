@@ -1,0 +1,86 @@
+/* ── Shared UI Overrides ─────────────────────────────────────────────────────
+   Loaded after per-page inline styles. Overrides only targeted elements.      */
+
+/* ── Info panel ─────────────────────────────────────────────────────────── */
+/* Deeper opaque background so the panel never feels translucent or scrolling */
+#info-panel {
+    background: rgba(0, 0, 0, 0.92);
+    /* Prevent macOS elastic-scroll from letting the panel background bounce   */
+    overscroll-behavior: contain;
+    /* Slightly softer easing for open/close */
+    transition: transform 0.44s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* Sticky close bar: solid background so content doesn't bleed through on
+   scroll. Extend left/right to cover the inner-padding gutters.              */
+.ip-close-btn {
+    background: rgba(0, 0, 0, 0.92);
+    margin-left:  -7vw;
+    margin-right: -7vw;
+    padding-left:  7vw;
+    padding-right: 7vw;
+    z-index: 1;
+    color: rgba(255, 255, 255, 0.32);
+    font-size: clamp(10px, 0.82vw, 12px);
+    letter-spacing: 0.22em;
+    padding-top: 2.8vh;
+    padding-bottom: 2.2vh;
+    transition: color 0.18s ease;
+}
+.ip-close-btn:hover  { color: rgba(255, 255, 255, 0.78); }
+.ip-close-btn:active { color: rgba(255, 255, 255, 0.4);  }
+
+/* Responsive gutter compensation */
+@media (max-width: 1280px) {
+    .ip-close-btn { margin-left: -6vw; margin-right: -6vw; padding-left: 6vw; padding-right: 6vw; }
+}
+@media (max-width: 768px) {
+    .ip-close-btn { margin-left: -5vw; margin-right: -5vw; padding-left: 5vw; padding-right: 5vw; }
+}
+
+/* ── Song header (click to open panel) ───────────────────────────────────── */
+#song-header {
+    /* Larger invisible touch target without changing layout */
+    padding: 10px 16px;
+    margin: -10px -16px;
+    border-radius: 3px;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+#song-header:active {
+    opacity: 0.45;
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ── Navigation arrows ──────────────────────────────────────────────────── */
+#nav-prev, #nav-next {
+    padding: 28px 22px;
+}
+#nav-prev::before, #nav-next::before {
+    transition: background 0.18s ease, filter 0.18s ease, transform 0.18s ease;
+}
+/* Gentle directional nudge on hover */
+#nav-prev:hover::before { transform: translateX(-2px); }
+#nav-next:hover::before { transform: translateX(2px);  }
+#nav-prev:active::before, #nav-next:active::before {
+    background: rgba(255, 255, 255, 1) !important;
+}
+
+/* ── Back link (Ω) ──────────────────────────────────────────────────────── */
+#backLink {
+    opacity: 0.38;
+    transition: opacity 0.18s ease, color 0.18s ease;
+    text-shadow: none !important;
+    color: rgba(255, 255, 255, 0.38) !important;
+}
+#backLink:hover  { opacity: 0.85; color: rgba(255, 255, 255, 0.85) !important; }
+#backLink:active { opacity: 0.25; }
+
+/* ── Controls tooltip (i button) ────────────────────────────────────────── */
+/* Small delay prevents the tooltip from flickering on mouse pass-throughs    */
+#controlsPanel {
+    transition: opacity 0.16s ease 0.07s;
+}
+#controlsBtn:hover + #controlsPanel,
+#controlsPanel:hover {
+    transition-delay: 0.07s;
+}

@@ -449,6 +449,7 @@
         /* static fine grain */
         body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.055; background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>"); background-repeat: repeat; background-size: 160px; }
     </style>
+    <link rel="stylesheet" href="ui.css">
 </head>
 <body>
     <div id="song-header">1986  -  Can You Feel It  -  Mr. Fingers (Larry Heard)</div>
@@ -3557,6 +3558,42 @@ function showSpeedIndicator() {
                 closePanel();
             }
         });
+    })();
+    </script>
+    <script>
+    // Auto-start handler
+    (function() {
+      function tryAutoPlay() {
+        if (typeof song !== 'undefined' && song && song.isLoaded()) {
+          var audioCtx = getAudioContext();
+          if (audioCtx.state === 'suspended') return;
+          userStartAudio().then(function() {
+            if (!started) {
+              song.play();
+              started = true;
+              currentX = 0; lastX = 0; frameCounter = 0;
+            }
+          });
+        } else {
+          setTimeout(tryAutoPlay, 200);
+        }
+      }
+      setTimeout(tryAutoPlay, 500);
+
+      function resumeAndPlay() {
+        var audioCtx = getAudioContext();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().then(function() {
+            if (typeof song !== 'undefined' && song && song.isLoaded() && !started) {
+              song.play();
+              started = true;
+              currentX = 0; lastX = 0; frameCounter = 0;
+            }
+          });
+        }
+      }
+      document.addEventListener('pointerdown', resumeAndPlay, { once: true });
+      document.addEventListener('keydown', resumeAndPlay, { once: true });
     })();
     </script>
     <script>window.PRINT_LABEL = { artist: 'Mr. Fingers', song: 'Can You Feel It', year: '1986' };</script>
