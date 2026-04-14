@@ -463,7 +463,8 @@
 
         let scene, camera, renderer, labelRenderer, controls, audioCtx, analyser, dataArray;
         let audioStarted = false;
-        let towerHeight  = 0;
+        let towerHeight       = 0;
+        let smoothedTowerTop  = 0;  // for camera follow
         const bgColor = new THREE.Color(0x000000); // lerped each frame, never jitters
 
         // Timestamp tracking
@@ -485,7 +486,7 @@
             { lo: 116, hi: 280 },
         ];
 
-        const BLOCK_COOLDOWN = 3;
+        const BLOCK_COOLDOWN = 10;          // minimum frames between spawns per tower
         const HEIGHT_RANGES  = [[3,8], [9,20], [20,46]];
         const WIDTH_RANGES   = [[3,6], [7,16], [16,32]];
         const FILL_COLORS    = [0xffffff, 0x3a3a3a, 0x000000];
@@ -558,7 +559,7 @@
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 2048;
-            analyser.smoothingTimeConstant = 0.3;
+            analyser.smoothingTimeConstant = 0.55;
             dataArray = new Uint8Array(analyser.frequencyBinCount);
 
             const _ca = sessionStorage.getItem('customAudio') || null;
@@ -675,16 +676,19 @@
                 towers.forEach((tower, i) => {
                     tower.cooldown = Math.max(0, tower.cooldown - 1);
                     const energy = bandEnergy(bands[i]);
-                    tower.smoothed = tower.smoothed * 0.80 + energy * 0.20;
+                    tower.smoothed = tower.smoothed * 0.85 + energy * 0.15;
 
                     const relHeight = tower.yPos / maxH;
-                    const threshold = Math.max(5, tower.smoothed * (0.70 + relHeight * 0.25));
+                    const threshold = Math.max(8, tower.smoothed * (0.80 + relHeight * 0.35));
 
                     if (energy > threshold && tower.cooldown === 0) {
                         spawnBlock(tower, energy, sizeScale);
-                        tower.cooldown = BLOCK_COOLDOWN + Math.round(relHeight * 5);
+                        tower.cooldown = BLOCK_COOLDOWN + Math.round(relHeight * 8);
                     }
                 });
+
+                // Smooth tower top for camera follow
+                smoothedTowerTop += (towerHeight - smoothedTowerTop) * 0.012;
 
                 // Drop a timestamp label every 30 s of song time
                 if (audioEl && audioEl.currentTime > 0) {
@@ -704,6 +708,12 @@
             const _t    = Math.min(Math.max((_dist - 55) / 380, 0), 1);
             bgColor.lerp(new THREE.Color(_t * 0.09, _t * 0.09, _t * 0.09), 0.006);
             renderer.setClearColor(bgColor, 1);
+
+            // Camera follows the top of the tallest tower
+            const followTargetY  = smoothedTowerTop;
+            const prevTargetY    = controls.target.y;
+            controls.target.y   += (followTargetY - controls.target.y) * 0.025;
+            camera.position.y   += controls.target.y - prevTargetY;
 
             controls.update();
             renderer.render(scene, camera);

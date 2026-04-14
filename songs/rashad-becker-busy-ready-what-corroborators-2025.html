@@ -38,34 +38,14 @@
             z-index: 1;
         }
 
-        /* ── Enter overlay ── */
-        #enter-overlay {
+        /* ── Light flash overlay ── */
+        #light-flash {
             position: fixed;
             inset: 0;
-            background: #000;
-            z-index: 500;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 32px;
-            transition: opacity 2s ease;
-        }
-        #enter-overlay.fading { opacity: 0; pointer-events: none; }
-
-        #enter-overlay .enter-title {
-            font-family: "LinotypeUnivers", sans-serif;
-            font-size: 11px;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.55);
-        }
-        #enter-overlay .enter-prompt {
-            font-family: "LinotypeUnivers", sans-serif;
-            font-size: 11px;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.2);
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            background: radial-gradient(ellipse at 50% 40%, rgba(255,255,255,0.18) 0%, rgba(200,210,255,0.06) 40%, transparent 72%);
         }
 
         /* ── HUD hidden ── */
@@ -302,11 +282,8 @@
     <!-- 3D canvas -->
     <div id="webgl-container"></div>
 
-    <!-- Enter overlay -->
-    <div id="enter-overlay">
-        <div class="enter-title">Rashad Becker &nbsp;&mdash;&nbsp; Busy Ready What, Corroborators &nbsp;&mdash;&nbsp; 2025</div>
-        <div class="enter-prompt">Click to enter &nbsp;&middot;&nbsp; WASD to move &nbsp;&middot;&nbsp; Mouse to look &nbsp;&middot;&nbsp; Shift to sprint</div>
-    </div>
+    <!-- Light flash overlay -->
+    <div id="light-flash"></div>
 
     <div id="hud"></div>
 
@@ -344,10 +321,9 @@
     <!-- Controls -->
     <div id="controlsBtn"><span class="info-icon">i</span></div>
     <div id="controlsPanel">
-        <div class="control-item"><span class="key">WASD</span><span>Move</span></div>
         <div class="control-item"><span class="key">Mouse</span><span>Look</span></div>
-        <div class="control-item"><span class="key">Shift</span><span>Sprint</span></div>
-        <div class="control-item"><span class="key">Space / C</span><span>Up / Down</span></div>
+        <div class="control-item"><span class="key">Space</span><span>Ascend</span></div>
+        <div class="control-item"><span class="key">C / Shift</span><span>Descend</span></div>
         <div class="control-item"><span class="key">Esc</span><span>Release cursor</span></div>
     </div>
 
@@ -382,9 +358,10 @@
     <script type="module">
         import * as THREE from 'three';
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { RenderPass }     from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+        import { ShaderPass }     from 'three/addons/postprocessing/ShaderPass.js';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
         const AUDIO_PATH = '../Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3';
 
@@ -396,14 +373,15 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
         let structureTension = 0;
         let globalTime = 0;
 
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, moveUp = false, moveDown = false;
-        let isSprinting = false;
+        let moveUp = false, moveDown = false, isSprinting = false;
         let velocity   = new THREE.Vector3();
         let direction  = new THREE.Vector3();
         let prevTime   = performance.now();
         let cameraShake = new THREE.Vector3();
 
         let particleSystem, cityMesh, wireframeFloor;
+        let blockHeights;      // persistent lerped heights per city tile
+        let smoothedCityTop = 0; // smoothed max build height for camera follow
         const PARTICLE_COUNT = 400000;
         const CITY_SIZE = 100;
         const dummy = new THREE.Object3D();
@@ -416,7 +394,7 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
             scene.fog = new THREE.FogExp2(0x000000, 0.000005);
 
             camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 400000);
-            camera.position.set(0, 14000, 0);
+            camera.position.set(0, 52000, 0);
             camera.rotation.x = -Math.PI / 2; // look straight down
 
             renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: true });
@@ -426,16 +404,50 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
             container.appendChild(renderer.domElement);
 
             const renderScene = new RenderPass(scene, camera);
-            const bloomPass   = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.1, 0.7);
+            const bloomPass   = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.2, 0.6, 0.35);
+
+            // Chromatic aberration — radial RGB split, strongest near center glow
+            const chromaPass = new ShaderPass({
+                uniforms: {
+                    tDiffuse:  { value: null },
+                    uStrength: { value: 0.0025 }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
+                `,
+                fragmentShader: `
+                    uniform sampler2D tDiffuse;
+                    uniform float uStrength;
+                    varying vec2 vUv;
+                    void main() {
+                        vec2 dir   = vUv - 0.5;
+                        float dist = length(dir);
+                        // Hard mask — only within a small circle around the centre
+                        float mask = smoothstep(0.18, 0.0, dist);
+                        vec2 unit  = (dist > 0.0001) ? dir / dist : vec2(0.0);
+                        vec2 off   = unit * uStrength * mask;
+                        // All three channels shift by different amounts — no channel left unshifted
+                        float r = texture2D(tDiffuse, vUv + off).r;
+                        float g = texture2D(tDiffuse, vUv + off * 0.35).g;
+                        float b = texture2D(tDiffuse, vUv - off).b;
+                        gl_FragColor = vec4(r, g, b, 1.0);
+                    }
+                `
+            });
 
             composer = new EffectComposer(renderer);
             composer.addPass(renderScene);
             composer.addPass(bloomPass);
+            composer.addPass(chromaPass);
+            composer.chromaPass = chromaPass;   // keep ref for animate loop
+            composer.bloomPass  = bloomPass;
 
             controls = new PointerLockControls(camera, document.body);
 
             buildVoid();
-
+            buildCenterGlow();
+            buildGradientBlocks();
             window.addEventListener('resize', onWindowResize);
             document.addEventListener('keydown', onKeyDown);
             document.addEventListener('keyup',   onKeyUp);
@@ -516,8 +528,10 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
                 fragmentShader: `
                     varying float vAlpha;
                     void main() {
-                        if (length(gl_PointCoord - 0.5) > 0.5) discard;
-                        gl_FragColor = vec4(1.0, 1.0, 1.0, vAlpha * 0.7);
+                        float d = length(gl_PointCoord - 0.5) * 2.0;
+                        if (d > 1.0) discard;
+                        float soft = exp(-d * d * 4.0);
+                        gl_FragColor = vec4(1.0, 1.0, 1.0, vAlpha * soft);
                     }
                 `
             });
@@ -528,45 +542,189 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
             const cityGeo = new THREE.BoxGeometry(800, 1, 800);
             const cityMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
             cityMesh = new THREE.InstancedMesh(cityGeo, cityMat, CITY_SIZE * CITY_SIZE);
+            blockHeights = new Float32Array(CITY_SIZE * CITY_SIZE).fill(1);
             let idx = 0;
             for (let x = 0; x < CITY_SIZE; x++) {
                 for (let z = 0; z < CITY_SIZE; z++) {
-                    dummy.position.set((x-CITY_SIZE/2)*1200, 0, (z-CITY_SIZE/2)*1200);
+                    dummy.position.set((x-CITY_SIZE/2)*1200, -2000, (z-CITY_SIZE/2)*1200);
                     dummy.updateMatrix();
                     cityMesh.setMatrixAt(idx++, dummy.matrix);
                 }
             }
             scene.add(cityMesh);
 
-            // 3. Wireframe floor
-            const floorGeo = new THREE.PlaneGeometry(150000, 150000, 150, 150);
-            floorGeo.rotateX(-Math.PI/2);
-            const floorMat = new THREE.ShaderMaterial({
-                uniforms: { uTime: { value: 0 }, uBass: { value: 0 } },
-                wireframe: true, transparent: true,
+            // 3. Ground particle field — flat disc of points replacing wireframe floor
+            const FLOOR_COUNT = 180000;
+            const fGeo   = new THREE.BufferGeometry();
+            const fPos   = new Float32Array(FLOOR_COUNT * 3);
+            const fRand  = new Float32Array(FLOOR_COUNT * 3);
+            for (let i = 0; i < FLOOR_COUNT; i++) {
+                // Polar distribution so density is even (not clumped at centre)
+                const r     = Math.sqrt(Math.random()) * 130000;
+                const theta = Math.random() * Math.PI * 2;
+                fPos[i*3]   = Math.cos(theta) * r;
+                fPos[i*3+1] = -2000 + (Math.random() - 0.5) * 600; // thin horizontal slab
+                fPos[i*3+2] = Math.sin(theta) * r;
+                fRand[i*3]   = (Math.random() - 0.5) * 2;
+                fRand[i*3+1] = (Math.random() - 0.5) * 2;
+                fRand[i*3+2] = (Math.random() - 0.5) * 2;
+            }
+            fGeo.setAttribute('position', new THREE.BufferAttribute(fPos,  3));
+            fGeo.setAttribute('aRandom',  new THREE.BufferAttribute(fRand, 3));
+
+            const fMat = new THREE.ShaderMaterial({
+                uniforms: { uBass: { value: 0 } },
+                transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
                 vertexShader: `
-                    uniform float uTime, uBass;
-                    varying float vDepth;
+                    uniform float uBass;
+                    attribute vec3 aRandom;
+                    varying float vAlpha;
                     void main() {
                         vec3 pos = position;
+                        // Bass lifts particles slightly — very subtle vertical ripple
                         float dist = length(pos.xz);
-                        pos.y += sin(dist * 0.0005 - uTime * 5.0) * (uBass * 5000.0);
+                        pos.y += aRandom.y * uBass * 800.0 * (1.0 - smoothstep(0.0, 130000.0, dist));
                         vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
-                        vDepth = -mvPos.z;
-                        gl_Position = projectionMatrix * mvPos;
+                        // Particles smaller and dimmer toward the horizon
+                        float fade = 1.0 - smoothstep(30000.0, 120000.0, dist);
+                        gl_PointSize = (1.2 + uBass * 1.5) * (8000.0 / -mvPos.z) * fade;
+                        gl_Position  = projectionMatrix * mvPos;
+                        vAlpha = fade * 0.55;
                     }
                 `,
                 fragmentShader: `
-                    varying float vDepth;
+                    varying float vAlpha;
                     void main() {
-                        float alpha = 1.0 - smoothstep(1000.0, 80000.0, vDepth);
-                        gl_FragColor = vec4(0.2, 0.2, 0.2, alpha);
+                        float d = length(gl_PointCoord - 0.5) * 2.0;
+                        if (d > 1.0) discard;
+                        float soft = exp(-d * d * 4.0);
+                        gl_FragColor = vec4(0.7, 0.7, 0.75, vAlpha * soft);
                     }
                 `
             });
-            wireframeFloor = new THREE.Mesh(floorGeo, floorMat);
-            wireframeFloor.position.y = -2000;
+            wireframeFloor = new THREE.Points(fGeo, fMat);
             scene.add(wireframeFloor);
+
+            // 4. Sine-wave wireframe — low opacity, monochrome gradient by depth
+            const wGeo = new THREE.PlaneGeometry(150000, 150000, 180, 180);
+            wGeo.rotateX(-Math.PI / 2);
+            const wMat = new THREE.ShaderMaterial({
+                uniforms: { uTime: { value: 0 }, uBass: { value: 0 } },
+                wireframe: true,
+                transparent: true,
+                depthWrite: false,
+                vertexShader: `
+                    uniform float uTime, uBass;
+                    varying float vDist;
+                    void main() {
+                        vec3 pos = position;
+                        float dist = length(pos.xz);
+                        pos.y += sin(dist * 0.00045 - uTime * 4.0) * (800.0 + uBass * 3000.0);
+                        vDist = dist;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    varying float vDist;
+                    void main() {
+                        // Monochrome: bright near centre, fades to transparent at horizon
+                        float t     = smoothstep(0.0, 130000.0, vDist);
+                        float grey  = mix(0.28, 0.06, t);
+                        float alpha = mix(0.18, 0.0,  t);
+                        gl_FragColor = vec4(grey, grey, grey, alpha);
+                    }
+                `
+            });
+            const waveMesh = new THREE.Mesh(wGeo, wMat);
+            waveMesh.position.y = -2000;
+            waveMesh.userData.isSineWave = true;
+            scene.add(waveMesh);
+        }
+
+        // ── Center glow beacon ──────────────────────────────────────────────────
+        let centerGlow;
+        function buildCenterGlow() {
+            // Soft radial canvas texture — pure white core, fades to transparent
+            const size = 256;
+            const cv   = document.createElement('canvas');
+            cv.width   = size; cv.height = size;
+            const ctx  = cv.getContext('2d');
+            const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            grad.addColorStop(0,    'rgba(255,255,255,1.0)');
+            grad.addColorStop(0.12, 'rgba(240,245,255,0.85)');
+            grad.addColorStop(0.35, 'rgba(210,225,255,0.35)');
+            grad.addColorStop(0.65, 'rgba(180,200,255,0.10)');
+            grad.addColorStop(1,    'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+
+            const mat = new THREE.SpriteMaterial({
+                map: new THREE.CanvasTexture(cv),
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                opacity: 0.9
+            });
+            centerGlow = new THREE.Sprite(mat);
+            centerGlow.scale.set(18000, 18000, 1);
+            centerGlow.position.set(0, 0, 0);
+            scene.add(centerGlow);
+        }
+
+        // ── Gradient blocks ──────────────────────────────────────────────────────
+        // Large softly-lit planes scattered through the void — subtle, non-figurative.
+        function buildGradientBlocks() {
+            // Each block is a PlaneGeometry with a custom ShaderMaterial that draws
+            // a soft radial gradient, so they read as atmospheric zones rather than shapes.
+            const configs = [
+                // { pos, normal (which axis faces viewer), size, color, opacity }
+                { p:[  20000, -5000,  35000], rx: 0,            ry: 0.4,   w:55000, h:28000, r:0.08, g:0.08, b:0.10, a:0.18 },
+                { p:[ -45000, 30000, -20000], rx:-0.15,          ry:-0.3,   w:70000, h:40000, r:0.06, g:0.06, b:0.09, a:0.14 },
+                { p:[  60000, 60000,  10000], rx: 0.1,           ry: 0.6,   w:80000, h:50000, r:0.07, g:0.07, b:0.10, a:0.12 },
+                { p:[  -8000,120000, -50000], rx:-0.2,           ry:-0.1,   w:90000, h:55000, r:0.05, g:0.05, b:0.08, a:0.10 },
+                { p:[  35000,-15000, -65000], rx: 0.05,          ry:-0.5,   w:60000, h:35000, r:0.09, g:0.08, b:0.11, a:0.16 },
+                { p:[ -70000, 80000,  40000], rx: 0.12,          ry: 0.2,   w:75000, h:45000, r:0.05, g:0.05, b:0.07, a:0.09 },
+                { p:[  10000, 40000,  80000], rx:-0.08,          ry:-0.05,  w:65000, h:38000, r:0.06, g:0.06, b:0.09, a:0.11 },
+            ];
+
+            const vShader = `
+                varying vec2 vUv;
+                void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
+            `;
+            const fShader = `
+                uniform float uOpacity;
+                uniform vec3  uColor;
+                varying vec2  vUv;
+                void main() {
+                    // Radial gradient: full at centre, fully transparent at edges
+                    float d = length(vUv - 0.5) * 2.0; // 0 at centre, 1 at corner
+                    float alpha = uOpacity * smoothstep(1.0, 0.0, d);
+                    // Very slight darkening toward corners for depth
+                    vec3 col = uColor * (0.75 + 0.25 * (1.0 - d));
+                    gl_FragColor = vec4(col, alpha);
+                }
+            `;
+
+            for (const c of configs) {
+                const geo = new THREE.PlaneGeometry(c.w, c.h);
+                const mat = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uOpacity: { value: c.a },
+                        uColor:   { value: new THREE.Vector3(c.r, c.g, c.b) }
+                    },
+                    vertexShader: vShader,
+                    fragmentShader: fShader,
+                    transparent: true,
+                    depthWrite: false,
+                    side: THREE.DoubleSide,
+                    blending: THREE.AdditiveBlending
+                });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(...c.p);
+                mesh.rotation.x = c.rx;
+                mesh.rotation.y = c.ry;
+                scene.add(mesh);
+            }
         }
 
         // ── Audio ────────────────────────────────────────────────────────────────
@@ -592,46 +750,41 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
             isPlaying = true;
         }
 
-        // ── Enter overlay ─────────────────────────────────────────────────────────
-        const enterOverlay = document.getElementById('enter-overlay');
-        const crosshair    = document.getElementById('crosshair');
+        // ── Enter on first click (no overlay) ────────────────────────────────────
+        const crosshair = document.getElementById('crosshair');
+        const lightFlash = document.getElementById('light-flash');
 
         let audioReady = false;
+        let hasEntered = false;
         loadAudio().then(() => { audioReady = true; }).catch(console.error);
 
-        enterOverlay.addEventListener('click', async () => {
-            if (audioContext && audioContext.state === 'suspended') await audioContext.resume();
-            if (!audioReady) return;
-            startAudio();
-            enterOverlay.classList.add('fading');
-            setTimeout(() => { enterOverlay.style.display = 'none'; }, 2200);
-            crosshair.style.opacity = '1';
-            controls.lock();
+        document.addEventListener('click', async () => {
+            if (!hasEntered && audioReady) {
+                if (audioContext && audioContext.state === 'suspended') await audioContext.resume();
+                startAudio();
+                crosshair.style.opacity = '1';
+                controls.lock();
+                hasEntered = true;
+            } else if (isPlaying) {
+                controls.lock();
+            }
         });
-
-        document.addEventListener('click', () => { if (isPlaying) controls.lock(); });
 
         // ── Keyboard ────────────────────────────────────────────────────────────
         function onKeyDown(e) {
             switch (e.code) {
-                case 'KeyW':     moveForward  = true;  break;
-                case 'KeyS':     moveBackward = true;  break;
-                case 'KeyA':     moveLeft     = true;  break;
-                case 'KeyD':     moveRight    = true;  break;
-                case 'Space':    moveUp       = true;  break;
-                case 'KeyC':     moveDown     = true;  break;
-                case 'ShiftLeft':isSprinting  = true;  break;
+                case 'Space':      e.preventDefault(); moveUp      = true;  break;
+                case 'KeyC':       moveDown    = true;  break;
+                case 'ShiftLeft':
+                case 'ShiftRight': moveDown    = true;  isSprinting = true; break;
             }
         }
         function onKeyUp(e) {
             switch (e.code) {
-                case 'KeyW':     moveForward  = false; break;
-                case 'KeyS':     moveBackward = false; break;
-                case 'KeyA':     moveLeft     = false; break;
-                case 'KeyD':     moveRight    = false; break;
-                case 'Space':    moveUp       = false; break;
-                case 'KeyC':     moveDown     = false; break;
-                case 'ShiftLeft':isSprinting  = false; break;
+                case 'Space':      moveUp      = false; break;
+                case 'KeyC':       moveDown    = false; break;
+                case 'ShiftLeft':
+                case 'ShiftRight': moveDown    = false; isSprinting = false; break;
             }
         }
 
@@ -681,23 +834,47 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
                 particleSystem.material.uniforms.uScatter.value += (scatter - particleSystem.material.uniforms.uScatter.value) * 0.3;
                 particleSystem.material.uniforms.uHighs.value   = normHigh;
 
-                wireframeFloor.material.uniforms.uTime.value = globalTime;
                 wireframeFloor.material.uniforms.uBass.value = smoothedBass;
 
+                // Update sine-wave mesh uniforms
+                scene.traverse(obj => {
+                    if (obj.userData.isSineWave) {
+                        obj.material.uniforms.uTime.value = globalTime;
+                        obj.material.uniforms.uBass.value = smoothedBass;
+                    }
+                });
+
+                // City blocks — lerped heights, intentional build pacing
                 let idx = 0;
-                for (let x=0; x<CITY_SIZE; x++) {
-                    for (let z=0; z<CITY_SIZE; z++) {
-                        const dist   = Math.abs(x-CITY_SIZE/2) + Math.abs(z-CITY_SIZE/2);
-                        const freq   = Math.floor(Math.min(dist*2, 511));
-                        const amp    = dataArray[freq]/255;
-                        const tgtY   = 1 + Math.pow(amp,3)*40000;
-                        dummy.position.set((x-CITY_SIZE/2)*1200, tgtY/2-2000, (z-CITY_SIZE/2)*1200);
-                        dummy.scale.set(1, tgtY, 1);
+                let frameMax = 0;
+                // Rise fast on strong signal, decay slowly for a building effect
+                const riseRate  = 0.055;   // how quickly blocks climb toward target
+                const fallRate  = 0.008;   // how slowly they settle back down
+                for (let x = 0; x < CITY_SIZE; x++) {
+                    for (let z = 0; z < CITY_SIZE; z++) {
+                        const i    = x * CITY_SIZE + z;
+                        const dist = Math.abs(x - CITY_SIZE/2) + Math.abs(z - CITY_SIZE/2);
+                        const freq = Math.floor(Math.min(dist * 2, 511));
+                        const amp  = dataArray[freq] / 255;
+                        // Cap height lower so the building feels grounded, not explosive
+                        const tgt  = 1 + Math.pow(amp, 2.2) * 18000;
+                        const cur  = blockHeights[i];
+                        // Asymmetric lerp: climb faster than fall
+                        blockHeights[i] = tgt > cur
+                            ? cur + (tgt - cur) * riseRate
+                            : cur + (tgt - cur) * fallRate;
+                        const h = blockHeights[i];
+                        if (h > frameMax) frameMax = h;
+                        dummy.position.set((x - CITY_SIZE/2)*1200, h/2 - 2000, (z - CITY_SIZE/2)*1200);
+                        dummy.scale.set(1, h, 1);
                         dummy.updateMatrix();
                         cityMesh.setMatrixAt(idx++, dummy.matrix);
                     }
                 }
                 cityMesh.instanceMatrix.needsUpdate = true;
+
+                // Smooth the scene's tallest point — camera follows it gently
+                smoothedCityTop += (frameMax - smoothedCityTop) * 0.015;
 
                 if (scatter > 0) {
                     cameraShake.set(
@@ -710,36 +887,66 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
                 }
                 composer.passes[1].strength = 1.0 + scatter*2.5 + normHigh*1.5;
 
+                // ── Center glow — synced to song ──
+                if (centerGlow) {
+                    // Base size pulses with bass, brief spikes on beats, drifts with time
+                    const beatBurst  = Math.pow(normBass, 2.2) * 22000;
+                    const midSwell   = smoothedMid  * 8000;
+                    const highShimmer = normHigh * 4000;
+                    const targetScale = 14000 + beatBurst + midSwell + highShimmer;
+                    // Smooth lerp so it eases rather than jumps
+                    const cs = centerGlow.scale.x;
+                    centerGlow.scale.setScalar(cs + (targetScale - cs) * 0.18);
+
+                    // Opacity: brighter on loud peaks, dims slightly in quiet passages
+                    centerGlow.material.opacity = 0.55 + smoothedBass * 0.45 + normHigh * 0.25;
+
+                    // Subtle vertical drift — glow wanders a little with the music
+                    centerGlow.position.y = Math.sin(globalTime * 0.7) * 500 * smoothedMid;
+                }
+
+                // ── Chromatic aberration — pulses gently with highs ──
+                if (composer.chromaPass) {
+                    const baseCA = 0.0025;
+                    composer.chromaPass.uniforms.uStrength.value = baseCA + normHigh * 0.006 + smoothedBass * 0.003;
+                }
+
+                // ── Gradient flash synced to audio ──
+                if (lightFlash) {
+                    const beatFlash = Math.pow(Math.max(smoothedBass - 0.15, 0) / 0.85, 1.8);
+                    const midGlow   = smoothedMid * 0.18;
+                    const flashVal  = Math.min(beatFlash * 0.72 + midGlow, 1.0);
+                    lightFlash.style.opacity = flashVal.toFixed(3);
+                    // Shift gradient color slightly with mids — cool white to warm
+                    const r = Math.round(220 + normMid * 35);
+                    const g = Math.round(225 + normHigh * 20);
+                    const b = Math.round(255);
+                    lightFlash.style.background = `radial-gradient(ellipse at 50% 40%, rgba(${r},${g},${b},0.18) 0%, rgba(180,195,255,0.05) 45%, transparent 72%)`;
+                }
+
             }
 
-            // Flight physics — smooth, limited, natural
+            // Vertical-only flight physics
             if (controls.isLocked) {
-                const drag = 4.0; // higher = snappier stop
-                velocity.x -= velocity.x * drag * delta;
-                velocity.z -= velocity.z * drag * delta;
+                const drag = 6.0;                          // higher = snappier deceleration
                 velocity.y -= velocity.y * drag * delta;
 
-                direction.z = Number(moveForward)  - Number(moveBackward);
-                direction.x = Number(moveRight)    - Number(moveLeft);
-                direction.y = Number(moveUp)       - Number(moveDown);
-                direction.normalize();
+                direction.y = Number(moveUp) - Number(moveDown);
 
-                const spd = isSprinting ? 12000 : 4000; // much slower
-                if (moveForward  || moveBackward) velocity.z -= direction.z * spd * delta;
-                if (moveLeft     || moveRight)    velocity.x -= direction.x * spd * delta;
-                if (moveUp       || moveDown)     velocity.y += direction.y * spd * delta;
+                const spd = isSprinting ? 60000 : 22000;  // fast base, shift = dive
+                if (moveUp || moveDown) velocity.y += direction.y * spd * delta;
 
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
                 camera.position.y += velocity.y * delta;
 
                 // Constrain altitude — stay between floor level and max height
-                camera.position.y = Math.max(-1000, Math.min(50000, camera.position.y));
+                camera.position.y = Math.max(-1000, Math.min(200000, camera.position.y));
 
-                // Constrain horizontal drift — soft boundary
-                const maxXZ = 60000;
-                camera.position.x = Math.max(-maxXZ, Math.min(maxXZ, camera.position.x));
-                camera.position.z = Math.max(-maxXZ, Math.min(maxXZ, camera.position.z));
+                // Gently pull camera upward as blocks grow taller — viewer "follows the build"
+                // Only nudges; user can still override with Space/C
+                if (!moveUp && !moveDown) {
+                    const followTarget = smoothedCityTop + 32000;
+                    camera.position.y += (followTarget - camera.position.y) * 0.004;
+                }
 
                 camera.position.add(cameraShake);
                 composer.render();
