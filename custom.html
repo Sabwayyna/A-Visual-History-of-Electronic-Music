@@ -39,8 +39,8 @@
             align-items: center;
         }
 
-        /* ── Identical 3-col grid to index.html ── */
-        .viz-row,
+        /* ── Shared grid ── */
+        .row-grid,
         #site-footer {
             display: grid;
             grid-template-columns: 2.8em 40% 1fr;
@@ -63,7 +63,229 @@
             z-index: 10;
         }
 
-        /* Rows */
+        /* ── Source rows (Search / Upload / Record) ── */
+        .src-row {
+            color: #fff;
+            line-height: 1.15;
+            transition: opacity 0.35s, letter-spacing 0.35s;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #audio-section:hover .src-row         { opacity: 0.5; }
+        #audio-section:hover .src-row:hover   { opacity: 1; letter-spacing: 0.12em; }
+        .src-row:active                        { opacity: 0.5; }
+
+        .src-sym, .src-name, .src-hint {
+            font-size: clamp(16px, 3.5vw, 64px);
+            letter-spacing: -0.02em;
+            line-height: inherit;
+            color: #fff;
+        }
+        .src-name { text-transform: uppercase; padding-left: 1.5em; }
+        .src-hint { text-transform: uppercase; text-align: right; color: rgba(255,255,255,0.58); }
+
+        /* ── Expanded area (search / recording / naming) ── */
+        #expand-area {
+            padding-top: calc(var(--m) * 0.9);
+            width: 100%;
+        }
+
+        .exp-panel {
+            display: none;
+        }
+        .exp-panel.active {
+            display: block;
+            animation: expFadeIn 0.32s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes expFadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* src-rows fade when a panel is active */
+        #src-rows {
+            transition: opacity 0.25s;
+        }
+        #src-rows.dimmed {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Large contextual prompt above name input */
+        .exp-title {
+            font-size: clamp(16px, 3.5vw, 64px);
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+            color: #fff;
+            line-height: 1.15;
+            margin-bottom: calc(var(--m) * 0.55);
+        }
+        .exp-hint {
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.55);
+            margin-top: calc(var(--m) * 0.45);
+        }
+
+        /* shared input style */
+        .exp-input {
+            flex: 1;
+            background: none;
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.18);
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #fff;
+            padding: 0.3em 0;
+            outline: none;
+            caret-color: #fff;
+            min-width: 0;
+        }
+        .exp-input::placeholder { color: rgba(255,255,255,0.22); }
+
+        /* shared btn style */
+        .exp-btn {
+            background: none;
+            border: none;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.2s;
+            flex-shrink: 0;
+        }
+        .exp-btn.primary { color: rgba(255,255,255,0.9); }
+        .exp-btn.primary:hover { color: #fff; }
+        .exp-btn.muted  { color: rgba(255,255,255,0.58); }
+        .exp-btn.muted:hover  { color: rgba(255,255,255,0.9); }
+
+        .exp-row {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--m) * 1.2);
+            width: 100%;
+        }
+
+        /* ── Search panel ── */
+        #exp-search-results {
+            margin-top: calc(var(--m) * 0.5);
+            width: 100%;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .search-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: var(--m);
+            padding: 0.55em 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .search-result:last-child { border-bottom: none; }
+        #exp-search-results:hover .search-result       { opacity: 0.3; }
+        #exp-search-results:hover .search-result:hover { opacity: 1; }
+
+        .sr-title {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #fff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .sr-artist {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.65);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        #exp-search-status {
+            margin-top: calc(var(--m) * 0.4);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.32);
+        }
+
+        /* Suggested songs (shown before search) */
+        #suggestions {
+            margin-top: calc(var(--m) * 0.5);
+            width: 100%;
+        }
+        #suggestions-label {
+            font-size: 11px;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 0.3em;
+        }
+        .suggestion-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: var(--m);
+            padding: 0.5em 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .suggestion-item:last-child { border-bottom: none; }
+        #suggestions:hover .suggestion-item       { opacity: 0.25; }
+        #suggestions:hover .suggestion-item:hover { opacity: 1; }
+        .si-title {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.82);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .si-artist {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.62);
+            white-space: nowrap; flex-shrink: 0;
+        }
+
+        /* ── Recording panel ── */
+        #rec-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #fff;
+            animation: recPulse 1s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        @keyframes recPulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.2; }
+        }
+        #rec-timer {
+            font-size: 11px;
+            letter-spacing: 0.10em;
+            color: rgba(255,255,255,0.55);
+            font-variant-numeric: tabular-nums;
+        }
+        #rec-label-text {
+            font-size: 11px;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.38);
+        }
+
+        /* ── Viz rows ── */
         .viz-row {
             text-decoration: none;
             color: #fff;
@@ -73,9 +295,9 @@
             user-select: none;
         }
 
-        .list-section:hover .viz-row           { opacity: 0.15; }
-        .list-section:hover .viz-row:hover     { opacity: 1; letter-spacing: 0.12em; }
-        .viz-row:active                        { opacity: 0.5; }
+        #viz-list:hover .viz-row         { opacity: 0.5; }
+        #viz-list:hover .viz-row:hover   { opacity: 1; letter-spacing: 0.12em; }
+        .viz-row:active                  { opacity: 0.5; }
 
         .viz-num, .viz-name, .viz-artist {
             font-size: clamp(16px, 3.5vw, 64px);
@@ -83,9 +305,25 @@
             line-height: inherit;
             color: #fff;
         }
-
         .viz-name   { text-transform: uppercase; padding-left: 1.5em; }
         .viz-artist { text-transform: uppercase; text-align: right; }
+
+        /* ── Page-level fade between steps ── */
+        .page-step {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .page-step.active {
+            opacity: 1;
+            pointer-events: auto;
+            position: relative;
+        }
 
         /* ── Footer ── */
         #site-footer {
@@ -107,157 +345,132 @@
         #site-footer .footer-right { text-align: right; }
         #site-footer a:hover { color: #fff; }
 
-        /* ── Audio panel — slides up from bottom ── */
-        #audio-panel {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #050505;
-            border-top: 1px solid rgba(255,255,255,0.12);
-            padding: calc(var(--m) * 1.1) calc(var(--m) * 2) calc(var(--m) * 1.2);
-            z-index: 500;
-            transform: translateY(100%);
-            transition: transform 0.38s cubic-bezier(0.77, 0, 0.175, 1);
-        }
-        #audio-panel.open { transform: translateY(0); }
-
-        /* Panel: selected name */
-        #panel-title {
-            font-size: clamp(13px, 1.6vw, 26px);
-            letter-spacing: -0.01em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.5);
-            margin-bottom: calc(var(--m) * 0.7);
-        }
-
-        /* Panel: action row */
-        .panel-actions {
-            display: flex;
-            align-items: center;
-            gap: calc(var(--m) * 1.2);
-        }
-
-        .panel-btn {
-            background: none;
-            border: none;
-            font-family: "LinotypeUnivers", sans-serif;
-            font-size: 11px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.55);
-            cursor: pointer;
-            padding: 0;
-            transition: color 0.2s;
-        }
-        .panel-btn:hover  { color: #fff; }
-        .panel-btn.primary { color: rgba(255,255,255,0.90); }
-
-        #panel-cancel {
-            margin-left: auto;
-            background: none;
-            border: none;
-            font-family: "LinotypeUnivers", sans-serif;
-            font-size: 11px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.28);
-            cursor: pointer;
-            padding: 0;
-            transition: color 0.2s;
-        }
-        #panel-cancel:hover { color: rgba(255,255,255,0.7); }
-
-        /* Recording state (hidden until recording starts) */
-        #rec-state {
-            display: none;
-            align-items: center;
-            gap: calc(var(--m) * 0.6);
-            width: 100%;
-        }
-        #rec-state.active { display: flex; }
-
-        #rec-dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: #fff;
-            animation: recPulse 1s ease-in-out infinite;
-        }
-        @keyframes recPulse {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.2; }
-        }
-
-        #rec-timer {
-            font-size: 11px;
-            letter-spacing: 0.10em;
-            color: rgba(255,255,255,0.55);
-            font-variant-numeric: tabular-nums;
-        }
-
         /* ── Mobile ── */
         @media (max-width: 600px) {
             :root { --m: 5vw; }
 
-            .viz-row, #site-footer {
+            .row-grid, #site-footer {
                 grid-template-columns: 3.2em 1fr;
             }
-            .viz-artist { display: none; }
-            .viz-num, .viz-name { font-size: clamp(13px, 4.5vw, 20px); }
+            .src-hint, .viz-artist { display: none; }
+            .src-sym, .src-name, .viz-num, .viz-name {
+                font-size: clamp(13px, 4.5vw, 20px);
+            }
 
-            .list-section:hover .viz-row       { opacity: 1; }
-            .list-section:hover .viz-row:hover { letter-spacing: -0.02em; }
+            #audio-section:hover .src-row       { opacity: 1; }
+            #audio-section:hover .src-row:hover { letter-spacing: -0.02em; }
+            #viz-list:hover .viz-row            { opacity: 1; }
+            #viz-list:hover .viz-row:hover      { letter-spacing: -0.02em; }
 
             #site-footer .footer-title { display: none; }
             #site-footer .footer-right { text-align: right; }
-
-            #audio-panel {
-                padding: calc(var(--m) * 1.2) var(--m) calc(var(--m) * 1.4);
-            }
         }
 
         * {
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Crect width='9' height='9' fill='white'/%3E%3C/svg%3E") 0 0, auto !important;
         }
-        /* static fine grain */
         body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999; opacity: 0.055; background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/></filter><rect width='256' height='256' filter='url(%23n)'/></svg>"); background-repeat: repeat; background-size: 160px; }
     </style>
 </head>
 <body>
 
-    <section class="list-section" id="viz-list">
+    <!-- ── Step 1: Audio source ── -->
+    <section class="list-section page-step active" id="audio-section">
 
-        <div class="viz-row" data-href="songs/brian-eno-music-for-airports-11-1978.html" data-label="Drift">
+        <!-- Source options -->
+        <div id="src-rows">
+            <div class="src-row row-grid" id="src-search">
+                <span class="src-sym">→</span>
+                <span class="src-name">Search</span>
+                <span class="src-hint">Find a song</span>
+            </div>
+            <div class="src-row row-grid" id="src-upload">
+                <span class="src-sym">↑</span>
+                <span class="src-name">Upload File</span>
+                <span class="src-hint">From your device</span>
+            </div>
+            <div class="src-row row-grid" id="src-record">
+                <span class="src-sym">●</span>
+                <span class="src-name">Record</span>
+                <span class="src-hint">Live audio</span>
+            </div>
+        </div>
+
+        <!-- Expanded area -->
+        <div id="expand-area">
+
+            <!-- Search -->
+            <div class="exp-panel" id="exp-search">
+                <div class="exp-row">
+                    <input class="exp-input" id="search-input" type="text"
+                           placeholder="Artist or song title"
+                           autocomplete="off" autocorrect="off" spellcheck="false">
+                    <button class="exp-btn primary" id="btn-search-go">Search →</button>
+                    <button class="exp-btn muted"   id="btn-search-back">← Back</button>
+                </div>
+                <div id="suggestions">
+                    <div id="suggestions-label">Suggested</div>
+                </div>
+                <div id="exp-search-results"></div>
+                <div id="exp-search-status"></div>
+            </div>
+
+            <!-- Recording -->
+            <div class="exp-panel" id="exp-record">
+                <div class="exp-row">
+                    <div id="rec-dot"></div>
+                    <span id="rec-timer">00:00</span>
+                    <span id="rec-label-text">Recording</span>
+                    <button class="exp-btn primary" id="btn-stop" style="margin-left:auto;">Stop</button>
+                    <button class="exp-btn muted"   id="btn-rec-cancel">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Naming -->
+            <div class="exp-panel" id="exp-name">
+                <div class="exp-title" id="name-prompt">Name your song</div>
+                <div class="exp-row">
+                    <input class="exp-input" id="name-input" type="text"
+                           placeholder="Untitled"
+                           autocomplete="off" autocorrect="off" spellcheck="false">
+                    <button class="exp-btn primary" id="btn-begin">Begin →</button>
+                    <button class="exp-btn muted"   id="btn-name-back">← Back</button>
+                </div>
+                <div class="exp-hint">Press enter to begin</div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ── Step 2: Viz selection ── -->
+    <section class="list-section page-step" id="viz-list">
+
+        <div class="viz-row row-grid" data-href="songs/brian-eno-music-for-airports-11-1978.html">
             <span class="viz-num">I</span>
             <span class="viz-name">Drift</span>
             <span class="viz-artist">Eno</span>
         </div>
-
-        <div class="viz-row" data-href="songs/laurie-spiegel-patchwork-1980.html" data-label="Grid">
+        <div class="viz-row row-grid" data-href="songs/laurie-spiegel-patchwork-1980.html">
             <span class="viz-num">II</span>
             <span class="viz-name">Grid</span>
             <span class="viz-artist">Spiegel</span>
         </div>
-
-        <div class="viz-row" data-href="songs/autechre-dael-1995.html" data-label="Glitch">
+        <div class="viz-row row-grid" data-href="songs/autechre-dael-1995.html">
             <span class="viz-num">III</span>
             <span class="viz-name">Glitch</span>
             <span class="viz-artist">Autechre</span>
         </div>
-
-        <div class="viz-row" data-href="songs/oneohtrix-point-never-returnal-2010.html" data-label="Wave">
+        <div class="viz-row row-grid" data-href="songs/oneohtrix-point-never-returnal-2010.html">
             <span class="viz-num">IV</span>
             <span class="viz-name">Wave</span>
             <span class="viz-artist">OPN</span>
         </div>
-
-        <div class="viz-row" data-href="songs/ryoji-ikeda-datamatrix-2005.html" data-label="Matrix">
+        <div class="viz-row row-grid" data-href="songs/ryoji-ikeda-datamatrix-2005.html">
             <span class="viz-num">V</span>
             <span class="viz-name">Matrix</span>
             <span class="viz-artist">Ikeda</span>
         </div>
-
-        <div class="viz-row" data-href="songs/rashad-becker-busy-ready-what-corroborators-2025.html" data-label="Field">
+        <div class="viz-row row-grid" data-href="songs/rashad-becker-busy-ready-what-corroborators-2025.html">
             <span class="viz-num">VI</span>
             <span class="viz-name">Field</span>
             <span class="viz-artist">Becker</span>
@@ -267,158 +480,149 @@
 
     <footer id="site-footer">
         <a href="index.html">&larr; Back</a>
-        <span class="footer-title">Custom Visualizer</span>
-        <span class="footer-right">Upload or record audio</span>
+        <span class="footer-title" id="footer-title">Custom Visualizer</span>
+        <span class="footer-right" id="footer-hint">Choose how to add audio</span>
     </footer>
 
-    <!-- ── Audio panel ── -->
-    <div id="audio-panel">
-        <div id="panel-title">—</div>
-
-        <!-- Default state: upload + record buttons -->
-        <div class="panel-actions" id="panel-default">
-            <button class="panel-btn primary" id="btn-upload">Upload File ↑</button>
-            <button class="panel-btn" id="btn-record">● Record</button>
-            <button id="panel-cancel">Cancel</button>
-        </div>
-
-        <!-- Recording state: timer + stop -->
-        <div class="panel-actions" id="rec-state">
-            <div id="rec-dot"></div>
-            <span id="rec-timer">00:00</span>
-            <span id="rec-label" style="font-size:11px;letter-spacing:0.10em;text-transform:uppercase;color:rgba(255,255,255,0.38);">Recording</span>
-            <button class="panel-btn primary" id="btn-stop" style="margin-left:auto;">Stop</button>
-            <button id="panel-cancel-rec" style="background:none;border:none;font-family:inherit;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.28);cursor:pointer;padding:0;">Cancel</button>
-        </div>
-    </div>
-
-    <!-- Hidden file input -->
     <input type="file" id="file-input" accept="audio/*" style="display:none">
 
     <script>
     (function () {
-        const panel        = document.getElementById('audio-panel');
-        const panelTitle   = document.getElementById('panel-title');
-        const panelDef     = document.getElementById('panel-default');
-        const recState     = document.getElementById('rec-state');
-        const btnUpload    = document.getElementById('btn-upload');
-        const btnRecord    = document.getElementById('btn-record');
-        const btnStop      = document.getElementById('btn-stop');
-        const btnCancel    = document.getElementById('panel-cancel');
-        const btnCancelRec = document.getElementById('panel-cancel-rec');
-        const recTimer     = document.getElementById('rec-timer');
-        const fileInput    = document.getElementById('file-input');
+        const srcRows        = document.getElementById('src-rows');
+        const srcSearch      = document.getElementById('src-search');
+        const srcUpload      = document.getElementById('src-upload');
+        const srcRecord      = document.getElementById('src-record');
+        const namePrompt     = document.getElementById('name-prompt');
+        const suggestionsEl  = document.getElementById('suggestions');
 
-        let selectedHref  = '';
-        let selectedLabel = '';
-        let mediaRecorder = null;
-        let recChunks     = [];
-        let recStream     = null;
-        let recInterval   = null;
-        let recSeconds    = 0;
+        const expSearch      = document.getElementById('exp-search');
+        const expRecord      = document.getElementById('exp-record');
+        const expName        = document.getElementById('exp-name');
 
-        // Max file size for upload (10 MB unencoded → ~13 MB base64, fits Chrome sessionStorage)
+        const searchInput    = document.getElementById('search-input');
+        const btnSearchGo    = document.getElementById('btn-search-go');
+        const btnSearchBack  = document.getElementById('btn-search-back');
+        const searchResults  = document.getElementById('exp-search-results');
+        const searchStatus   = document.getElementById('exp-search-status');
+
+        const recTimer       = document.getElementById('rec-timer');
+        const btnStop        = document.getElementById('btn-stop');
+        const btnRecCancel   = document.getElementById('btn-rec-cancel');
+
+        const nameInput      = document.getElementById('name-input');
+        const btnBegin       = document.getElementById('btn-begin');
+        const btnNameBack    = document.getElementById('btn-name-back');
+
+        const audioSection   = document.getElementById('audio-section');
+        const vizList        = document.getElementById('viz-list');
+        const footerHint     = document.getElementById('footer-hint');
+        const fileInput      = document.getElementById('file-input');
+
+        let mediaRecorder  = null;
+        let recChunks      = [];
+        let recStream      = null;
+        let recInterval    = null;
+        let recSeconds     = 0;
+        let pendingBlob    = null;
+        let namingContext  = 'search'; // 'search' | 'upload' | 'recording'
+
         const MAX_BYTES = 10 * 1024 * 1024;
 
-        // ── Row click: open panel ─────────────────────────────────────────
-        document.getElementById('viz-list').addEventListener('click', e => {
-            const row = e.target.closest('.viz-row');
-            if (!row) return;
-            selectedHref  = row.dataset.href;
-            selectedLabel = row.dataset.label;
-            panelTitle.textContent = selectedLabel;
-            showDefault();
-            panel.classList.add('open');
-        });
+        // ── Suggested songs ───────────────────────────────────────────────
+        const SUGGESTIONS = [
+            { title: 'Windowlicker',     artist: 'Aphex Twin'     },
+            { title: 'Archangel',        artist: 'Burial'         },
+            { title: 'Teardrop',         artist: 'Massive Attack' },
+            { title: 'Sing',             artist: 'Four Tet'       },
+            { title: 'Open Eye Signal',  artist: 'Jon Hopkins'    },
+            { title: 'Heartbeats',       artist: 'The Knife'      },
+            { title: 'Bad Kingdom',      artist: 'Moderat'        },
+            { title: 'Kong',             artist: 'Bonobo'         },
+        ];
 
-        // ── Cancel ────────────────────────────────────────────────────────
-        function closePanel() {
-            panel.classList.remove('open');
-            stopRecording(true);
-            setTimeout(() => { panelTitle.textContent = '—'; }, 400);
-        }
-        btnCancel.addEventListener('click', closePanel);
-        btnCancelRec.addEventListener('click', closePanel);
-
-        document.addEventListener('click', e => {
-            if (!panel.classList.contains('open')) return;
-            if (!panel.contains(e.target) && !e.target.closest('.viz-row')) closePanel();
-        });
-
-        // ── Status helper ─────────────────────────────────────────────────
-        function setStatus(msg) { panelTitle.textContent = msg; }
-        function resetStatus()  { panelTitle.textContent = selectedLabel; }
-
-        // ── Store data URL and navigate ───────────────────────────────────
-        // We use FileReader.readAsDataURL() so the audio is stored as a
-        // self-contained base64 string. This survives page navigation reliably,
-        // unlike blob:// URLs which are tied to the document that created them
-        // and get invalidated the moment custom.html navigates away.
-        function storeAndGo(blob) {
-            setStatus('Loading…');
-            const reader = new FileReader();
-            reader.onload = () => {
-                try {
-                    sessionStorage.setItem('customAudio', reader.result);
-                    window.location.href = selectedHref + '?custom=1';
-                } catch (e) {
-                    // sessionStorage full (file too large even after size check)
-                    setStatus('File too large for storage. Try a shorter file.');
-                    setTimeout(resetStatus, 3000);
-                }
-            };
-            reader.onerror = () => {
-                setStatus('Could not read file.');
-                setTimeout(resetStatus, 3000);
-            };
-            reader.readAsDataURL(blob);
+        function buildSuggestions() {
+            // Keep the label, rebuild items after it
+            const label = document.getElementById('suggestions-label');
+            // Remove old items
+            Array.from(suggestionsEl.querySelectorAll('.suggestion-item')).forEach(el => el.remove());
+            SUGGESTIONS.forEach(s => {
+                const el = document.createElement('div');
+                el.className = 'suggestion-item';
+                el.innerHTML = '<span class="si-title">' + esc(s.title) + '</span>' +
+                               '<span class="si-artist">' + esc(s.artist) + '</span>';
+                el.addEventListener('click', () => {
+                    searchInput.value = s.artist + ' ' + s.title;
+                    doSearch();
+                });
+                suggestionsEl.appendChild(el);
+            });
+            suggestionsEl.style.display = '';
         }
 
-        // ── Upload file ───────────────────────────────────────────────────
-        btnUpload.addEventListener('click', () => fileInput.click());
+        // ── State ─────────────────────────────────────────────────────────
+        // states: 'source' | 'search' | 'recording' | 'naming' | 'vizpick'
+        function setState(s) {
+            const expanded = s !== 'source' && s !== 'vizpick';
+            srcRows.classList.toggle('dimmed', expanded);
 
-        fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            fileInput.value = '';
-            if (!file) return;
+            setPanel(expSearch,  s === 'search');
+            setPanel(expRecord,  s === 'recording');
+            setPanel(expName,    s === 'naming');
 
-            if (file.size > MAX_BYTES) {
-                setStatus('File over 10 MB — try a shorter track or record instead.');
-                setTimeout(resetStatus, 3500);
-                return;
-            }
-            storeAndGo(file);
+            const onAudio = s !== 'vizpick';
+            audioSection.classList.toggle('active', onAudio);
+            vizList.classList.toggle('active', s === 'vizpick');
+
+            if (s === 'source')    footerHint.textContent = 'Choose how to add audio';
+            if (s === 'search')    footerHint.textContent = 'Search for a song';
+            if (s === 'recording') footerHint.textContent = 'Recording — press Stop when done';
+            if (s === 'naming')    footerHint.textContent = 'Name it, then choose a visualization';
+            if (s === 'vizpick')   footerHint.textContent = 'Choose a visualization style';
+        }
+
+        function setPanel(el, on) {
+            el.classList.toggle('active', on);
+        }
+
+        // ── Source row clicks ─────────────────────────────────────────────
+        srcSearch.addEventListener('click', () => {
+            namingContext = 'search';
+            setState('search');
+            searchInput.value = '';
+            searchResults.innerHTML = '';
+            searchStatus.textContent = '';
+            buildSuggestions();
+            setTimeout(() => searchInput.focus(), 50);
         });
 
-        // ── Record ────────────────────────────────────────────────────────
-        btnRecord.addEventListener('click', () => {
+        srcUpload.addEventListener('click', () => { namingContext = 'upload'; fileInput.click(); });
+
+        srcRecord.addEventListener('click', () => {
+            namingContext = 'recording';
             navigator.mediaDevices.getUserMedia({ audio: true, video: false })
                 .then(stream => {
                     recStream  = stream;
                     recChunks  = [];
                     recSeconds = 0;
+                    recTimer.textContent = '00:00';
 
                     const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', 'audio/mp4']
                         .find(t => MediaRecorder.isTypeSupported(t)) || '';
 
                     mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
-
                     mediaRecorder.ondataavailable = e => {
                         if (e.data && e.data.size > 0) recChunks.push(e.data);
                     };
-
                     mediaRecorder.onstop = () => {
                         const blob = new Blob(recChunks, { type: mime || 'audio/webm' });
-                        // Release mic before navigating
                         recStream.getTracks().forEach(t => t.stop());
                         recStream = null;
                         clearInterval(recInterval);
                         recInterval = null;
-                        storeAndGo(blob);
+                        toNaming(blob, '');
                     };
 
                     mediaRecorder.start(100);
-
                     recInterval = setInterval(() => {
                         recSeconds++;
                         const m = String(Math.floor(recSeconds / 60)).padStart(2, '0');
@@ -426,31 +630,82 @@
                         recTimer.textContent = m + ':' + s;
                     }, 1000);
 
-                    showRecording();
+                    setState('recording');
                 })
                 .catch(() => {
-                    setStatus('Microphone access denied.');
-                    setTimeout(resetStatus, 3000);
+                    showInlineStatus('Microphone access denied.', 3000);
                 });
         });
 
-        btnStop.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop(); // → onstop → storeAndGo → navigate
+        // ── Upload ────────────────────────────────────────────────────────
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            fileInput.value = '';
+            if (!file) return;
+            if (file.size > MAX_BYTES) {
+                showInlineStatus('File over 10 MB — try a shorter track or record instead.', 3500);
+                return;
             }
+            const defaultTitle = file.name.replace(/\.[^.]+$/, '');
+            toNaming(file, defaultTitle);
         });
 
-        // ── Helpers ───────────────────────────────────────────────────────
-        function showDefault() {
-            panelDef.style.display = 'flex';
-            recState.classList.remove('active');
+        // ── Search ────────────────────────────────────────────────────────
+        btnSearchBack.addEventListener('click', () => setState('source'));
+
+        function doSearch() {
+            const q = searchInput.value.trim();
+            if (!q) return;
+            searchResults.innerHTML = '';
+            searchStatus.textContent = 'Searching…';
+            btnSearchGo.disabled = true;
+
+            fetch('https://itunes.apple.com/search?term=' + encodeURIComponent(q) +
+                  '&entity=song&limit=7&media=music')
+                .then(r => r.json())
+                .then(data => {
+                    btnSearchGo.disabled = false;
+                    searchStatus.textContent = '';
+                    const items = (data.results || []).filter(r => r.previewUrl);
+                    if (!items.length) { searchStatus.textContent = 'No results.'; return; }
+                    suggestionsEl.style.display = 'none';
+                    items.forEach(item => {
+                        const row = document.createElement('div');
+                        row.className = 'search-result';
+                        row.innerHTML =
+                            '<span class="sr-title">' + esc(item.trackName) + '</span>' +
+                            '<span class="sr-artist">' + esc(item.artistName) + '</span>';
+                        row.addEventListener('click', () => pickResult(item));
+                        searchResults.appendChild(row);
+                    });
+                })
+                .catch(() => {
+                    btnSearchGo.disabled = false;
+                    searchStatus.textContent = 'Search unavailable — try uploading a file.';
+                });
         }
 
-        function showRecording() {
-            panelDef.style.display = 'none';
-            recState.classList.add('active');
-            recTimer.textContent = '00:00';
+        btnSearchGo.addEventListener('click', doSearch);
+        searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+        function pickResult(item) {
+            searchStatus.textContent = 'Loading preview…';
+            searchResults.innerHTML = '';
+            fetch(item.previewUrl)
+                .then(r => { if (!r.ok) throw new Error(); return r.blob(); })
+                .then(blob => { searchStatus.textContent = ''; toNaming(blob, item.trackName); })
+                .catch(() => { searchStatus.textContent = 'Could not load preview — try uploading a file.'; });
         }
+
+        // ── Recording controls ────────────────────────────────────────────
+        btnStop.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+        });
+
+        btnRecCancel.addEventListener('click', () => {
+            stopRecording(true);
+            setState('source');
+        });
 
         function stopRecording(discard) {
             if (recInterval) { clearInterval(recInterval); recInterval = null; }
@@ -459,8 +714,69 @@
                 mediaRecorder.stop();
             }
             if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null; }
-            showDefault();
         }
+
+        // ── Naming step ───────────────────────────────────────────────────
+        function toNaming(blob, defaultTitle) {
+            pendingBlob = blob;
+            nameInput.value = defaultTitle || '';
+            // Set contextual prompt
+            if (namingContext === 'recording') namePrompt.textContent = 'Name your recording';
+            else if (namingContext === 'upload') namePrompt.textContent = 'Name your song';
+            else namePrompt.textContent = 'Name your song';
+            setState('naming');
+            setTimeout(() => { nameInput.focus(); if (defaultTitle) nameInput.select(); }, 50);
+        }
+
+        btnNameBack.addEventListener('click', () => {
+            pendingBlob = null;
+            setState('source');
+        });
+
+        btnBegin.addEventListener('click', commitAudio);
+        nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') commitAudio(); });
+
+        // ── Commit audio → show viz list ──────────────────────────────────
+        function commitAudio() {
+            const title = nameInput.value.trim() || 'Untitled';
+            sessionStorage.setItem('customTitle', title);
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    sessionStorage.setItem('customAudio', reader.result);
+                    setState('vizpick');
+                } catch (e) {
+                    showInlineStatus('File too large for storage. Try a shorter file.', 3500);
+                }
+            };
+            reader.onerror = () => showInlineStatus('Could not read file.', 3000);
+            reader.readAsDataURL(pendingBlob);
+        }
+
+        // ── Viz row click → navigate ───────────────────────────────────────
+        vizList.addEventListener('click', e => {
+            const row = e.target.closest('.viz-row');
+            if (!row) return;
+            window.location.href = row.dataset.href + '?custom=1';
+        });
+
+        // ── Helpers ───────────────────────────────────────────────────────
+        function showInlineStatus(msg, ms) {
+            footerHint.textContent = msg;
+            setTimeout(() => {
+                footerHint.textContent = 'Choose how to add audio';
+            }, ms);
+        }
+
+        function esc(str) {
+            return String(str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // Init
+        setState('source');
     })();
     </script>
 

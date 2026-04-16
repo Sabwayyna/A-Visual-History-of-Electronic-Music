@@ -20,7 +20,7 @@
     padding-left:  7vw;
     padding-right: 7vw;
     z-index: 1;
-    color: rgba(255, 255, 255, 0.32);
+    color: rgba(255, 255, 255, 0.52);
     font-size: clamp(10px, 0.82vw, 12px);
     letter-spacing: 0.22em;
     padding-top: 2.8vh;
@@ -67,10 +67,10 @@
 
 /* ── Back link (Ω) ──────────────────────────────────────────────────────── */
 #backLink {
-    opacity: 0.38;
+    opacity: 0.58;
     transition: opacity 0.18s ease, color 0.18s ease;
     text-shadow: none !important;
-    color: rgba(255, 255, 255, 0.38) !important;
+    color: rgba(255, 255, 255, 0.58) !important;
 }
 #backLink:hover  { opacity: 0.85; color: rgba(255, 255, 255, 0.85) !important; }
 #backLink:active { opacity: 0.25; }

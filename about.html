@@ -88,14 +88,14 @@
         }
 
         .song-year {
-            color: rgba(255, 255, 255, 0.18);
+            color: rgba(255, 255, 255, 0.65);
         }
 
         /* Body paragraphs — start at same left edge as artist column */
         .text-row p {
             grid-column: 2 / 4;
             padding-left: 1.5em;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.65);
             padding-bottom: 0.85em;
         }
 
@@ -108,14 +108,14 @@
         #site-footer a {
             font-size: 11px;
             letter-spacing: 0.06em;
-            color: rgba(255, 255, 255, 0.38);
+            color: rgba(255, 255, 255, 0.55);
             text-decoration: none;
             text-transform: uppercase;
         }
 
         #site-footer a:first-child {
             font-size: 28px;
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255, 255, 255, 0.65);
             line-height: 1;
         }
 
@@ -158,14 +158,14 @@
             left: 32px;
             font-size: 26px;
             font-family: "LinotypeUnivers", sans-serif;
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.65);
             text-decoration: none;
             z-index: 100;
             transition: color 0.3s ease;
             line-height: 1;
             user-select: none;
         }
-        #backLink:hover { color: rgba(255, 255, 255, 0.85); }
+        #backLink:hover { color: #fff; }
 
         /* ── Mobile ── */
         @media (max-width: 600px) {
@@ -229,7 +229,7 @@
             font-size: clamp(10px, 1vw, 14px);
             line-height: 1.7;
             letter-spacing: 0.01em;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255,255,255,0.65);
             text-align: left;
             margin-bottom: 1.4em;
         }
@@ -238,7 +238,7 @@
             font-size: 10px;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.45);
             margin-top: 1em;
         }
 
@@ -566,7 +566,7 @@
 
         function reflScrollStep() {
             if (reflAuto) {
-                reflScroll.scrollTop += 0.4;
+                reflScroll.scrollTop += 0.18;
                 if (reflScroll.scrollTop + reflScroll.clientHeight >= reflScroll.scrollHeight - 2) reflAuto = false;
             }
             reflRAF = requestAnimationFrame(reflScrollStep);
