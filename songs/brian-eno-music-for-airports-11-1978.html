@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music for Airports 1/1 - Brian Eno (1978)</title>
-    <link rel="icon" href="../favicon/favicon.svg" type="image/svg+xml"><link rel="icon" href="../favicon/favicon.ico" sizes="any">
+    <link rel="icon" href="../favicon/square%20logo.jpeg" type="image/jpeg">
     <style>
         @font-face {
             font-family: "LinotypeUnivers";
@@ -155,25 +155,25 @@
             opacity: 1;
         }
 
-        /* Back to timeline link */
+                /* Back link — white square */
         #backLink {
             position: fixed;
-            top: 28px;
-            left: 32px;
-            font-size: 26px;
-            font-family: "Helvetica Neue", Arial, sans-serif;
-            color: rgba(255, 255, 255, 0.60);
+            top: 33px;
+            left: 40px;
+            width: 14px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.80);
+            display: block;
+            z-index: 200;
             cursor: pointer;
-            z-index: 100;
             text-decoration: none;
-            transition: color 0.3s ease, text-shadow 0.3s ease;
-            line-height: 1;
-            user-select: none;
+            color: transparent;
+            font-size: 0;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
         }
-
         #backLink:hover {
-            color: rgba(255, 255, 255, 0.85);
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 1.0);
+            box-shadow: 0 0 16px rgba(255,255,255,0.5);
         }
 
         /* Bottom-left navigation */
@@ -362,7 +362,7 @@
             content: '';
             display: block;
             width: 12px;
-            height: 22px;
+            height: 14px;
             background: rgba(255,255,255,0.3);
             transition: background 0.25s ease, filter 0.25s ease;
         }
@@ -454,7 +454,7 @@
     <input type="file" id="fileInput" accept="audio/*" />
 
     <!-- Back to timeline -->
-    <a href="../index.html" id="backLink">&#937;</a>
+    <a href="../index.html" id="backLink" title="Back to timeline"></a>
     <a href="delia-derbyshire-doctor-who-theme-1963.html" id="nav-prev">&#9664;</a>
     <a href="laurie-spiegel-patchwork-1980.html" id="nav-next">&#9654;</a>
     <script>(function(){if(new URLSearchParams(location.search).get('custom')){document.getElementById('backLink').href='../custom.html';var p=document.getElementById('nav-prev');var n=document.getElementById('nav-next');if(p)p.style.display='none';if(n)n.style.display='none';}})();</script>

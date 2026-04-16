@@ -65,15 +65,39 @@
     background: rgba(255, 255, 255, 1) !important;
 }
 
-/* ── Back link (Ω) ──────────────────────────────────────────────────────── */
+/* ── Back link (white square) ───────────────────────────────────────────── */
 #backLink {
-    opacity: 0.58;
-    transition: opacity 0.18s ease, color 0.18s ease;
+    position: fixed !important;
+    top: 28px !important;
+    left: 32px !important;
+    display: block !important;
+    width: 20px !important;
+    height: 20px !important;
+    background: rgba(255, 255, 255, 0.72) !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
     text-shadow: none !important;
-    color: rgba(255, 255, 255, 0.58) !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    transition: background 0.22s ease, box-shadow 0.22s ease !important;
+    border-radius: 0 !important;
+    /* larger invisible hit area */
+    padding: 12px !important;
+    margin: -12px !important;
+    box-sizing: content-box !important;
 }
-#backLink:hover  { opacity: 0.85; color: rgba(255, 255, 255, 0.85) !important; }
-#backLink:active { opacity: 0.25; }
+#backLink:hover {
+    background: rgba(255, 255, 255, 1.0) !important;
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.55) !important;
+    opacity: 1 !important;
+}
+#backLink:active {
+    background: rgba(255, 255, 255, 0.30) !important;
+    opacity: 1 !important;
+}
 
 /* ── Controls tooltip (i button) ────────────────────────────────────────── */
 /* Small delay prevents the tooltip from flickering on mouse pass-throughs    */

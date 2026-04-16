@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Busy Ready What, Corroborators - Rashad Becker (2025)</title>
-    <link rel="icon" href="../favicon/favicon.svg" type="image/svg+xml"><link rel="icon" href="../favicon/favicon.ico" sizes="any">
+    <link rel="icon" href="../favicon/square%20logo.jpeg" type="image/jpeg">
     <script type="importmap">
         {
             "imports": {
@@ -216,7 +216,7 @@
         }
         #nav-prev::before, #nav-next::before {
             content: ''; display: block;
-            width: 12px; height: 22px;
+            width: 12px; height: 14px;
             background: rgba(255,255,255,0.3);
             transition: background 0.25s ease, filter 0.25s ease;
         }
@@ -237,19 +237,26 @@
             animation: navPulse 0.35s ease-out forwards;
         }
 
-        /* ── Back link ── */
+                /* Back link — white square */
         #backLink {
             position: fixed;
-            top: 28px; left: 32px;
-            font-size: 26px;
-            color: rgba(255,255,255,0.4);
+            top: 33px;
+            left: 40px;
+            width: 14px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.80);
+            display: block;
+            z-index: 200;
+            cursor: pointer;
             text-decoration: none;
-            z-index: 10000;
-            transition: color 0.3s ease;
-            line-height: 1;
-            user-select: none;
+            color: transparent;
+            font-size: 0;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
         }
-        #backLink:hover { color: rgba(255,255,255,0.85); }
+        #backLink:hover {
+            background: rgba(255, 255, 255, 1.0);
+            box-shadow: 0 0 16px rgba(255,255,255,0.5);
+        }
 
         /* Responsive */
         @media (max-width: 600px) {
@@ -314,7 +321,7 @@
     </div>
 
     <!-- Navigation -->
-    <a href="../index.html" id="backLink">&#937;</a>
+    <a href="../index.html" id="backLink" title="Back to timeline"></a>
     <a href="oneohtrix-point-never-returnal-2010.html" id="nav-prev">&#9664;</a>
     <a href="nikolai-voinov-rachmaninoff-prelude-1932.html" id="nav-next">&#9654;</a>
     <script>(function(){if(new URLSearchParams(location.search).get('custom')){document.getElementById('backLink').href='../custom.html';var p=document.getElementById('nav-prev');var n=document.getElementById('nav-next');if(p)p.style.display='none';if(n)n.style.display='none';}})();</script>

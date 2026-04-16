@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tri Repetae - Autechre (1995)</title>
-    <link rel="icon" href="../favicon/favicon.svg" type="image/svg+xml"><link rel="icon" href="../favicon/favicon.ico" sizes="any">
+    <link rel="icon" href="../favicon/square%20logo.jpeg" type="image/jpeg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
     <style>
@@ -156,25 +156,25 @@
             opacity: 1;
         }
 
-        /* Back to timeline link */
+                /* Back link — white square */
         #backLink {
             position: fixed;
-            top: 28px;
-            left: 32px;
-            font-size: 26px;
-            font-family: "Helvetica Neue", Arial, sans-serif;
-            color: rgba(255, 255, 255, 0.60);
+            top: 33px;
+            left: 40px;
+            width: 14px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.80);
+            display: block;
+            z-index: 200;
             cursor: pointer;
-            z-index: 100;
             text-decoration: none;
-            transition: color 0.3s ease, text-shadow 0.3s ease;
-            line-height: 1;
-            user-select: none;
+            color: transparent;
+            font-size: 0;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
         }
-
         #backLink:hover {
-            color: rgba(255, 255, 255, 0.85);
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 1.0);
+            box-shadow: 0 0 16px rgba(255,255,255,0.5);
         }
 
         /* Bottom-left navigation */
@@ -364,7 +364,7 @@
             content: '';
             display: block;
             width: 12px;
-            height: 22px;
+            height: 14px;
             background: rgba(255,255,255,0.3);
             transition: background 0.25s ease, filter 0.25s ease;
         }
@@ -455,10 +455,10 @@
     <input type="file" id="fileInput" accept="audio/*" />
 
     <!-- Back to timeline -->
-    <a href="../index.html" id="backLink">&#937;</a>
+    <a href="../index.html" id="backLink" title="Back to timeline"></a>
     <a href="laurie-spiegel-patchwork-1980.html" id="nav-prev">&#9664;</a>
     <a href="ryoji-ikeda-datamatrix-2005.html" id="nav-next">&#9654;</a>
-    <script>(function(){if(new URLSearchParams(location.search).get('custom')){document.getElementById('backLink').href='../custom.html';var p=document.getElementById('nav-prev');var n=document.getElementById('nav-next');if(p)p.style.display='none';if(n)n.style.display='none';}})();</script>
+    <script>(function(){if(new URLSearchParams(location.search).get('custom')){document.getElementById('backLink').href='../custom.html';var p=document.getElementById('nav-prev');var n=document.getElementById('nav-next');if(p)p.style.display='none';if(n)n.style.display='none';var h=document.getElementById('song-header');if(h){var ct=sessionStorage.getItem('customTitle')||'They entered';h.textContent=ct;};}})();</script>
 
     <!-- Minimalist controls button (top right) -->
     <div id="controlsBtn">
@@ -502,6 +502,11 @@
 const AUTO_LOAD_AUDIO = '../Musique/11 - Dael · Autechre.mp3';
 const _customAudio = sessionStorage.getItem('customAudio') || null;
 if (_customAudio) sessionStorage.removeItem('customAudio');
+
+// Custom mode detection
+const isCustom = !!(new URLSearchParams(location.search).get('custom'));
+// Zoom state (custom mode only)
+let _cZoom = 1.0, _cZoomTarget = 1.0, _customCanvas = null;
 
 let song, fft, amp;
 let started = false;
@@ -552,7 +557,12 @@ function preload() {
 
 function setup() {
   pixelDensity(window.devicePixelRatio || 2);
-  createCanvas(windowWidth, windowHeight);
+  // Custom mode uses a 3× world canvas so zooming out reveals more content
+  if (isCustom) {
+    createCanvas(windowWidth * 3, windowHeight * 3);
+  } else {
+    createCanvas(windowWidth, windowHeight);
+  }
   angleMode(DEGREES);
   fft = new p5.FFT(0.8, 1024);
   amp = new p5.Amplitude(0.8);
@@ -572,6 +582,27 @@ function setup() {
   // Initialize center point for radial mode
   centerX = width / 2;
   centerY = height / 2;
+
+  // Custom mode: zoom + centering setup
+  // The 3× canvas is centred on screen via translate(-50%,-50%).
+  // scale(0.90) means only the inner ~37% of the canvas is visible → "close-up".
+  // Scrolling out to scale(0.333) reveals the full 3× world canvas.
+  if (isCustom) {
+    _customCanvas = document.querySelector('canvas');
+    _cZoom = _cZoomTarget = 0.90;
+    if (_customCanvas) {
+      _customCanvas.style.position       = 'fixed';
+      _customCanvas.style.top            = '50%';
+      _customCanvas.style.left           = '50%';
+      _customCanvas.style.transformOrigin = 'center center';
+      _customCanvas.style.transform      = 'translate(-50%, -50%) scale(0.90)';
+    }
+    window.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      // min 0.32 ≈ full world canvas visible; max 1.45 ≈ very close-up
+      _cZoomTarget = Math.max(0.32, Math.min(1.45, _cZoomTarget - e.deltaY * 0.0008));
+    }, { passive: false });
+  }
 }
 
 function handleFile() {
@@ -606,6 +637,7 @@ function handleFile() {
         }
         userStartAudio();
         song.play();
+        if (isCustom) song.setLoop(true);
         song.rate(playbackSpeed);
         started = true;
         currentX = 0;
@@ -623,7 +655,11 @@ function handleFile() {
 }
 
 function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
+  if (isCustom) {
+    resizeCanvas(windowWidth * 3, windowHeight * 3);
+  } else {
+    resizeCanvas(windowWidth, windowHeight);
+  }
 }
 
 // Max shapes kept in memory — oldest are evicted when exceeded
@@ -653,7 +689,14 @@ function draw() {
 
 
   frameCounter++;
-  
+
+  // Custom mode: smooth zoom via CSS transform
+  if (isCustom && _customCanvas) {
+    _cZoom += (_cZoomTarget - _cZoom) * 0.055;
+    _customCanvas.style.transform =
+      'translate(-50%, -50%) scale(' + _cZoom.toFixed(4) + ')';
+  }
+
   // Calculate position based on current visualization mode
   let totalProgress = 0;
   if (song.duration() > 0) {
@@ -2032,6 +2075,116 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
     }
   }
 
+  // ── CUSTOM MODE: organic overlay shapes ───────────────────────────────
+  if (isCustom && vol > 0.04) {
+    // Scattered organic arcs around current spiral position
+    // Double-draw: one thick+dim (body) + one thin+bright (highlight)
+    if (random() < 0.50) {
+      let _aOff = random(-55, 55);
+      let _rOff = random(-28, 28);
+      let _aRad = radians(currentAngle + _aOff);
+      let _ax = centerX + cos(_aRad) * (currentRadius + _rOff);
+      let _ay = centerY + sin(_aRad) * (currentRadius + _rOff);
+      let _arcR = map(vol, 0, 1, 6, 52) * sizeMultiplier;
+      let _sa = random(360);
+      let _sw = random(35, 210);
+      // Body: wide + low opacity
+      shapes.push({ type: 'arc', x: _ax, y: _ay,
+        radius: _arcR * random(0.75, 1.35),
+        startAngle: _sa, endAngle: _sa + _sw,
+        weight: random(1.2, 3.0),
+        color: map(vol, 0, 1, 45, 155)
+      });
+      // Highlight: thin + bright
+      if (random() < 0.65) {
+        shapes.push({ type: 'arc', x: _ax, y: _ay,
+          radius: _arcR * random(0.75, 1.35),
+          startAngle: _sa + random(-10, 10), endAngle: _sa + _sw + random(-10, 10),
+          weight: random(0.12, 0.38),
+          color: map(vol, 0, 1, 170, 255)
+        });
+      }
+    }
+
+    // Bezier curves weaving through spiral — gestural, calligraphic
+    if (random() < 0.32 && vol > 0.07) {
+      let _a1 = radians(currentAngle + random(-18, 18));
+      let _a2 = radians(currentAngle + random(-18, 18));
+      let _r1 = currentRadius + random(-30, 30);
+      let _r2 = currentRadius + random(-30, 30);
+      let _bx1 = centerX + cos(_a1) * _r1;
+      let _by1 = centerY + sin(_a1) * _r1;
+      let _bx2 = centerX + cos(_a2) * _r2;
+      let _by2 = centerY + sin(_a2) * _r2;
+      let _cp = map(vol, 0, 1, 18, 75);
+      shapes.push({
+        type: 'bezier',
+        x1: _bx1, y1: _by1,
+        cx1: _bx1 + random(-_cp, _cp), cy1: _by1 + random(-_cp, _cp),
+        cx2: _bx2 + random(-_cp, _cp), cy2: _by2 + random(-_cp, _cp),
+        x2: _bx2, y2: _by2,
+        weight: random(0.10, 0.45),
+        color: map(vol, 0, 1, 75, 215)
+      });
+    }
+
+    // Tapered calligraphic strokes on beats
+    if (isBeat && random() < 0.55) {
+      let _tRad = radians(currentAngle + random(-20, 20));
+      let _tx = centerX + cos(_tRad) * (currentRadius + random(-18, 18));
+      let _ty = centerY + sin(_tRad) * (currentRadius + random(-18, 18));
+      shapes.push({
+        type: 'taperedLine',
+        x: _tx, y: _ty,
+        length: map(vol, 0, 1, 12, 58) * sizeMultiplier,
+        angle: random(-65, 65),
+        weight: random(2.0, 5.5),
+        color: map(vol, 0, 1, 110, 255)
+      });
+    }
+
+    // Concentric arc rings on very loud moments — depth + resonance
+    if (isVeryLoud && random() < 0.38) {
+      let _numR = floor(random(2, 5));
+      let _baseR = map(vol, 0, 1, 18, 85) * sizeMultiplier;
+      let _sa2 = random(360);
+      let _sw2 = random(55, 260);
+      let _rRad = radians(currentAngle + random(-35, 35));
+      let _rx = centerX + cos(_rRad) * (currentRadius + random(-22, 22));
+      let _ry = centerY + sin(_rRad) * (currentRadius + random(-22, 22));
+      for (let _ri = 0; _ri < _numR; _ri++) {
+        shapes.push({
+          type: 'arc',
+          x: _rx, y: _ry,
+          radius: _baseR * (1 + _ri * 0.24),
+          startAngle: _sa2 + _ri * random(-6, 6),
+          endAngle: _sa2 + _sw2 + _ri * random(-6, 6),
+          weight: random(0.08, 0.30),
+          color: Math.max(40, map(vol, 0, 1, 95, 240) - _ri * 22)
+        });
+      }
+    }
+
+    // Fine particle arcs — tiny, scattered, quiet texture
+    if (random() < 0.28 && vol > 0.06) {
+      let _n = floor(random(2, 5));
+      for (let _pi = 0; _pi < _n; _pi++) {
+        let _pRad = radians(currentAngle + random(-70, 70));
+        let _pr = currentRadius + random(-40, 40);
+        shapes.push({
+          type: 'arc',
+          x: centerX + cos(_pRad) * _pr,
+          y: centerY + sin(_pRad) * _pr,
+          radius: random(3, 14) * sizeMultiplier,
+          startAngle: random(360), endAngle: random(360) + random(20, 120),
+          weight: random(0.06, 0.22),
+          color: map(vol, 0, 1, 120, 240)
+        });
+      }
+    }
+  }
+  // ───────────────────────────────────────────────────────────────────────
+
   // ── GRADIENT SHAPES ────────────────────────────────────────────────────
   // Glowing orb on beats — centre bright, dissolves outward
   if (isBeat && random() < 0.55) {
@@ -3048,7 +3201,7 @@ function drawSingleShape(shape, mirrored) {
     fill(255);
   }
 
-  strokeWeight((shape.weight || 0.5) * 0.5);
+  strokeWeight((shape.weight || 0.5) * (isCustom ? 0.28 : 0.5));
 
   // Get coordinates (mirrored if needed)
   let x = mirrored && shape.x !== undefined ? getMirroredX(shape.x) : shape.x;
@@ -3229,6 +3382,51 @@ function drawSingleShape(shape, mirrored) {
         }
         break;
 
+      // ── ORGANIC CUSTOM SHAPES ──────────────────────────────────────────
+      case 'arc':
+        noFill();
+        if (shape.x !== undefined && shape.y !== undefined && shape.radius) {
+          // Mirror: flip angle
+          let _sa = mirrored ? (180 - (shape.endAngle || 180)) : (shape.startAngle || 0);
+          let _ea = mirrored ? (180 - (shape.startAngle || 0)) : (shape.endAngle || 180);
+          arc(x, shape.y, shape.radius * 2, shape.radius * 2, radians(_sa), radians(_ea), OPEN);
+        }
+        break;
+
+      case 'bezier':
+        noFill();
+        if (shape.x1 !== undefined) {
+          let _bx1 = mirrored ? getMirroredX(shape.x1) : shape.x1;
+          let _bx2 = mirrored ? getMirroredX(shape.x2) : shape.x2;
+          let _bcx1 = mirrored ? getMirroredX(shape.cx1) : shape.cx1;
+          let _bcx2 = mirrored ? getMirroredX(shape.cx2) : shape.cx2;
+          bezier(_bx1, shape.y1, _bcx1, shape.cy1, _bcx2, shape.cy2, _bx2, shape.y2);
+        }
+        break;
+
+      case 'taperedLine':
+        noFill();
+        if (shape.x !== undefined && shape.y !== undefined && shape.length) {
+          let _tSteps = 10;
+          let _tAng = mirrored ? (180 - (shape.angle || 0)) : (shape.angle || 0);
+          let _tDx = Math.cos(_tAng * Math.PI / 180) * shape.length / _tSteps;
+          let _tDy = Math.sin(_tAng * Math.PI / 180) * shape.length / _tSteps;
+          let _tSx = x - (shape.length / 2) * Math.cos(_tAng * Math.PI / 180);
+          let _tSy = shape.y - (shape.length / 2) * Math.sin(_tAng * Math.PI / 180);
+          let _tBaseW = (shape.weight || 0.5) * 0.28;
+          for (let _ti = 0; _ti < _tSteps; _ti++) {
+            let _tt = _ti / _tSteps;
+            let _taper = 1 - Math.abs(_tt - 0.5) * 2;
+            strokeWeight(Math.max(0.06, _tBaseW * 4.5 * _taper));
+            stroke(shape.color || 255);
+            line(_tSx + _tDx * _ti, _tSy + _tDy * _ti,
+                 _tSx + _tDx * (_ti + 1), _tSy + _tDy * (_ti + 1));
+          }
+          strokeWeight(_tBaseW); // reset
+        }
+        break;
+      // ───────────────────────────────────────────────────────────────────
+
       // ── GRADIENT SHAPES ────────────────────────────────────────────────
       case 'gradientCircle':
         // Radial gradient: centre bright, edge fades to transparent
@@ -3302,7 +3500,9 @@ function mousePressed() {
 
     // Try to play and log any errors
     try {
+      song.jump(0);
       song.play();
+      if (isCustom) song.setLoop(true);
       console.log('Song playing:', song.isPlaying());
       started = true;
       currentX = 0;
@@ -3482,6 +3682,7 @@ function showSpeedIndicator() {
           userStartAudio().then(function() {
             if (!started) {
               song.play();
+              if (isCustom) song.setLoop(true);
               started = true;
               currentX = 0; lastX = 0; frameCounter = 0;
             }
@@ -3498,6 +3699,7 @@ function showSpeedIndicator() {
           audioCtx.resume().then(function() {
             if (typeof song !== 'undefined' && song && song.isLoaded() && !started) {
               song.play();
+              if (isCustom) song.setLoop(true);
               started = true;
               currentX = 0; lastX = 0; frameCounter = 0;
             }
@@ -3508,7 +3710,7 @@ function showSpeedIndicator() {
       document.addEventListener('keydown', resumeAndPlay, { once: true });
     })();
     </script>
-    <script>window.PRINT_LABEL = { artist: 'Autechre', song: 'Du00e6l', year: '1995' };</script>
+    <script>(function(){var isCustom=new URLSearchParams(location.search).get('custom');if(isCustom){var ct=sessionStorage.getItem('customTitle')||'They entered';window.PRINT_LABEL={artist:'Custom',song:ct,year:new Date().getFullYear().toString()};}else{window.PRINT_LABEL={artist:'Autechre',song:'D\u00e6l',year:'1995'};}})();</script>
     <script src="../clap-print.js"></script>
 </body>
 </html>

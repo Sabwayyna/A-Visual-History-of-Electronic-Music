@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom — A Visual History of Electronic Music</title>
-    <link rel="icon" href="favicon/favicon.svg" type="image/svg+xml">
-    <link rel="icon" href="favicon/favicon.ico" sizes="any">
+    <link rel="icon" href="favicon/square%20logo.jpeg" type="image/jpeg">
     <style>
         @font-face {
             font-family: "LinotypeUnivers";
@@ -285,29 +284,6 @@
             color: rgba(255,255,255,0.38);
         }
 
-        /* ── Viz rows ── */
-        .viz-row {
-            text-decoration: none;
-            color: #fff;
-            line-height: 1.15;
-            transition: opacity 0.35s, letter-spacing 0.35s;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        #viz-list:hover .viz-row         { opacity: 0.5; }
-        #viz-list:hover .viz-row:hover   { opacity: 1; letter-spacing: 0.12em; }
-        .viz-row:active                  { opacity: 0.5; }
-
-        .viz-num, .viz-name, .viz-artist {
-            font-size: clamp(16px, 3.5vw, 64px);
-            letter-spacing: -0.02em;
-            line-height: inherit;
-            color: #fff;
-        }
-        .viz-name   { text-transform: uppercase; padding-left: 1.5em; }
-        .viz-artist { text-transform: uppercase; text-align: right; }
-
         /* ── Page-level fade between steps ── */
         .page-step {
             position: absolute;
@@ -442,41 +418,6 @@
         </div>
     </section>
 
-    <!-- ── Step 2: Viz selection ── -->
-    <section class="list-section page-step" id="viz-list">
-
-        <div class="viz-row row-grid" data-href="songs/brian-eno-music-for-airports-11-1978.html">
-            <span class="viz-num">I</span>
-            <span class="viz-name">Drift</span>
-            <span class="viz-artist">Eno</span>
-        </div>
-        <div class="viz-row row-grid" data-href="songs/laurie-spiegel-patchwork-1980.html">
-            <span class="viz-num">II</span>
-            <span class="viz-name">Grid</span>
-            <span class="viz-artist">Spiegel</span>
-        </div>
-        <div class="viz-row row-grid" data-href="songs/autechre-dael-1995.html">
-            <span class="viz-num">III</span>
-            <span class="viz-name">Glitch</span>
-            <span class="viz-artist">Autechre</span>
-        </div>
-        <div class="viz-row row-grid" data-href="songs/oneohtrix-point-never-returnal-2010.html">
-            <span class="viz-num">IV</span>
-            <span class="viz-name">Wave</span>
-            <span class="viz-artist">OPN</span>
-        </div>
-        <div class="viz-row row-grid" data-href="songs/ryoji-ikeda-datamatrix-2005.html">
-            <span class="viz-num">V</span>
-            <span class="viz-name">Matrix</span>
-            <span class="viz-artist">Ikeda</span>
-        </div>
-        <div class="viz-row row-grid" data-href="songs/rashad-becker-busy-ready-what-corroborators-2025.html">
-            <span class="viz-num">VI</span>
-            <span class="viz-name">Field</span>
-            <span class="viz-artist">Becker</span>
-        </div>
-
-    </section>
 
     <footer id="site-footer">
         <a href="index.html">&larr; Back</a>
@@ -514,7 +455,6 @@
         const btnNameBack    = document.getElementById('btn-name-back');
 
         const audioSection   = document.getElementById('audio-section');
-        const vizList        = document.getElementById('viz-list');
         const footerHint     = document.getElementById('footer-hint');
         const fileInput      = document.getElementById('file-input');
 
@@ -560,24 +500,21 @@
         }
 
         // ── State ─────────────────────────────────────────────────────────
-        // states: 'source' | 'search' | 'recording' | 'naming' | 'vizpick'
+        // states: 'source' | 'search' | 'recording' | 'naming'
         function setState(s) {
-            const expanded = s !== 'source' && s !== 'vizpick';
+            const expanded = s !== 'source';
             srcRows.classList.toggle('dimmed', expanded);
 
             setPanel(expSearch,  s === 'search');
             setPanel(expRecord,  s === 'recording');
             setPanel(expName,    s === 'naming');
 
-            const onAudio = s !== 'vizpick';
-            audioSection.classList.toggle('active', onAudio);
-            vizList.classList.toggle('active', s === 'vizpick');
+            audioSection.classList.toggle('active', true);
 
             if (s === 'source')    footerHint.textContent = 'Choose how to add audio';
             if (s === 'search')    footerHint.textContent = 'Search for a song';
             if (s === 'recording') footerHint.textContent = 'Recording — press Stop when done';
-            if (s === 'naming')    footerHint.textContent = 'Name it, then choose a visualization';
-            if (s === 'vizpick')   footerHint.textContent = 'Choose a visualization style';
+            if (s === 'naming')    footerHint.textContent = 'Name it, then press Begin';
         }
 
         function setPanel(el, on) {
@@ -736,7 +673,7 @@
         btnBegin.addEventListener('click', commitAudio);
         nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') commitAudio(); });
 
-        // ── Commit audio → show viz list ──────────────────────────────────
+        // ── Commit audio → navigate directly to Autechre visualizer ─────────
         function commitAudio() {
             const title = nameInput.value.trim() || 'Untitled';
             sessionStorage.setItem('customTitle', title);
@@ -745,7 +682,7 @@
             reader.onload = () => {
                 try {
                     sessionStorage.setItem('customAudio', reader.result);
-                    setState('vizpick');
+                    window.location.href = 'songs/autechre-dael-1995.html?custom=1';
                 } catch (e) {
                     showInlineStatus('File too large for storage. Try a shorter file.', 3500);
                 }
@@ -753,13 +690,6 @@
             reader.onerror = () => showInlineStatus('Could not read file.', 3000);
             reader.readAsDataURL(pendingBlob);
         }
-
-        // ── Viz row click → navigate ───────────────────────────────────────
-        vizList.addEventListener('click', e => {
-            const row = e.target.closest('.viz-row');
-            if (!row) return;
-            window.location.href = row.dataset.href + '?custom=1';
-        });
 
         // ── Helpers ───────────────────────────────────────────────────────
         function showInlineStatus(msg, ms) {

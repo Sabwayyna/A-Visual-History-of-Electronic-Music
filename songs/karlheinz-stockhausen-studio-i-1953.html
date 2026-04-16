@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Studie I - Karlheinz Stockhausen (1953)</title>
-    <link rel="icon" href="../favicon/favicon.svg" type="image/svg+xml"><link rel="icon" href="../favicon/favicon.ico" sizes="any">
+    <link rel="icon" href="../favicon/square%20logo.jpeg" type="image/jpeg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
     <style>
@@ -150,24 +150,25 @@
             opacity: 1;
         }
 
+                /* Back link — white square */
         #backLink {
             position: fixed;
-            top: 28px;
-            left: 32px;
-            font-size: 26px;
-            font-family: "Helvetica Neue", Arial, sans-serif;
-            color: rgba(255, 255, 255, 0.60);
+            top: 33px;
+            left: 40px;
+            width: 14px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.80);
+            display: block;
+            z-index: 200;
             cursor: pointer;
-            z-index: 100;
             text-decoration: none;
-            transition: color 0.3s ease, text-shadow 0.3s ease;
-            line-height: 1;
-            user-select: none;
+            color: transparent;
+            font-size: 0;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
         }
-
         #backLink:hover {
-            color: rgba(255, 255, 255, 0.85);
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 1.0);
+            box-shadow: 0 0 16px rgba(255,255,255,0.5);
         }
 
 
@@ -376,7 +377,7 @@
             content: '';
             display: block;
             width: 12px;
-            height: 22px;
+            height: 14px;
             background: rgba(255,255,255,0.3);
             transition: background 0.25s ease, filter 0.25s ease;
         }
@@ -462,7 +463,7 @@
         </div>
     </div>    <input type="file" id="fileInput" accept="audio/*" />
 
-    <a href="../index.html" id="backLink">&#937;</a>
+    <a href="../index.html" id="backLink" title="Back to timeline"></a>
     <a href="pierre-schaeffer-cinq-études-de-bruits-1948.html" id="nav-prev">&#9664;</a>
     <a href="daphne-oram-four-aspects-1960.html" id="nav-next">&#9654;</a>
 

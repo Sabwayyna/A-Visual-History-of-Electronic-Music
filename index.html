@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A Visual History of Electronic Music</title>
-    <link rel="icon" href="favicon/favicon.svg" type="image/svg+xml"><link rel="icon" href="favicon/favicon.ico" sizes="any">
+    <link rel="icon" href="favicon/square%20logo.jpeg" type="image/jpeg">
     <style>
         @font-face {
             font-family: "LinotypeUnivers";
@@ -38,33 +38,23 @@
             align-items: center;
         }
 
-        /* Ohm symbol canvas — shows in idle state, also serves as viz mask */
-        #shape-img {
-            position: fixed;
-            left: 50%;
-            top: 54%;
-            transform: translate(-50%, -50%);
-            height: 92vh;
-            width: 92vh;
-            pointer-events: none;
-            z-index: 5;
-            opacity: 0.45;
-            transition: opacity 0.3s;
-        }
-        #shape-img.hidden { opacity: 0; }
+        /* Ohm canvas — retired, kept for JS compatibility */
+        #shape-img { display: none; }
 
-        /* Center square — idle state background element */
+        /* Center square — idle state white square */
         #center-square {
             position: fixed;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            width: min(52vh, 52vw);
-            height: min(52vh, 52vw);
-            background: rgba(220, 220, 215, 0.09);
+            width: min(22vh, 22vw);
+            height: min(22vh, 22vw);
+            background: rgba(235, 235, 230, 0.18);
             pointer-events: none;
             z-index: 4;
+            transition: opacity 0.35s;
         }
+        #center-square.hidden { opacity: 0; }
 
         /* Visualization canvas — full-screen on hover */
         #viz-canvas {
@@ -370,15 +360,19 @@
     }
 
     // ── Hover wiring ──────────────────────────────────────────────────────────
+    const centerSquare = document.getElementById('center-square');
+
     document.querySelectorAll('.song-row').forEach(row => {
         row.addEventListener('mouseenter', () => {
             currentMode = parseInt(row.dataset.mode, 10);
             shapeImg.classList.add('hidden');
+            if (centerSquare) centerSquare.classList.add('hidden');
             playAudio(row.dataset.audio);
         });
         row.addEventListener('mouseleave', () => {
             currentMode = -1;
             shapeImg.classList.remove('hidden');
+            if (centerSquare) centerSquare.classList.remove('hidden');
             stopAudio();
         });
     });
@@ -469,45 +463,67 @@
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 2 · Daphne Oram — procedural score marks drawn left → right ──────────
+    // ── 2 · Daphne Oram — Oramics score: stave lines + procedural marks ─────────
     function mOram(v) {
-        const TOTAL = 120, PER = 2, PAUSE = 50;
-        const frames = Math.ceil(TOTAL / PER);
-        const cycle  = t % (frames + PAUSE);
-        if (cycle === 0) bc.clearRect(0, 0, W, H);
-        if (cycle >= frames) { ctx.drawImage(buf, 0, 0); return; }
-        for (let j = 0; j < PER; j++) {
-            const step = cycle * PER + j;
-            if (step >= TOTAL) break;
-            const prog = step / TOTAL;
-            // x advances left to right like a score being drawn
-            const x = prog * W * 0.92 + W * 0.04;
-            // y follows a slow organic curve with variation
-            const y = H * (0.15 + 0.70 * (0.5 + 0.4 * Math.sin(prog * Math.PI * 4.2 + v * 1.5)
-                                               + 0.1 * Math.sin(prog * Math.PI * 11)));
-            const alpha = 0.65 + 0.35 * v;
-            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
-            bc.fillStyle   = `rgba(255,255,255,${alpha})`;
-            bc.lineWidth   = Math.max(1, Math.min(W, H) * 0.009);
-            const type = (step * 7) % 5 | 0;
-            if (type === 0) {                // arc stroke
-                const r = rn(H * 0.025, H * 0.09);
-                bc.beginPath(); bc.arc(x, y, r, rn(0, Math.PI), rn(Math.PI, Math.PI * 2)); bc.stroke();
-            } else if (type === 1) {         // vertical stroke
-                const len = rn(H * 0.04, H * 0.13);
-                bc.beginPath(); bc.moveTo(x, y - len * 0.5); bc.lineTo(x, y + len * 0.5); bc.stroke();
-            } else if (type === 2) {         // filled dot
-                const r = rn(2, Math.min(W, H) * 0.02);
-                bc.beginPath(); bc.arc(x, y, r, 0, Math.PI * 2); bc.fill();
-            } else if (type === 3) {         // diagonal dash
-                const len = rn(W * 0.015, W * 0.07);
-                const tilt = rn(-H * 0.025, H * 0.025);
-                bc.beginPath(); bc.moveTo(x, y); bc.lineTo(x + len, y + tilt); bc.stroke();
-            } else {                         // small rect
-                const sw = rn(3, W * 0.018), sh = rn(H * 0.012, H * 0.065);
-                bc.strokeRect(x - sw * 0.5, y - sh * 0.5, sw, sh);
+        const STAVES      = 5;
+        const mg          = H * 0.14;
+        const gap         = (H - 2 * mg) / (STAVES - 1);
+        const DRAW_FRAMES = 200;   // slow left-to-right draw
+        const HOLD_FRAMES = 100;   // hold before fade
+        const FADE_FRAMES = 60;    // fade out
+        const CYCLE       = DRAW_FRAMES + HOLD_FRAMES + FADE_FRAMES;
+        const cycle       = t % CYCLE;
+
+        if (cycle === 0) {
+            bc.clearRect(0, 0, W, H);
+            // Draw stave lines once at cycle start
+            bc.strokeStyle = 'rgba(255,255,255,0.10)';
+            bc.lineWidth = 1;
+            for (let s = 0; s < STAVES; s++) {
+                const sy = mg + s * gap;
+                bc.beginPath(); bc.moveTo(W * 0.04, sy); bc.lineTo(W * 0.96, sy); bc.stroke();
             }
         }
+
+        // Fade out during last FADE_FRAMES
+        if (cycle >= DRAW_FRAMES + HOLD_FRAMES) {
+            bc.fillStyle = `rgba(0,0,0,0.028)`;
+            bc.fillRect(0, 0, W, H);
+        }
+
+        // Add one mark every 2 frames during draw phase
+        if (cycle < DRAW_FRAMES && cycle % 2 === 0) {
+            const prog  = cycle / DRAW_FRAMES;
+            const x     = prog * W * 0.88 + W * 0.06;
+            const stave = ri(0, STAVES);
+            const sy    = mg + stave * gap;
+            const alpha = 0.50 + 0.40 * v;
+            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
+            bc.fillStyle   = `rgba(255,255,255,${alpha})`;
+            bc.lineWidth   = Math.max(1, Math.min(W, H) * 0.007);
+
+            const type = ri(0, 5);
+            if (type === 0) {                 // arch above stave (Oramics wave)
+                const r = rn(H * 0.018, H * 0.065);
+                bc.beginPath(); bc.arc(x, sy, r, Math.PI, 0); bc.stroke();
+            } else if (type === 1) {          // note stem + head
+                const len = rn(H * 0.04, H * 0.10);
+                bc.beginPath(); bc.moveTo(x, sy - len); bc.lineTo(x, sy + H * 0.012); bc.stroke();
+                bc.beginPath(); bc.ellipse(x, sy, H * 0.013, H * 0.009, -0.3, 0, Math.PI * 2); bc.fill();
+            } else if (type === 2) {          // small filled dot (notehead)
+                const r = rn(H * 0.007, H * 0.016);
+                bc.beginPath(); bc.arc(x, sy, r, 0, Math.PI * 2); bc.fill();
+            } else if (type === 3) {          // curve below stave (bass shape)
+                const w = rn(H * 0.03, H * 0.09);
+                bc.beginPath(); bc.moveTo(x, sy);
+                bc.quadraticCurveTo(x + w * 0.5, sy + rn(H * 0.02, H * 0.07), x + w, sy);
+                bc.stroke();
+            } else {                          // short horizontal ledger dash
+                const len = rn(W * 0.010, W * 0.040);
+                bc.beginPath(); bc.moveTo(x - len * 0.5, sy); bc.lineTo(x + len * 0.5, sy); bc.stroke();
+            }
+        }
+
         ctx.drawImage(buf, 0, 0);
     }
 
@@ -720,73 +736,87 @@
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 9 · Oneohtrix Point Never — slow drone sine clouds ────────────────────
+    // ── 9 · OPN — deep space: drifting star field + soft nebula glow ─────────
     function mOPN(v, b, sb) {
-        bc.fillStyle = 'rgba(0,0,0,0.003)';
+        bc.fillStyle = 'rgba(0,0,0,0.007)';
         bc.fillRect(0, 0, W, H);
-        const layers = sb ? 10 : (b ? 8 : 6);
-        for (let l = 0; l < layers; l++) {
-            const yBase = H * (0.05 + l * 0.10 + 0.07 * Math.sin(t * 0.002 + l));
-            const amp   = H * (0.07 + 0.10 * v) * (0.5 + 0.5 * Math.sin(t * 0.0015 + l * 1.7));
-            const freq  = 0.004 + l * 0.003;
-            const phase = t * (0.004 + l * 0.0008);
-            const alpha = rn(0.25, 0.75) * (0.6 + 0.4 * v);
-            bc.strokeStyle = `rgba(255,255,255,${alpha})`;
-            bc.lineWidth   = rn(0.5, 2.0);
-            bc.beginPath();
-            for (let x = 0; x <= W; x += 2) {
-                const y = yBase + Math.sin(x * freq + phase) * amp + Math.sin(x * freq * 2.3 + phase * 1.5) * amp * 0.3;
-                x === 0 ? bc.moveTo(x, y) : bc.lineTo(x, y);
+
+        // Star field — scattered tiny bright points, most sub-pixel
+        const nStars = b ? ri(8, 18) : ri(3, 9);
+        for (let i = 0; i < nStars; i++) {
+            const size = Math.random() < 0.80 ? rn(0.5, 1.2) : rn(1.5, 3.0);
+            bc.fillStyle = `rgba(255,255,255,${rn(0.35, 0.95)})`;
+            bc.fillRect(rn(0, W), rn(0, H), size, size);
+        }
+
+        // Soft nebula glow patches — large radial blobs at very low opacity
+        if (t % 80 === 0 || sb) {
+            const ng = ri(1, 3);
+            for (let i = 0; i < ng; i++) {
+                const gx = rn(W * 0.08, W * 0.92);
+                const gy = rn(H * 0.08, H * 0.92);
+                const gr = rn(Math.min(W, H) * 0.07, Math.min(W, H) * 0.24);
+                const grad = bc.createRadialGradient(gx, gy, 0, gx, gy, gr);
+                grad.addColorStop(0, `rgba(255,255,255,${rn(0.04, 0.10)})`);
+                grad.addColorStop(1, 'rgba(255,255,255,0)');
+                bc.fillStyle = grad;
+                bc.beginPath(); bc.arc(gx, gy, gr, 0, Math.PI * 2); bc.fill();
             }
-            bc.stroke();
         }
-        const np = ri(8, sb ? 20 : 12);
-        for (let i = 0; i < np; i++) {
-            bc.fillStyle = `rgba(255,255,255,${rn(0.4, 0.9)})`;
-            bc.fillRect(rn(0, W), rn(0, H), rn(1, 4), rn(1, 4));
-        }
+
+        // Occasional faint light streaks (light years of motion)
         if (b) {
-            const ns = ri(2, 4);
-            for (let i = 0; i < ns; i++) {
-                const sy = rn(H * 0.05, H * 0.95);
-                bc.strokeStyle = `rgba(255,255,255,${rn(0.15, 0.5)})`; bc.lineWidth = rn(0.5, 1.5);
-                bc.beginPath(); bc.moveTo(0, sy); bc.lineTo(rn(W * 0.4, W), sy); bc.stroke();
+            const nl = ri(1, 3);
+            for (let i = 0; i < nl; i++) {
+                const y   = rn(H * 0.05, H * 0.95);
+                const len = rn(W * 0.04, W * 0.16);
+                const x   = rn(0, W - len);
+                bc.strokeStyle = `rgba(255,255,255,${rn(0.05, 0.14)})`;
+                bc.lineWidth = rn(0.5, 1.0);
+                bc.beginPath(); bc.moveTo(x, y); bc.lineTo(x + len, y); bc.stroke();
             }
         }
+
         ctx.drawImage(buf, 0, 0);
     }
 
-    // ── 10 · Ryoji Ikeda — data matrix barcode streams ────────────────────────
+    // ── 10 · Ryoji Ikeda — data matrix barcode strips (quiet, precise) ─────────
     function mIkeda(v, b, sb) {
-        bc.fillStyle = 'rgba(0,0,0,0.008)';
+        bc.fillStyle = 'rgba(0,0,0,0.014)';
         bc.fillRect(0, 0, W, H);
-        const groups = sb ? ri(8, 16) : (b ? ri(5, 11) : ri(3, 7));
+
+        // Fewer groups, shorter bars, lower opacity so text stays readable
+        const groups = b ? ri(2, 5) : ri(1, 3);
         for (let g = 0; g < groups; g++) {
-            const gx  = rn(0, W * 0.82);
-            const gy1 = rn(H * 0.02, H * 0.25);
-            const gy2 = gy1 + rn(H * 0.4, H * 0.75);
-            const bars = ri(12, 40);
+            const gx  = rn(W * 0.05, W * 0.78);
+            const bh  = rn(H * 0.10, H * 0.28);    // max 28% height
+            const gy1 = rn(H * 0.35, H * 0.52);    // vertically centred
+            const bars = ri(6, 22);
             let x = gx;
             for (let i = 0; i < bars; i++) {
-                const bw = rn(1, 5);
-                bc.fillStyle = `rgba(255,255,255,${rn(0.8, 1.0)})`;
-                bc.fillRect(x, gy1, bw, gy2 - gy1);
-                x += bw + rn(0.5, 5);
+                const bw = rn(1, 3.5);
+                bc.fillStyle = `rgba(255,255,255,${rn(0.40, 0.70)})`;
+                bc.fillRect(x, gy1, bw, bh);
+                x += bw + rn(0.5, 4.5);
                 if (x > W) break;
             }
         }
-        const np = ri(12, 35);
+
+        // Sparse pixel scatter
+        const np = ri(4, 14);
         for (let i = 0; i < np; i++) {
-            const ps = rn(1, 4);
-            bc.fillStyle = `rgba(255,255,255,${rn(0.85, 1.0)})`;
+            const ps = rn(0.8, 2.2);
+            bc.fillStyle = `rgba(255,255,255,${rn(0.45, 0.75)})`;
             bc.fillRect(rn(0, W), rn(0, H), ps, ps);
         }
-        const ns = ri(1, 3);
-        for (let i = 0; i < ns; i++) {
-            const sy = rn(H * 0.05, H * 0.95);
-            bc.strokeStyle = `rgba(255,255,255,${rn(0.6, 1.0)})`; bc.lineWidth = rn(0.5, 1.5);
-            bc.beginPath(); bc.moveTo(0, sy); bc.lineTo(rn(W * 0.5, W), sy); bc.stroke();
+
+        // Occasional thin scan line
+        if (b) {
+            const sy = rn(H * 0.1, H * 0.9);
+            bc.strokeStyle = `rgba(255,255,255,${rn(0.12, 0.28)})`; bc.lineWidth = 1;
+            bc.beginPath(); bc.moveTo(0, sy); bc.lineTo(rn(W * 0.3, W * 0.8), sy); bc.stroke();
         }
+
         ctx.drawImage(buf, 0, 0);
     }
 
@@ -871,5 +901,103 @@
     cx.putImageData(id,0,0);
 })();
 </script>
+
+<!-- ── First-time intro popup ── -->
+<div id="intro-popup">
+    <p class="intro-body">This is a purely coded visualization of the history of electronic music. Each piece translates sound into real-time visuals.<br><br><span class="intro-note">Not sure where to start? → <a class="intro-link intro-inline" href="songs/autechre-dael-1995.html">1995 • AUTECHRE • DAEL</a></span></p>
+    <p class="intro-explore">Or explore</p>
+    <div class="intro-links">
+        <a class="intro-link" href="songs/nikolai-voinov-rachmaninoff-prelude-1932.html">→ Start from the beginning</a>
+        <a class="intro-link" href="custom.html">→ What does your favorite song look like?</a>
+        <a class="intro-link" href="about.html">→ Learn more</a>
+    </div>
+    <button id="intro-close-btn">×</button>
+</div>
+
+<style>
+#intro-popup {
+    position: fixed;
+    bottom: calc(var(--m) + 2em);
+    left: var(--m);
+    width: 260px;
+    height: 260px;
+    background: #000;
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 22px 22px 18px;
+    z-index: 9000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+    font-family: "LinotypeUnivers", sans-serif;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+#intro-popup.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+.intro-body {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.75);
+    text-transform: uppercase;
+}
+.intro-note {
+    color: rgba(255,255,255,0.45);
+}
+.intro-links {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.intro-link {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.intro-link:hover { color: #fff; }
+.intro-inline { display: inline; }
+.intro-explore {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    margin-top: 14px;
+}
+#intro-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.35);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+}
+#intro-close-btn:hover { color: #fff; }
+</style>
+
+<script>
+(function () {
+    var popup = document.getElementById('intro-popup');
+    setTimeout(function () { popup.classList.add('visible'); }, 600);
+    function close() { popup.classList.remove('visible'); }
+    document.addEventListener('click', function() {
+        if (popup.classList.contains('visible')) close();
+    });
+})();
+</script>
+
 </body>
 </html>
