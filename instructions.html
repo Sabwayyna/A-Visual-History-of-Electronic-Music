@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use — A Visual History of Electronic Music</title>
+    <link rel="icon" href="favicon/square-logo.png" type="image/png">
+    <style>
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: "LinotypeUnivers";
+            src: url("fonts/LinotypeUnivers-BasicRegularItalic.otf") format("opentype");
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        :root { --m: 5vw; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            background: #050505;
+            color: #fff;
+            font-family: "LinotypeUnivers", sans-serif;
+            font-weight: 400;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            padding: var(--m) var(--m) calc(var(--m) * 4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #content {
+            width: 100%;
+            max-width: 560px;
+        }
+
+        /* ── Back link ── */
+        #back {
+            display: inline-block;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.35);
+            text-decoration: none;
+            margin-bottom: calc(var(--m) * 1.2);
+            transition: color 0.2s;
+        }
+        #back:hover { color: #fff; }
+
+        /* ── Touch hint ── */
+        #touch-hint {
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.22);
+            margin-bottom: calc(var(--m) * 1.5);
+        }
+
+        /* ── Page title ── */
+        h1 {
+            font-size: clamp(28px, 5.5vw, 72px);
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            line-height: 0.95;
+            color: rgba(255,255,255,0.9);
+            text-transform: uppercase;
+            margin-bottom: calc(var(--m) * 1.5);
+        }
+        h1 span {
+            display: block;
+            color: rgba(255,255,255,0.28);
+        }
+
+        /* ── Divider ── */
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+            margin-bottom: calc(var(--m) * 1.5);
+        }
+
+        /* ── Section ── */
+        .section {
+            margin-bottom: calc(var(--m) * 1.5);
+        }
+
+        .section-num {
+            font-size: 10px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.22);
+            margin-bottom: 0.9em;
+        }
+
+        .section-body {
+            display: grid;
+            grid-template-columns: 2em 1fr;
+            column-gap: 1.2em;
+            row-gap: 1em;
+        }
+
+        .icon {
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+            padding-top: 0.1em;
+            line-height: 1.5;
+            font-style: normal;
+        }
+
+        .line {
+            font-size: clamp(13px, 2vw, 20px);
+            line-height: 1.45;
+            color: rgba(255,255,255,0.75);
+            letter-spacing: 0.01em;
+        }
+
+        .line em {
+            font-style: italic;
+            color: rgba(255,255,255,0.42);
+        }
+
+        .line strong {
+            font-style: normal;
+            font-weight: 400;
+            color: rgba(255,255,255,0.95);
+        }
+
+        /* ── Keyword tags ── */
+        .tag {
+            display: inline-block;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.15em 0.5em;
+            font-size: 0.82em;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.6);
+            margin-right: 0.3em;
+        }
+
+        /* ── Footer ── */
+        footer {
+            position: fixed;
+            bottom: var(--m);
+            left: var(--m);
+            right: var(--m);
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            pointer-events: none;
+        }
+        footer span {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.18);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="content">
+    <a id="back" href="index.html">← Back</a>
+
+    <p id="touch-hint">&#11835;&nbsp; Touch, tap &amp; swipe to navigate</p>
+
+    <h1>How<br>to Use<span>A Visual History<br>of Electronic Music</span></h1>
+
+    <div class="divider"></div>
+
+    <!-- 01 -->
+    <section class="section">
+        <p class="section-num">01 &mdash; The Project</p>
+        <div class="section-body">
+            <span class="icon">&#9632;</span>
+            <p class="line"><strong>A Visual History of Electronic Music</strong> traces selected moments from the history of the genre through real-time, code-based visuals.</p>
+
+            <span class="icon">&#9632;</span>
+            <p class="line">Each song in the list is a distinct era. <em>Click or tap any row</em> to enter its visualization — the sound and visuals play together.</p>
+
+            <span class="icon">&#9632;</span>
+            <p class="line">Every visualization is written entirely in code — no video, no pre-rendered frames. The visuals respond to the audio in real time.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- 02 -->
+    <section class="section">
+        <p class="section-num">02 &mdash; Navigating a Song</p>
+        <div class="section-body">
+            <span class="icon">&#9632;</span>
+            <p class="line"><em>Top center</em> — tap the song title to open the info panel with context about the work.</p>
+
+            <span class="icon">&#9632;</span>
+            <p class="line"><em>Left / right arrows</em> — move between songs without returning to the main page.</p>
+
+            <span class="icon">&#9632;</span>
+            <p class="line"><em>Top right &#9432;</em> — shows available controls for that visualization.</p>
+
+            <span class="icon">&#9632;</span>
+            <p class="line"><em>Top left square</em> — returns to the homepage.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- 03 -->
+    <section class="section">
+        <p class="section-num">03 &mdash; Custom Visualizer</p>
+        <div class="section-body">
+            <span class="icon">&#9632;</span>
+            <p class="line">Tap <strong>Custom</strong> in the <em>bottom right corner</em> of the homepage to open the custom visualizer.</p>
+
+            <span class="icon">&#9632;</span>
+            <p class="line">You can <strong>upload a song</strong> from your device, <strong>choose from a list</strong>, or <strong>record your voice</strong> — the visuals will respond to whatever audio you provide.</p>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- 04 -->
+    <section class="section">
+        <p class="section-num">04 &mdash; Printing</p>
+        <div class="section-body">
+            <span class="icon">&#9632;</span>
+            <p class="line">A thermal printer is connected to this installation. Print any frame on screen using your voice or keyboard.</p>
+
+            <span class="icon">&#9632;</span>
+            <p class="line">
+                <span class="tag">W</span> white paper &nbsp;
+                <span class="tag">B</span> black paper &nbsp;
+                <span class="tag">P</span> print now
+            </p>
+
+            <span class="icon">&#9632;</span>
+            <p class="line">Or say aloud: <span class="tag">set to white</span> &nbsp;<span class="tag">set to black</span> &nbsp;<span class="tag">now</span></p>
+
+            <span class="icon">&#9632;</span>
+            <p class="line">Preview before printing: <span class="tag">1</span> preview black &nbsp; <span class="tag">2</span> preview white</p>
+        </div>
+    </section>
+
+    </div><!-- /content -->
+
+    <footer>
+        <span>A Visual History of Electronic Music</span>
+        <span>Sabrina Wu &middot; Parsons CD &rsquo;26</span>
+    </footer>
+
+    <script>
+        // Auto-scroll — pauses on touch, resumes after 2s idle
+        let autoScroll = true;
+        let resumeTimer = null;
+        const SPEED = 0.6; // px per frame
+        const MAX_Y = document.body.scrollHeight - window.innerHeight - 80;
+
+        function tick() {
+            if (autoScroll && window.scrollY < MAX_Y) {
+                window.scrollBy(0, SPEED);
+            }
+            requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+
+        function pauseScroll() {
+            autoScroll = false;
+            clearTimeout(resumeTimer);
+            resumeTimer = setTimeout(() => { autoScroll = true; }, 2000);
+        }
+
+        document.addEventListener('touchstart',  pauseScroll, { passive: true });
+        document.addEventListener('touchmove',   pauseScroll, { passive: true });
+        document.addEventListener('wheel',       pauseScroll, { passive: true });
+        document.addEventListener('pointerdown', pauseScroll, { passive: true });
+    </script>
+</body>
+</html>

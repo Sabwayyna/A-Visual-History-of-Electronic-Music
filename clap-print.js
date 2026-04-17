@@ -276,6 +276,29 @@
       .catch(e => console.error('[print] Error:', e));
   }
 
+  // ── KEYBOARD SHORTCUTS ────────────────────────────────────────────────────
+  window.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    if (key === 'w') {
+      printMode = 'white';
+      showNotification('print set to white');
+    } else if (key === 'b') {
+      printMode = 'black';
+      showNotification('print set to black');
+    } else if (key === 'p') {
+      const now = Date.now();
+      if (now - lastPrint < COOLDOWN_MS) return;
+      lastPrint = now;
+      captureAndPrint();
+    } else if (key === '1') {
+      printMode = 'black';
+      captureAndPrint();
+    } else if (key === '2') {
+      printMode = 'white';
+      captureAndPrint();
+    }
+  }, true); // capture phase — fires before any other listener
+
   // ── INIT ───────────────────────────────────────────────────────────────────
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startVoiceDetection);
   else startVoiceDetection();
