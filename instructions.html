@@ -258,15 +258,30 @@
     </footer>
 
     <script>
-        // Auto-scroll — pauses on touch, resumes after 2s idle
-        let autoScroll = true;
+        // Auto-scroll — pauses on touch, resumes after 3s idle, loops back to top
+        let autoScroll = false;
         let resumeTimer = null;
-        const SPEED = 0.6; // px per frame
-        const MAX_Y = document.body.scrollHeight - window.innerHeight - 80;
+        const SPEED = 0.7; // px per frame
+
+        // Delay start so iPad finishes layout before we sample scroll height
+        setTimeout(() => { autoScroll = true; }, 800);
+
+        function maxY() {
+            return Math.max(0, document.documentElement.scrollHeight - window.innerHeight - 60);
+        }
 
         function tick() {
-            if (autoScroll && window.scrollY < MAX_Y) {
-                window.scrollBy(0, SPEED);
+            if (autoScroll) {
+                if (window.scrollY >= maxY()) {
+                    // Pause at bottom, then jump back to top and continue
+                    autoScroll = false;
+                    setTimeout(() => {
+                        window.scrollTo({ top: 0, behavior: 'instant' });
+                        setTimeout(() => { autoScroll = true; }, 600);
+                    }, 2000);
+                } else {
+                    window.scrollBy(0, SPEED);
+                }
             }
             requestAnimationFrame(tick);
         }
@@ -275,7 +290,7 @@
         function pauseScroll() {
             autoScroll = false;
             clearTimeout(resumeTimer);
-            resumeTimer = setTimeout(() => { autoScroll = true; }, 2000);
+            resumeTimer = setTimeout(() => { autoScroll = true; }, 3000);
         }
 
         document.addEventListener('touchstart',  pauseScroll, { passive: true });
