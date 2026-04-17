@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busy Ready What, Corroborators - Rashad Becker (2025)</title>
+    <title>Hate or Glory - Gesaffelstein (2013)</title>
     <link rel="icon" href="../favicon/square-logo.png" type="image/png">
     <script type="importmap">
         {
@@ -74,7 +74,7 @@
         #controlsBtn {
             position: fixed;
             top: 28px; right: 32px;
-            width: 36px; height: 36px;
+            width: 18px; height: 18px;
             background: transparent;
             cursor: pointer;
             z-index: 10000;
@@ -83,7 +83,7 @@
             justify-content: center;
         }
         #controlsBtn .info-icon {
-            font-size: 26px;
+            font-size: 13px;
             color: rgba(255,255,255,0.45);
             transition: color 0.25s ease;
             line-height: 1;
@@ -298,24 +298,22 @@
     <div id="crosshair"></div>
 
     <!-- Song header -->
-    <div id="song-header">2025 &nbsp;&#8212;&nbsp; Busy Ready What &nbsp;&#8212;&nbsp; Rashad Becker</div>
+    <div id="song-header">2013 &nbsp;&#8212;&nbsp; Hate or Glory &nbsp;&#8212;&nbsp; Gesaffelstein</div>
 
     <!-- Info panel -->
     <div id="info-panel">
         <div id="info-panel-inner">
             <div class="ip-close-btn">CLOSE &#215;</div>
             <div class="ip-meta">
-                <div class="ip-year">2025</div>
-                <div class="ip-title">Busy Ready What, Corroborators</div>
-                <div class="ip-artist">Rashad Becker</div>
+                <div class="ip-year">2013</div>
+                <div class="ip-title">Hate or Glory</div>
+                <div class="ip-artist">Gesaffelstein</div>
             </div>
             <div class="ip-text">
-                <p>Becker's work explores synthesized language, sounds that suggest speech and articulation without forming intelligible words. The title is itself a fragment: processed, unstable, teetering between syntax and noise.</p>
-                <p>Forms that gesture toward meaning without completing it. Frequency data generates shapes that accumulate and dissolve, a visual syntax that reads but does not resolve.</p>
-                <p>Each phrase carries the weight of its own ending. Compressed into fragments that teeter at the threshold of intelligibility, present then receding, never fully arriving at resolution.</p>
-                <p>The studio as a site of transformation. Raw frequencies shaped into something that resists easy categorization. Becker works at the intersection of composition and sound design, where neither label fully applies.</p>
-                <p>Timbre as the primary carrier of meaning. Not melody, not rhythm, but the grain and texture of each individual sound event. The piece rewards close listening and resists casual consumption.</p>
-                <p>A record that asks the listener to recalibrate what listening means. To sit with sounds that do not resolve, that tease intelligibility without committing to it. That's where the work lives.</p>
+                <p>Gesaffelstein is the project of French producer Mike Lévy. "Hate or Glory" appears on the 2013 album Aleph — a record built from industrial techno, dark electronics, and a relentless mechanical tension.</p>
+                <p>The track moves with compressed, grinding force. Distorted synths and hard-edged percussion create a sense of controlled violence — sound as pressure, rhythm as constraint.</p>
+                <p>Lévy draws from the lineage of French electronic music while pushing it toward something harder and more severe. The aesthetic is stark: black, metallic, unornamented.</p>
+                <p>Aleph arrived as a defining document of a darker strain of electronic music — one that rejected warmth in favor of precision and weight. "Hate or Glory" sits at its center.</p>
             </div>
         </div>
     </div>
@@ -359,7 +357,7 @@
 
     <!-- Print label -->
     <script>
-        window.PRINT_LABEL = { artist: 'Rashad Becker', song: 'Busy Ready What', year: '2025' };
+        window.PRINT_LABEL = { artist: 'Gesaffelstein', song: 'Hate or Glory', year: '2013' };
     </script>
 
     <!-- Three.js visualization -->
@@ -371,7 +369,7 @@
         import { ShaderPass }     from 'three/addons/postprocessing/ShaderPass.js';
         import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-        const AUDIO_PATH = '../Musique/16 - Rashad Becker - Busy Ready What, Corroborators (2025).mp3';
+        const AUDIO_PATH = '../Musique/Hate or Glory.mp3';
 
         let scene, camera, renderer, composer, controls;
         let audioContext, analyser, dataArray, audioSource, audioBuffer;
@@ -613,8 +611,8 @@
             wireframeFloor = new THREE.Points(fGeo, fMat);
             scene.add(wireframeFloor);
 
-            // 4. Sine-wave wireframe — low opacity, monochrome gradient by depth
-            const wGeo = new THREE.PlaneGeometry(150000, 150000, 180, 180);
+            // 4. Sine-wave wireframe — bright, multi-harmonic, time-varying motion
+            const wGeo = new THREE.PlaneGeometry(150000, 150000, 200, 200);
             wGeo.rotateX(-Math.PI / 2);
             const wMat = new THREE.ShaderMaterial({
                 uniforms: { uTime: { value: 0 }, uBass: { value: 0 } },
@@ -627,7 +625,16 @@
                     void main() {
                         vec3 pos = position;
                         float dist = length(pos.xz);
-                        pos.y += sin(dist * 0.00045 - uTime * 4.0) * (800.0 + uBass * 3000.0);
+                        float slow = uTime * 0.12;
+                        // Frequency and speed evolve slowly over time
+                        float freq1 = 0.00042 + sin(slow * 0.31) * 0.00018;
+                        float freq2 = 0.00088 + cos(slow * 0.19) * 0.00012;
+                        float spd1  = 3.5 + sin(slow * 0.47) * 1.8;
+                        float spd2  = 7.0 + cos(slow * 0.23) * 2.5;
+                        float amp1  = 1400.0 + uBass * 5000.0 + sin(slow * 0.53) * 700.0;
+                        float amp2  = 700.0  + uBass * 2500.0 + cos(slow * 0.37) * 400.0;
+                        pos.y += sin(dist * freq1 - uTime * spd1) * amp1;
+                        pos.y += sin(dist * freq2 - uTime * spd2 + sin(slow) * 2.0) * amp2;
                         vDist = dist;
                         gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
                     }
@@ -635,10 +642,9 @@
                 fragmentShader: `
                     varying float vDist;
                     void main() {
-                        // Monochrome: bright near centre, fades to transparent at horizon
                         float t     = smoothstep(0.0, 130000.0, vDist);
-                        float grey  = mix(0.28, 0.06, t);
-                        float alpha = mix(0.18, 0.0,  t);
+                        float grey  = mix(0.92, 0.28, t);
+                        float alpha = mix(0.72, 0.04, t);
                         gl_FragColor = vec4(grey, grey, grey, alpha);
                     }
                 `
@@ -700,32 +706,38 @@
                 void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
             `;
             const fShader = `
-                uniform float uOpacity;
-                uniform vec3  uColor;
+                uniform float uAngle;
+                uniform float uBright;
+                uniform float uDark;
                 varying vec2  vUv;
                 void main() {
-                    // Radial gradient: full at centre, fully transparent at edges
-                    float d = length(vUv - 0.5) * 2.0; // 0 at centre, 1 at corner
-                    float alpha = uOpacity * smoothstep(1.0, 0.0, d);
-                    // Very slight darkening toward corners for depth
-                    vec3 col = uColor * (0.75 + 0.25 * (1.0 - d));
-                    gl_FragColor = vec4(col, alpha);
+                    vec2 dir = vec2(cos(uAngle), sin(uAngle));
+                    float t = dot(vUv - 0.5, dir) * 1.6 + 0.5;
+                    t = clamp(t, 0.0, 1.0);
+                    float grey = mix(uDark, uBright, t);
+                    // Edge fade so blocks don't have hard rectangular borders
+                    float edgeFade = smoothstep(0.0, 0.12, min(min(vUv.x, 1.0-vUv.x), min(vUv.y, 1.0-vUv.y)));
+                    gl_FragColor = vec4(grey, grey, grey, edgeFade);
                 }
             `;
 
             for (const c of configs) {
+                const angle  = Math.random() * Math.PI * 2.0;
+                const bright = 0.65 + Math.random() * 0.35;
+                const dark   = 0.04 + Math.random() * 0.18;
                 const geo = new THREE.PlaneGeometry(c.w, c.h);
                 const mat = new THREE.ShaderMaterial({
                     uniforms: {
-                        uOpacity: { value: c.a },
-                        uColor:   { value: new THREE.Vector3(c.r, c.g, c.b) }
+                        uAngle:  { value: angle },
+                        uBright: { value: bright },
+                        uDark:   { value: dark }
                     },
                     vertexShader: vShader,
                     fragmentShader: fShader,
                     transparent: true,
                     depthWrite: false,
                     side: THREE.DoubleSide,
-                    blending: THREE.AdditiveBlending
+                    blending: THREE.NormalBlending
                 });
                 const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.set(...c.p);
