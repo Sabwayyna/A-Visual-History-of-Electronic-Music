@@ -820,18 +820,17 @@ function draw() {
     volHistory.shift();
   }
   
-  // IMPROVED beat detection - more sensitive and accurate
+  // Beat detection — stricter thresholds so only real hits register
   let volChange = vol - lastVol;
   let avgVol = volHistory.length > 0 ? volHistory.reduce((a, b) => a + b, 0) / volHistory.length : vol;
 
-  // Better beat detection - MORE SENSITIVE
-  let isBeat = (volChange > 0.04 && vol > avgVol * 1.1) || // Sharp increase
-               (vol > 0.35 && volChange > 0.02) || // Loud with increase
-               (vol > 0.15 && volChange > 0.06); // Medium with sharp change
+  let isBeat = (volChange > 0.07 && vol > avgVol * 1.25) || // Sharp transient
+               (vol > 0.45 && volChange > 0.04) ||           // Very loud hit
+               (vol > 0.22 && volChange > 0.10);             // Strong mid attack
 
-  let isLoud = vol > 0.12; // More sensitive
-  let isVeryLoud = vol > 0.3; // More sensitive
-  let isQuiet = vol < 0.05; // More sensitive
+  let isLoud = vol > 0.18;
+  let isVeryLoud = vol > 0.38;
+  let isQuiet = vol < 0.05;
   
   // Track quiet streaks for breaks
   if (isQuiet) {
@@ -860,34 +859,36 @@ function draw() {
   }
 
   let shouldGenerate = false;
-  if (isBeat && vol > 0.05) {
-    shouldGenerate = true;                               // always fire on beats
-  } else if (frameCounter % 4 === 0 && vol > 0.03) {
-    shouldGenerate = distTravelled > MIN_TRAVEL;         // every 4th frame + distance gate
-  } else if (vol > 0.14 && frameCounter % 2 === 0) {
-    shouldGenerate = distTravelled > MIN_TRAVEL * 0.4;   // loud: every other frame, lower gate
-  } else if (vol > 0.08 && frameCounter % 3 === 0) {
-    shouldGenerate = true;                               // moderate: every 3rd frame
-  } else if (random() < 0.12) {
-    shouldGenerate = true;                               // sparse random fill
+  let genIntensity = 1.0;
+  if (isBeat && vol > 0.06) {
+    shouldGenerate = true;
+    genIntensity = 1.0;
+  } else if (vol > 0.04 && frameCount % 8 === 0) {
+    shouldGenerate = distTravelled > MIN_TRAVEL;
+    genIntensity = 0.28;
+  } else if (random() < 0.018) {
+    shouldGenerate = distTravelled > MIN_TRAVEL;
+    genIntensity = 0.22;
   }
 
   if (shouldGenerate && vol > 0.003) {
-    generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
-    // Burst: spawn extra passes on strong beats / bass drops
+    generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange, 1.0, genIntensity);
+    // Burst extra passes on strong hits — the louder the beat, the more shapes
     if (isBeat && isVeryLoud) {
-      let bursts = vol > 0.5 ? 3 : 2;
+      let bursts = vol > 0.65 ? 40 : vol > 0.55 ? 28 : 18;
+      let burstSize = vol > 0.65 ? 1.8 : 1.4;
       for (let b = 0; b < bursts; b++) {
-        generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
+        generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange, burstSize, 1.0);
       }
     } else if (isBeat && isLoud) {
-      generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
-    } else if (isVeryLoud && bassNorm > 0.4) {
-      generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange);
+      let bursts = vol > 0.30 ? 10 : 6;
+      for (let b = 0; b < bursts; b++) {
+        generateShapes(vol, subBassNorm, bassNorm, lowMidNorm, midNorm, highMidNorm, trebleNorm, isBeat, isLoud, isVeryLoud, isQuiet, volChange, 1.0, 1.0);
+      }
     }
     lastX = currentX;
   } else if (isQuiet && quietStreak > 40) {
-    if (random() < 0.06) generateQuietMark(vol);
+    if (random() < 0.04) generateQuietMark(vol);
   }
 
   // Draw only newly added shapes this frame — old shapes stay on canvas permanently
@@ -946,7 +947,8 @@ function getGrayscaleColor(vol, frequencyType, isVeryLoud, isLoud, isQuiet) {
 }
 
 
-function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat, isLoud, isVeryLoud, isQuiet, volChange, sizeMultiplier = 1.0) {
+function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat, isLoud, isVeryLoud, isQuiet, volChange, sizeMultiplier = 1.0, intensity = 1.0) {
+  let _startIdx = shapes.length;
   // Calculate positions based on visualization mode
   let subBassY, bassY, lowMidY, midY, highMidY, trebleY;
 
@@ -2075,6 +2077,41 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
     }
   }
 
+  // Rare horizontal full-screen lines (custom mode only)
+  if (isCustom && isBeat && random() < 0.04) {
+    addFullScreenLineCluster(vol);
+  }
+
+  // ── MASSIVE BASS SHAPES (custom mode only) ────────────────────────────
+  // Very large outlined shapes, triggered by deep sub-bass, appear rarely
+  if (isCustom && subBass > 0.35 && random() < 0.018) {
+    let shapeChoice = floor(random(5));
+    let sz = random(height * 0.7, height * 1.4);
+    let px = centerX + random(-width * 0.2, width * 0.2);
+    let py = centerY + random(-height * 0.15, height * 0.15);
+    let col = map(subBass, 0, 1, 55, 160);
+
+    if (shapeChoice === 0) {
+      shapes.push({ type: 'largeCircle', x: px, y: py, size: sz,
+        weight: random(0.4, 1.0), color: col });
+    } else if (shapeChoice === 1) {
+      shapes.push({ type: 'diamond', x: px, y: py, size: sz,
+        weight: random(0.4, 1.0), color: col });
+    } else if (shapeChoice === 2) {
+      shapes.push({ type: 'concentricSquares', x: px, y: py, size: sz,
+        rings: floor(random(2, 4)), weight: random(0.3, 0.8), color: col });
+    } else if (shapeChoice === 3) {
+      shapes.push({ type: 'brokenCircle', x: px, y: py, size: sz,
+        segments: floor(random(4, 8)), gapRatio: random(0.25, 0.5),
+        rotation: random(360), weight: random(0.4, 0.9), color: col });
+    } else {
+      // Huge square outline
+      shapes.push({ type: 'square', x: px, y: py, size: sz,
+        filled: false, weight: random(0.4, 0.9), color: col });
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────
+
   // ── CUSTOM MODE: organic overlay shapes ───────────────────────────────
   if (isCustom && vol > 0.04) {
     // Scattered organic arcs around current spiral position
@@ -2239,6 +2276,17 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
     });
   }
   // ───────────────────────────────────────────────────────────────────────
+
+  // Post-process newly added shapes for ambient intensity dimming
+  if (intensity < 0.99) {
+    for (let _si = _startIdx; _si < shapes.length; _si++) {
+      if (!shapes[_si]) continue;
+      if (typeof shapes[_si].color === 'number') shapes[_si].color = Math.max(8, shapes[_si].color * intensity);
+      if (shapes[_si].weight) shapes[_si].weight *= intensity;
+      if (shapes[_si].colorA !== undefined) shapes[_si].colorA = Math.max(8, shapes[_si].colorA * intensity);
+      if (shapes[_si].alphaA !== undefined) shapes[_si].alphaA *= intensity;
+    }
+  }
 }
 
 function generateQuietMark(vol) {
@@ -3491,6 +3539,25 @@ function drawSingleShape(shape, mirrored) {
         break;
       // ───────────────────────────────────────────────────────────────────
     }
+}
+
+// Rare horizontal full-screen thin line cluster (custom mode only)
+function addFullScreenLineCluster(vol) {
+  let numLines = floor(random(2, 4));
+  let spacing = random(3, 8);
+  let baseColor = map(vol, 0, 1, 80, 180);
+  let ly = random(height);
+
+  for (let i = 0; i < numLines; i++) {
+    shapes.push({
+      type: 'horizontalLine',
+      x: 0,
+      y: ly + (i - (numLines - 1) / 2) * spacing,
+      length: width,
+      weight: random(0.2, 0.5),
+      color: baseColor
+    });
+  }
 }
 
 function mousePressed() {

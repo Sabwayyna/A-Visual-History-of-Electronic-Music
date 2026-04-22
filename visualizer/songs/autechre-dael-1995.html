@@ -1601,7 +1601,10 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
         size: circleSize,
         weight: random(0.6, 1.5),
         color: accentColor,
-        blendMode: 'difference'
+        blendMode: 'difference',
+        glow: true,
+        glowRadius: 22,
+        glowAlpha: 0.5
       });
     } else if (accentChoice < 0.30) {
       // Large star/asterisk
@@ -1614,7 +1617,8 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
         rotation: random(360),
         weight: random(0.6, 1.8),
         color: accentColor,
-        blendMode: 'difference'
+        blendMode: 'difference',
+        glow: random() < 0.55
       });
     } else if (accentChoice < 0.42) {
       // Large cross
@@ -1661,7 +1665,10 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
         size: random(40, 120),
         weight: random(0.6, 1.8),
         color: accentColor,
-        blendMode: 'difference'
+        blendMode: 'difference',
+        shadow3d: true,
+        shadowDepth: floor(random(3, 7)),
+        glow: random() < 0.4
       });
     } else if (accentChoice < 0.80) {
       // Concentric squares
@@ -1673,7 +1680,9 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
         rings: floor(random(3, 6)),
         weight: random(0.4, 1.2),
         color: accentColor,
-        blendMode: 'difference'
+        blendMode: 'difference',
+        shadow3d: true,
+        shadowDepth: floor(random(4, 8))
       });
     } else if (accentChoice < 0.88) {
       // Large cross-hatch pattern
@@ -1869,6 +1878,7 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
     let numSegments = floor(random(2, 5)); // Balanced
     let segmentHeight = height / numSegments;
 
+    let beatGlow = vol > 0.5;
     for (let i = 0; i < numSegments; i++) {
       if (random() < 0.6) { // More segments missing for glitch
         shapes.push({
@@ -1877,7 +1887,10 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
           y: i * segmentHeight,
           length: segmentHeight * random(0.6, 0.9),
           weight: map(vol, 0, 1, 0.6, 2),
-          color: map(vol, 0, 1, 180, 255)
+          color: map(vol, 0, 1, 180, 255),
+          glow: beatGlow,
+          glowRadius: 8,
+          glowAlpha: 0.45
         });
       }
     }
@@ -1906,6 +1919,17 @@ function generateShapes(vol, subBass, bass, lowMid, mid, highMid, treble, isBeat
     if (vol > 0.8 && random() < 0.12) {
       addArchitecturalElement(currentX, random(height * 0.4, height * 0.6), random(40, 80), vol);
     }
+  }
+
+  // Full-screen line clusters
+  if (isBeat && isLoud && random() < 0.18) {
+    addFullScreenLineCluster(currentX, 'vertical', vol);
+  }
+  if (treble > 0.25 && random() < 0.1) {
+    addFullScreenLineCluster(currentX + random(-50, 50), 'horizontal', vol);
+  }
+  if (isVeryLoud && random() < 0.08) {
+    addFullScreenLineCluster(currentX + random(-30, 30), random() < 0.5 ? 'vertical' : 'horizontal', vol);
   }
 }
 
@@ -2817,6 +2841,45 @@ function addGridPattern(x, y, gridWidth, gridHeight, cellSize, vol) {
   }
 }
 
+// Full-screen line clusters: 2-4 thin parallel lines spanning the entire width or height
+function addFullScreenLineCluster(x, orientation, vol) {
+  let numLines = floor(random(2, 5));
+  let spacing = random(3, 9);
+  let baseColor = map(vol, 0, 1, 100, 230);
+  let w = random(0.25, 0.7);
+  let addGlow = random() < 0.35;
+
+  for (let i = 0; i < numLines; i++) {
+    let offset = (i - (numLines - 1) / 2) * spacing;
+    if (orientation === 'vertical') {
+      shapes.push({
+        type: 'verticalLine',
+        x: x + offset,
+        y: 0,
+        length: height,
+        weight: w * random(0.6, 1.4),
+        color: baseColor,
+        glow: addGlow,
+        glowRadius: 10,
+        glowAlpha: 0.4
+      });
+    } else {
+      let ly = random(height);
+      shapes.push({
+        type: 'horizontalLine',
+        x: 0,
+        y: ly + offset,
+        length: width,
+        weight: w * random(0.6, 1.4),
+        color: baseColor,
+        glow: addGlow,
+        glowRadius: 10,
+        glowAlpha: 0.4
+      });
+    }
+  }
+}
+
 function drawShapes() {
   for (let shape of shapes) {
     if (!shape) continue; // Skip invalid shapes
@@ -2870,6 +2933,12 @@ function drawSingleShape(shape, mirrored) {
 
   strokeWeight(shape.weight || 0.5);
 
+  // Glow effect via canvas shadow
+  if (shape.glow) {
+    drawingContext.shadowBlur = shape.glowRadius || 14;
+    drawingContext.shadowColor = `rgba(255,255,255,${shape.glowAlpha || 0.55})`;
+  }
+
   // Get coordinates (mirrored if needed)
   let x = mirrored && shape.x !== undefined ? getMirroredX(shape.x) : shape.x;
   let x1 = mirrored && shape.x1 !== undefined ? getMirroredX(shape.x1) : shape.x1;
@@ -2879,6 +2948,12 @@ function drawSingleShape(shape, mirrored) {
       case 'rectangle':
         noFill();
         if (shape.x !== undefined && shape.y !== undefined && shape.w && shape.h) {
+          if (shape.shadow3d) {
+            let sd = shape.shadowDepth || 4;
+            stroke(35); noFill();
+            rect(x - shape.w/2 + sd, shape.y - shape.h/2 + sd, shape.w, shape.h);
+            stroke(shape.color !== undefined ? shape.color : 255);
+          }
           rect(x - shape.w/2, shape.y - shape.h/2, shape.w, shape.h);
         }
         break;
@@ -2887,12 +2962,25 @@ function drawSingleShape(shape, mirrored) {
         if (shape.filled) {
           // Filled square
           if (shape.x !== undefined && shape.y !== undefined && shape.size) {
+            if (shape.shadow3d) {
+              let sd = shape.shadowDepth || 3;
+              fill(25); noStroke();
+              rect(x - shape.size/2 + sd, shape.y - shape.size/2 + sd, shape.size, shape.size);
+              fill(shape.color !== undefined ? shape.color : 255);
+              stroke(shape.color !== undefined ? shape.color : 255);
+            }
             rect(x - shape.size/2, shape.y - shape.size/2, shape.size, shape.size);
           }
         } else {
           // Outlined square
           noFill();
           if (shape.x !== undefined && shape.y !== undefined && shape.size) {
+            if (shape.shadow3d) {
+              let sd = shape.shadowDepth || 3;
+              stroke(30);
+              rect(x - shape.size/2 + sd, shape.y - shape.size/2 + sd, shape.size, shape.size);
+              stroke(shape.color !== undefined ? shape.color : 255);
+            }
             rect(x - shape.size/2, shape.y - shape.size/2, shape.size, shape.size);
           }
         }
@@ -3006,6 +3094,15 @@ function drawSingleShape(shape, mirrored) {
         noFill();
         if (shape.x !== undefined && shape.y !== undefined && shape.size) {
           let hs = shape.size / 2;
+          if (shape.shadow3d) {
+            let sd = shape.shadowDepth || 5;
+            stroke(30);
+            line(x+sd, shape.y-hs+sd, x+hs+sd, shape.y+sd);
+            line(x+hs+sd, shape.y+sd, x+sd, shape.y+hs+sd);
+            line(x+sd, shape.y+hs+sd, x-hs+sd, shape.y+sd);
+            line(x-hs+sd, shape.y+sd, x+sd, shape.y-hs+sd);
+            stroke(shape.color !== undefined ? shape.color : 255);
+          }
           line(x, shape.y - hs, x + hs, shape.y);
           line(x + hs, shape.y, x, shape.y + hs);
           line(x, shape.y + hs, x - hs, shape.y);
@@ -3016,6 +3113,15 @@ function drawSingleShape(shape, mirrored) {
       case 'concentricSquares':
         noFill();
         if (shape.x !== undefined && shape.y !== undefined && shape.size && shape.rings) {
+          if (shape.shadow3d) {
+            let sd = shape.shadowDepth || 5;
+            stroke(30);
+            for (let r = 0; r < shape.rings; r++) {
+              let s = shape.size * (1 - r / shape.rings);
+              rect(x - s/2 + sd, shape.y - s/2 + sd, s, s);
+            }
+            stroke(shape.color !== undefined ? shape.color : 255);
+          }
           for (let r = 0; r < shape.rings; r++) {
             let s = shape.size * (1 - r / shape.rings);
             rect(x - s/2, shape.y - s/2, s, s);
@@ -3053,6 +3159,11 @@ function drawSingleShape(shape, mirrored) {
         }
         break;
     }
+
+  // Reset glow after drawing
+  if (shape.glow) {
+    drawingContext.shadowBlur = 0;
+  }
 }
 
 function mousePressed() {
